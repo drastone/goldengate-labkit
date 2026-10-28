@@ -1,0 +1,10 @@
+*.tar.gz
+*.tar.gz.sha256
+*.zip
+*.rpm
+*.key
+*.pem
+*.p12
+*.pfx
+.env
+*.log
