@@ -22,9 +22,11 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
-압축을 해제한 후 도서의 안내에 따라 필요한 제품 파일을 `oracle/pkg`와
-`centos/pkg`에 배치합니다. Docker Engine과 Docker Compose plugin이 준비된
-다음에는 아래 사전 점검을 실행합니다.
+압축을 해제한 후 도서의 안내에 따라 라이선스가 적용되는 제품 파일을
+`oracle/pkg`와 `centos/pkg`에 배치합니다. ZooKeeper, Kafka, Spark는
+Big Data/Analytics 이미지를 만들 때 Apache Archive에서 자동으로 내려받고
+고정된 SHA-512 체크섬으로 검증합니다. Docker Engine과 Docker Compose
+plugin이 준비된 다음에는 아래 사전 점검을 실행합니다.
 
 ```bash
 cd /home/oracle
