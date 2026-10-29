@@ -575,11 +575,31 @@ OSA installer는 `demo_centos` image 구성에 사용되므로 파일을 다시 
 manifest 값은 필요한 제품 media를 모두 준비한 뒤 검증 환경에서 다시 확인해
 확정한다.
 
+### 4.10 `centos/pkg` 최종 배치 확인
+
+ZIP과 WGET script를 `/home/oracle/centos/pkg`로 옮긴 뒤 실제로 확인한 결과는
+다음과 같다.
+
+```text
+[root@DESKTOP-4F78VMG pkg]# ls -ltr
+total 1708308
+-rw-r--r-- 1 root root 1749299087 Feb 10  2026 V1054826-01.zip
+-rwx------ 1 root root       2379 Oct 29 14:36 wget_oracle_stream_analytics_26ai.sh
+[root@DESKTOP-4F78VMG pkg]# pwd
+/home/oracle/centos/pkg
+[root@DESKTOP-4F78VMG pkg]# sha256sum V1054826-01.zip
+3da480b24b2dcd903e8f9ab2ed2e21937de8c5dee97260cc0ec86ed0ae0df341  V1054826-01.zip
+[root@DESKTOP-4F78VMG pkg]#
+```
+
+이동 전후 SHA-256이 같으므로 파일 내용은 변경되지 않았다. OSA installer와
+해당 installer를 받은 WGET script가 모두 Lab Kit의 지정 위치에 준비됐다.
+
 ## 다음 업데이트 대상
 
-OSA/GGSA `V1054826-01.zip`을 `centos/pkg`로 이동한 뒤의 확인 결과와 JDK 21
-다운로드 절차는 실제 수행 화면과 terminal 결과를 받는 순서대로 이 절에 계속
-추가한다.
+다음 필수 파일은 Oracle JDK 21 Linux x64 RPM이다. Oracle 공식 다운로드
+화면, license 확인, `/home/oracle/centos/pkg` 배치와 SHA-256 검증 결과를 실제
+수행 순서대로 계속 추가한다.
 ZooKeeper, Kafka, Spark는 현재 Lab Kit의 Dockerfile이 Apache Archive에서
 자동으로 내려받고 고정된 SHA-512 checksum으로 검증하므로 독자가 별도로
 다운로드하지 않는다.
