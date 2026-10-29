@@ -405,11 +405,68 @@ Oracle Stream Analytics installer용 WGET script를 Windows Downloads 폴더에
 token의 유효 시간이 짧을 수 있으므로 script를 먼저 WSL의 지정 위치로 옮기고
 실행 준비를 마친 뒤 새 token을 생성한다.
 
+### 4.5 WGET script를 `centos/pkg`에 배치하고 실행
+
+Windows Downloads 폴더에 저장된 `wget.sh`를 WSL로 옮기면서 제품 용도가
+드러나는 `wget_oracle_stream_analytics_26ai.sh`로 이름을 바꾼다.
+
+앞의 Database와 GoldenGate installer는 `/home/oracle/oracle/pkg`에
+배치했지만, Oracle Stream Analytics는 Kafka와 Spark가 실행되는
+`demo_centos` image에서 사용한다. 따라서 OSA용 WGET script와 다운로드
+결과는 `/home/oracle/centos/pkg`에 둬야 한다. 현재 Lab Kit의
+`preflight_downloads.sh`도 이 위치의 `V1054826-01.zip`을 검사한다.
+
+처음부터 올바른 위치로 옮기는 최종 독자용 절차는 다음과 같다.
+
+```text
+[root@DESKTOP-4F78VMG pkg]# cd /mnt/c/Users/<WindowsUser>/Downloads/
+[root@DESKTOP-4F78VMG Downloads]# ls -ltr wget.sh
+-rwxrwxrwx 1 root root 2379 Oct 29 14:36 wget.sh
+[root@DESKTOP-4F78VMG Downloads]# mv wget.sh /home/oracle/centos/pkg/wget_oracle_stream_analytics_26ai.sh
+[root@DESKTOP-4F78VMG Downloads]# cd /home/oracle/centos/pkg
+[root@DESKTOP-4F78VMG pkg]# chmod 700 wget_oracle_stream_analytics_26ai.sh
+[root@DESKTOP-4F78VMG pkg]# ls -ltr wget_oracle_stream_analytics_26ai.sh
+-rwx------ 1 root root 2379 Oct 29 14:36 wget_oracle_stream_analytics_26ai.sh
+[root@DESKTOP-4F78VMG pkg]#
+```
+
+이미 `/home/oracle/oracle/pkg`로 옮겼다면 다시 다운로드하지 말고 다음처럼
+`centos/pkg`로 이동한다. `mv`는 기존의 `700` 권한을 그대로 유지한다.
+
+```text
+[root@DESKTOP-4F78VMG pkg]# mv wget_oracle_stream_analytics_26ai.sh /home/oracle/centos/pkg/
+[root@DESKTOP-4F78VMG pkg]# cd /home/oracle/centos/pkg
+[root@DESKTOP-4F78VMG pkg]# ls -ltr wget_oracle_stream_analytics_26ai.sh
+-rwx------ 1 root root 2379 Oct 29 14:36 wget_oracle_stream_analytics_26ai.sh
+```
+
+`centos/pkg`에서 script를 실행하면 access token 입력을 기다린다.
+
+```text
+[root@DESKTOP-4F78VMG pkg]# sh wget_oracle_stream_analytics_26ai.sh
+Please paste your access token and press Enter:
+```
+
+이 prompt가 표시된 terminal은 닫지 않고 그대로 둔다.
+
+### 4.6 Access token 생성
+
+브라우저의 `WGET Options for Selected Files` 팝업으로 돌아가
+`Generate Token`을 클릭한다. 앞에서 Database 또는 GoldenGate를 받을 때
+사용한 token은 재사용하지 않고, OSA 다운로드를 시작하기 직전에 새 token을
+생성한다.
+
+![Oracle Stream Analytics 다운로드용 access token 생성](assets/osa-05-edelivery-generate-token.png)
+
+다음 화면에서 access token이 표시되면 `Copy`를 한 번 클릭한다. Token은
+터미널에 한 번만 붙여넣고 Enter를 누르며, 화면 캡처나 GitHub 문서에는 실제
+값과 callback 인증 코드를 남기지 않는다.
+
 ## 다음 업데이트 대상
 
-OSA/GGSA용 WGET script 이동과 실행, access token 입력,
-`V1054826-01.zip` 다운로드·검증과 JDK 21 다운로드 절차는 실제 수행 화면과
-terminal 결과를 받는 순서대로 이 절에 계속 추가한다.
+OSA/GGSA access token 복사, `V1054826-01.zip` 다운로드·검증과 JDK 21
+다운로드 절차는 실제 수행 화면과 terminal 결과를 받는 순서대로 이 절에
+계속 추가한다.
 ZooKeeper, Kafka, Spark는 현재 Lab Kit의 Dockerfile이 Apache Archive에서
 자동으로 내려받고 고정된 SHA-512 checksum으로 검증하므로 독자가 별도로
 다운로드하지 않는다.
