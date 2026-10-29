@@ -533,10 +533,53 @@ Please check logfile for more details: ./wgetlog-10-29-26-14:39.log
 최종 Lab Kit checksum manifest에는 전체 제품 media를 한 서버에 모아 다시
 검증한 뒤 확정한 값만 반영한다.
 
+### 4.9 다운로드 파일 확인과 배치 경로 수정
+
+실제 다운로드 직후 확인한 결과는 다음과 같다. 파일은 정상적으로 생성됐지만
+`pwd`가 `/home/oracle/oracle/pkg`이므로 OSA용 배치 경로와 일치하지 않는다.
+
+```text
+[root@DESKTOP-4F78VMG pkg]# pwd
+/home/oracle/oracle/pkg
+[root@DESKTOP-4F78VMG pkg]# ls -lh V1054826-01.zip
+-rw-r--r-- 1 root root 1.7G Feb 10  2026 V1054826-01.zip
+[root@DESKTOP-4F78VMG pkg]# sha256sum V1054826-01.zip
+3da480b24b2dcd903e8f9ab2ed2e21937de8c5dee97260cc0ec86ed0ae0df341  V1054826-01.zip
+```
+
+`ls -lh`의 `1.7G`와 eDelivery 화면의 `1.6 GB`는 표시 단위와 반올림 방식에
+따라 다르게 보일 수 있다. 파일명과 크기를 함께 확인하고, 정확한 파일 식별과
+무결성 확인에는 SHA-256 값을 사용한다.
+
+OSA installer는 `demo_centos` image 구성에 사용되므로 파일을 다시 다운로드하지
+말고 `/home/oracle/centos/pkg`로 옮긴다. 이동 후 같은 checksum이 출력되는지
+다시 확인한다.
+
+```text
+[root@DESKTOP-4F78VMG pkg]# mv V1054826-01.zip /home/oracle/centos/pkg/
+[root@DESKTOP-4F78VMG pkg]# cd /home/oracle/centos/pkg
+[root@DESKTOP-4F78VMG pkg]# pwd
+/home/oracle/centos/pkg
+[root@DESKTOP-4F78VMG pkg]# ls -lh V1054826-01.zip
+[root@DESKTOP-4F78VMG pkg]# sha256sum V1054826-01.zip
+```
+
+이동 전 확인한 SHA-256은 다음과 같다. 이동은 파일 내용을 변경하지 않으므로
+이동 후에도 같은 값이 나와야 한다.
+
+```text
+3da480b24b2dcd903e8f9ab2ed2e21937de8c5dee97260cc0ec86ed0ae0df341  V1054826-01.zip
+```
+
+이 값은 현재 다운로드 검증 기록이다. 최종 자동 preflight에서 사용할 checksum
+manifest 값은 필요한 제품 media를 모두 준비한 뒤 검증 환경에서 다시 확인해
+확정한다.
+
 ## 다음 업데이트 대상
 
-OSA/GGSA `V1054826-01.zip`의 실제 파일 크기와 SHA-256 결과, JDK 21 다운로드
-절차는 실제 수행 화면과 terminal 결과를 받는 순서대로 이 절에 계속 추가한다.
+OSA/GGSA `V1054826-01.zip`을 `centos/pkg`로 이동한 뒤의 확인 결과와 JDK 21
+다운로드 절차는 실제 수행 화면과 terminal 결과를 받는 순서대로 이 절에 계속
+추가한다.
 ZooKeeper, Kafka, Spark는 현재 Lab Kit의 Dockerfile이 Apache Archive에서
 자동으로 내려받고 고정된 SHA-512 checksum으로 검증하므로 독자가 별도로
 다운로드하지 않는다.
