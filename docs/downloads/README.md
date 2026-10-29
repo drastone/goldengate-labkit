@@ -462,11 +462,34 @@ Please paste your access token and press Enter:
 터미널에 한 번만 붙여넣고 Enter를 누르며, 화면 캡처나 GitHub 문서에는 실제
 값과 callback 인증 코드를 남기지 않는다.
 
+### 4.7 Access token 복사와 terminal 입력
+
+새 browser 화면에 `Your Access Token`이 표시되면 `Copy`를 한 번 클릭한다.
+아래 화면의 token은 공개 문서용으로 마스킹했으며, 실제 token 값은 저장하거나
+공유하지 않는다.
+
+![Oracle Stream Analytics access token 복사](assets/osa-06-edelivery-copy-token.png)
+
+앞에서 실행해 둔 terminal로 돌아가 `Please paste your access token and press
+Enter:` prompt 뒤에 token을 **한 번만** 붙여넣고 Enter를 누른다. Terminal
+설정에 따라 붙여넣은 긴 token이 화면에 보이지 않거나, 입력 직후 잠시 출력이
+없는 것처럼 보일 수 있다. 정상적으로 한 번 붙여넣고 Enter를 눌렀다면 script가
+다운로드를 시작하므로 잠시 기다린다.
+
+붙여넣기가 되었는지 확신이 없어도 같은 token을 다시 붙여넣지 않는다. 두 번
+입력했거나 잘못 입력한 경우에는 `Ctrl+C`로 현재 script를 중지하고 다시 실행한
+뒤, 필요하면 새 token을 생성해 한 번만 입력한다.
+
+Access token은 짧은 시간 동안만 유효한 임시 인증 정보다. 만료되었거나 다른
+server에서 나중에 다시 다운로드한다면 `Generate Token`을 다시 클릭해 새
+token을 사용한다. Token 문자열과 browser 주소의 callback code는 terminal
+capture, 문서, GitHub issue 또는 commit에 남기지 않는다.
+
 ## 다음 업데이트 대상
 
-OSA/GGSA access token 복사, `V1054826-01.zip` 다운로드·검증과 JDK 21
-다운로드 절차는 실제 수행 화면과 terminal 결과를 받는 순서대로 이 절에
-계속 추가한다.
+OSA/GGSA `V1054826-01.zip` 다운로드 완료 transcript, 파일 크기와 SHA-256
+검증, JDK 21 다운로드 절차는 실제 수행 화면과 terminal 결과를 받는 순서대로
+이 절에 계속 추가한다.
 ZooKeeper, Kafka, Spark는 현재 Lab Kit의 Dockerfile이 Apache Archive에서
 자동으로 내려받고 고정된 SHA-512 checksum으로 검증하므로 독자가 별도로
 다운로드하지 않는다.
