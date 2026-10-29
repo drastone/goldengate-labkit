@@ -601,6 +601,9 @@ Oracle Stream Analytics 26ai runtime에는 JDK 21이 필요하다. Lab Kit은
 `demo_centos` container에서 RPM을 설치하며, 다음 파일명과 위치를 기준으로
 검사한다.
 
+이 절의 화면과 version 정보는 `2026-10-29`에 확인했다. Oracle 사이트의 화면,
+세부 version, license와 로그인 방식은 이후 변경될 수 있다.
+
 ```text
 /home/oracle/centos/pkg/jdk-21_linux-x64_bin.rpm
 ```
@@ -644,6 +647,26 @@ Windows Downloads 폴더에 저장한다.
 License 문구, 로그인 요구 사항, package version은 Oracle 정책과 update에
 따라 변경될 수 있다. 이 저장소는 JDK RPM을 재배포하지 않으며, 각 독자가
 자신의 사용 조건을 확인하고 Oracle 공식 사이트에서 직접 다운로드한다.
+
+### 5.3 화면 변경 시 선택 기준과 대체 경로
+
+기본 다운로드 경로는 Oracle Java Downloads다. 화면이 개편됐거나 해당
+package를 찾기 어렵다면 [Oracle Software Delivery Cloud](https://edelivery.oracle.com/)
+에서 `Oracle JDK`를 검색하고 JDK 21 release를 선택하는 방법을 대체 경로로
+사용한다.
+
+어느 공식 사이트를 사용하더라도 다음 네 조건을 모두 만족하는 package를
+선택한다.
+
+- Major version: `JDK 21`
+- Operating system: `Linux`
+- Architecture: `x86-64` 또는 `x64`
+- Package format: `RPM`
+
+책이나 온라인 부록의 화면과 현재 Oracle 사이트가 다르면 버튼 위치나 표시
+순서보다 위 조건을 우선한다. 최신 update가 게시되면 세부 version과 다운로드
+파일명은 달라질 수 있다. 다운로드한 version 포함 파일명은 뒤 단계에서 Lab Kit
+기준 이름인 `jdk-21_linux-x64_bin.rpm`으로 변경하고 SHA-256을 기록한다.
 
 ## 다음 업데이트 대상
 
