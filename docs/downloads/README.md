@@ -303,10 +303,45 @@ Please paste your access token and press Enter:
 확인되지 않은 출력은 예시로 만들어 넣지 않는다. 세 checksum을 확인한 뒤
 도서의 Docker image 일괄 build 단계로 넘어간다.
 
+## 4. Oracle Stream Analytics/GGSA
+
+Oracle Stream Analytics는 GoldenGate가 Kafka로 전달한 CDC event를 실시간으로
+분석하고 pipeline과 dashboard로 시각화하는 실습에서 사용한다. 이 제품은
+Oracle Stream Analytics 또는 OSA라고 부르며, 일부 GoldenGate 문서와
+화면에서는 GoldenGate Stream Analytics 또는 GGSA라는 이름도 함께 사용한다.
+
+이 절부터는 책 본문 분량에 포함하지 않고, 제품 화면과 실제 terminal 수행
+결과를 이 공개 GitHub 가이드에 상세하게 기록한다.
+
+### 4.1 Oracle Stream Analytics 26.1 검색
+
+[Oracle Software Delivery Cloud](https://edelivery.oracle.com/)에 로그인한 뒤
+검색창에 `Oracle Stream Analytics`를 입력하고 `Search`를 클릭한다.
+
+검색 결과에는 다음 두 Product Pack이 함께 표시될 수 있다.
+
+```text
+DLP: Oracle Stream Analytics 26.1.0.0.0 (Oracle Stream Analytics)
+DLP: Oracle Stream Analytics 19.1.0.0.0 (Oracle Stream Analytics)
+```
+
+현재 Lab Kit는 Java 21과 함께 사용하는 26.1 계열 media를 기준으로 하므로
+위쪽의 `Oracle Stream Analytics 26.1.0.0.0`을 선택한다. 아래쪽의
+`19.1.0.0.0`은 과거 실습 자산과 비교할 때만 참고하며, 현재 독자용 Lab Kit의
+신규 설치 파일로 선택하지 않는다.
+
+![Oracle Software Delivery Cloud에서 Oracle Stream Analytics 26.1 검색](assets/osa-01-edelivery-product-search.png)
+
+선택 후 화면 오른쪽 위 `View Items`의 선택 수가 증가하는지 확인하고
+`Continue`를 클릭해 Download Queue로 이동한다. 같은 browser session에서
+앞서 다운로드한 Database 또는 GoldenGate 항목이 남아 있다면 다음 화면에서
+기존 항목을 해제해야 한다.
+
 ## 다음 업데이트 대상
 
-OSA/GGSA와 JDK를 포함한 나머지 필수 제품은 Lab Kit의 실제
-`preflight_downloads.sh` 요구 사항과 대조한 뒤 이 문서에 계속 추가한다.
+OSA/GGSA의 Download Queue, Linux x86-64 installer 선택, 라이선스 동의,
+WGET script 실행, `V1054826-01.zip` 검증과 JDK 21 다운로드 절차는 실제 수행
+화면과 terminal 결과를 받는 순서대로 이 절에 계속 추가한다.
 ZooKeeper, Kafka, Spark는 현재 Lab Kit의 Dockerfile이 Apache Archive에서
 자동으로 내려받고 고정된 SHA-512 checksum으로 검증하므로 독자가 별도로
 다운로드하지 않는다.
