@@ -595,11 +595,42 @@ total 1708308
 이동 전후 SHA-256이 같으므로 파일 내용은 변경되지 않았다. OSA installer와
 해당 installer를 받은 WGET script가 모두 Lab Kit의 지정 위치에 준비됐다.
 
+## 5. Oracle JDK 21 Linux x64 RPM 다운로드
+
+Oracle Stream Analytics 26ai runtime에는 JDK 21이 필요하다. Lab Kit은
+`demo_centos` container에서 RPM을 설치하며, 다음 파일명과 위치를 기준으로
+검사한다.
+
+```text
+/home/oracle/centos/pkg/jdk-21_linux-x64_bin.rpm
+```
+
+### 5.1 Oracle Java Downloads 접속과 package 선택
+
+Browser에서 [Oracle Java Downloads](https://www.oracle.com/java/technologies/downloads/)
+에 접속하고 `Java 21` tab을 선택한다. 다운로드 전에 화면에 표시된 현재
+license 조건을 직접 확인한다. 검증 시점의 화면에는 JDK 21.0.13 이상에 적용되는
+Oracle Technology Network License Agreement가 이전 JDK 21 license와 다르다는
+안내가 표시됐다.
+
+`Linux` tab에서 다음 항목을 선택한다.
+
+- Product/file description: `x64 RPM Package`
+- 검증 시점 파일명: `jdk-21.0.13.0.3_linux-x64_bin.rpm`
+- 검증 시점 표시 크기: `189.6 MB`
+
+![Oracle Java Downloads에서 JDK 21 Linux x64 RPM 선택](assets/jdk21-01-oracle-downloads-x64-rpm.png)
+
+`ARM64` package는 ARM 기반 Linux용이고, `.deb`는 Debian 계열 package다.
+이 Lab Kit의 x86-64 CentOS container에는 맨 아래의 `x64 RPM Package`를
+사용한다. JDK update에 따라 version과 파일 크기는 달라질 수 있으므로 제품
+종류와 architecture를 기준으로 선택한다.
+
 ## 다음 업데이트 대상
 
-다음 필수 파일은 Oracle JDK 21 Linux x64 RPM이다. Oracle 공식 다운로드
-화면, license 확인, `/home/oracle/centos/pkg` 배치와 SHA-256 검증 결과를 실제
-수행 순서대로 계속 추가한다.
+Oracle JDK 21 RPM을 Windows Downloads 폴더에서 `/home/oracle/centos/pkg`로
+옮겨 Lab Kit 기준 파일명으로 변경하고, 파일 크기와 SHA-256을 확인하는 절차를
+실제 수행 결과에 따라 계속 추가한다.
 ZooKeeper, Kafka, Spark는 현재 Lab Kit의 Dockerfile이 Apache Archive에서
 자동으로 내려받고 고정된 SHA-512 checksum으로 검증하므로 독자가 별도로
 다운로드하지 않는다.
