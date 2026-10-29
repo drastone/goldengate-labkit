@@ -28,6 +28,9 @@ Big Data/Analytics 이미지를 만들 때 Apache Archive에서 자동으로 내
 고정된 SHA-512 체크섬으로 검증합니다. Docker Engine과 Docker Compose
 plugin이 준비된 다음에는 아래 사전 점검을 실행합니다.
 
+Oracle 제품 파일명, 배치 위치, checksum은
+[제품 설치 파일 다운로드 목록](docs/downloads/README.md)에서 확인합니다.
+
 ```bash
 cd /home/oracle
 bash check_labkit.sh
