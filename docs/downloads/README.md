@@ -73,18 +73,21 @@ Agreement`를 선택하고 `Continue`를 클릭한다.
 
 WSL에서 script를 제품별 이름으로 옮기고 실행 권한을 설정한다.
 
-```bash
-cd /mnt/c/Users/<WindowsUser>/Downloads/
-mv wget.sh /home/oracle/oracle/pkg/wget_oracle_db_26ai.sh
-cd /home/oracle/oracle/pkg
-chmod 700 wget_oracle_db_26ai.sh
-ls -l wget_oracle_db_26ai.sh
+```text
+[root@DESKTOP-4F78VMG ~]# cd /mnt/c/Users/<WindowsUser>/Downloads/
+[root@DESKTOP-4F78VMG Downloads]# ls -ltr wget.sh
+-rwxrwxrwx 1 root root 2379 Oct 29 09:05 wget.sh
+[root@DESKTOP-4F78VMG Downloads]# mv wget.sh /home/oracle/oracle/pkg/wget_oracle_db_26ai.sh
+[root@DESKTOP-4F78VMG Downloads]# cd /home/oracle/oracle/pkg
+[root@DESKTOP-4F78VMG pkg]# chmod 700 wget_oracle_db_26ai.sh
+[root@DESKTOP-4F78VMG pkg]# ls -l wget_oracle_db_26ai.sh
+-rwx------ 1 root root 2379 Oct 29 09:05 wget_oracle_db_26ai.sh
 ```
 
 Script를 실행하면 access token 입력을 기다린다.
 
 ```text
-[root pkg]# sh wget_oracle_db_26ai.sh
+[root@DESKTOP-4F78VMG pkg]# sh wget_oracle_db_26ai.sh
 Please paste your access token and press Enter:
 ```
 
@@ -103,25 +106,23 @@ Please paste your access token and press Enter:
 
 ```text
 [ACCESS TOKEN MASKED]
-[INFO] Download initiated (background) for: V1054592-01.zip
-[INFO] All download(s) initiated in background.
-[INFO] Download completed: V1054592-01.zip (saved to: ./V1054592-01.zip)
-[INFO] ==== Script Finished ====
+[INFO] [2026-10-29 09:52:27] ==== Script Started ====
+[INFO] [2026-10-29 09:52:27] Download initiated (background) for: V1054592-01.zip
+[INFO] [2026-10-29 09:52:27] All download(s) initiated in background.
+Please check logfile for more details: ./wgetlog-10-29-26-09:52.log
+[INFO] [2026-10-29 09:53:22] Download completed: V1054592-01.zip (saved to: ./V1054592-01.zip)
+[INFO] [2026-10-29 09:53:22] ==== Script Finished ====
+[root@DESKTOP-4F78VMG pkg]#
 ```
 
 ### 1.4 파일 검증
 
-```bash
-cd /home/oracle/oracle/pkg
-ls -lh V1054592-01.zip
-sha256sum V1054592-01.zip
-```
-
-검증 환경의 결과는 다음과 같다.
-
 ```text
+[root@DESKTOP-4F78VMG pkg]# ls -lh V1054592-01.zip
 -rw-r--r-- 1 root root 2.3G Jan 23  2026 V1054592-01.zip
+[root@DESKTOP-4F78VMG pkg]# sha256sum V1054592-01.zip
 2a5d2583df076209e624dff750829f9a562473c27c8f926d546cf9ad2a1a2efd  V1054592-01.zip
+[root@DESKTOP-4F78VMG pkg]#
 ```
 
 ## 2. Oracle GoldenGate for Oracle
@@ -165,16 +166,20 @@ DB2 for LUW용 `V1054817-01.zip` 등 다른 Database installer는 선택하지 �
 
 ### 2.3 WGET script 실행
 
-```bash
-cd /mnt/c/Users/<WindowsUser>/Downloads/
-mv wget.sh /home/oracle/oracle/pkg/wget_oracle_goldengate_26ai.sh
-cd /home/oracle/oracle/pkg
-chmod 700 wget_oracle_goldengate_26ai.sh
-ls -l wget_oracle_goldengate_26ai.sh
+```text
+[root@DESKTOP-4F78VMG pkg]# cd /mnt/c/Users/<WindowsUser>/Downloads/
+[root@DESKTOP-4F78VMG Downloads]# ls -ltr wget.sh
+-rwxrwxrwx 1 root root 2379 Oct 29 12:47 wget.sh
+[root@DESKTOP-4F78VMG Downloads]# mv wget.sh /home/oracle/oracle/pkg/wget_oracle_goldengate_26ai.sh
+[root@DESKTOP-4F78VMG Downloads]# cd /home/oracle/oracle/pkg
+[root@DESKTOP-4F78VMG pkg]# chmod 700 wget_oracle_goldengate_26ai.sh
+[root@DESKTOP-4F78VMG pkg]# ls -ltr wget_oracle_goldengate_26ai.sh
+-rwx------ 1 root root 2379 Oct 29 12:47 wget_oracle_goldengate_26ai.sh
+[root@DESKTOP-4F78VMG pkg]#
 ```
 
 ```text
-[root pkg]# sh wget_oracle_goldengate_26ai.sh
+[root@DESKTOP-4F78VMG pkg]# sh wget_oracle_goldengate_26ai.sh
 Please paste your access token and press Enter:
 ```
 
@@ -189,23 +194,23 @@ Please paste your access token and press Enter:
 
 ```text
 [ACCESS TOKEN MASKED]
-[INFO] Download initiated (background) for: V1054774-01.zip
-[INFO] All download(s) initiated in background.
-[INFO] Download completed: V1054774-01.zip (saved to: ./V1054774-01.zip)
-[INFO] ==== Script Finished ====
+[INFO] [2026-10-29 12:53:51] ==== Script Started ====
+[INFO] [2026-10-29 12:53:51] Download initiated (background) for: V1054774-01.zip
+[INFO] [2026-10-29 12:53:51] All download(s) initiated in background.
+Please check logfile for more details: ./wgetlog-10-29-26-12:51.log
+[INFO] [2026-10-29 12:54:04] Download completed: V1054774-01.zip (saved to: ./V1054774-01.zip)
+[INFO] [2026-10-29 12:54:04] ==== Script Finished ====
+[root@DESKTOP-4F78VMG pkg]#
 ```
 
 ### 2.4 파일 검증
 
-```bash
-cd /home/oracle/oracle/pkg
-ls -lh V1054774-01.zip
-sha256sum V1054774-01.zip
-```
-
 ```text
+[root@DESKTOP-4F78VMG pkg]# ls -lh V1054774-01.zip
 -rw-r--r-- 1 root root 497M Jan 29  2026 V1054774-01.zip
+[root@DESKTOP-4F78VMG pkg]# sha256sum V1054774-01.zip
 cd9220e74c7e3afe73bd00c40778faf8bee6cb0fb18140eee0e0ad9d4d140f96  V1054774-01.zip
+[root@DESKTOP-4F78VMG pkg]#
 ```
 
 ## 3. GoldenGate for Distributed Applications and Analytics
@@ -254,19 +259,23 @@ Size: 520.7 MB
 
 ### 3.3 WGET script 실행
 
-```bash
-cd /mnt/c/Users/<WindowsUser>/Downloads/
-mv wget.sh /home/oracle/oracle/pkg/wget_oracle_goldengate_for_DAA_26ai.sh
-cd /home/oracle/oracle/pkg
-chmod 700 wget_oracle_goldengate_for_DAA_26ai.sh
-ls -l wget_oracle_goldengate_for_DAA_26ai.sh
+```text
+[root@DESKTOP-4F78VMG pkg]# cd /mnt/c/Users/<WindowsUser>/Downloads/
+[root@DESKTOP-4F78VMG Downloads]# ls -ltr wget.sh
+-rwxrwxrwx 1 root root 2379 Oct 29 13:15 wget.sh
+[root@DESKTOP-4F78VMG Downloads]# mv wget.sh /home/oracle/oracle/pkg/wget_oracle_goldengate_for_DAA_26ai.sh
+[root@DESKTOP-4F78VMG Downloads]# cd /home/oracle/oracle/pkg/
+[root@DESKTOP-4F78VMG pkg]# chmod 700 wget_oracle_goldengate_for_DAA_26ai.sh
+[root@DESKTOP-4F78VMG pkg]# ls -ltr wget_oracle_goldengate_for_DAA_26ai.sh
+-rwx------ 1 root root 2379 Oct 29 13:15 wget_oracle_goldengate_for_DAA_26ai.sh
+[root@DESKTOP-4F78VMG pkg]#
 ```
 
 Linux file name은 대소문자를 구분하므로 실행할 때도 `DAA`를 대문자로
 정확히 입력한다.
 
 ```text
-[root pkg]# sh wget_oracle_goldengate_for_DAA_26ai.sh
+[root@DESKTOP-4F78VMG pkg]# sh wget_oracle_goldengate_for_DAA_26ai.sh
 Please paste your access token and press Enter:
 ```
 
@@ -281,28 +290,18 @@ Please paste your access token and press Enter:
 
 ### 3.4 파일 검증
 
-```bash
-cd /home/oracle/oracle/pkg
-sha256sum V1054834-01.zip
-```
-
 ```text
+[root@DESKTOP-4F78VMG pkg]# sha256sum V1054834-01.zip
 8971fdfeb734a30df09b486f3c49a99ff4335a0daced21a8f70783d783413c45  V1054834-01.zip
+[root@DESKTOP-4F78VMG pkg]#
 ```
 
 ## 세 제품 다운로드 완료 확인
 
-세 파일을 모두 받은 뒤 한 번에 확인한다.
-
-```bash
-cd /home/oracle/oracle/pkg
-
-ls -lh V1054592-01.zip V1054774-01.zip V1054834-01.zip
-sha256sum V1054592-01.zip V1054774-01.zip V1054834-01.zip
-```
-
-세 파일의 크기와 checksum을 확인한 뒤 도서의 Docker image 일괄 build
-단계로 넘어간다.
+위의 실제 수행 결과에서 세 파일의 prompt, 명령, 대표 출력과 SHA-256을 모두
+확인했다. DAA 파일의 `ls -lh` 결과는 실제 캡처가 추가되는 시점에 보강한다.
+확인되지 않은 출력은 예시로 만들어 넣지 않는다. 세 checksum을 확인한 뒤
+도서의 Docker image 일괄 build 단계로 넘어간다.
 
 ## 다음 업데이트 대상
 
