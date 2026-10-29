@@ -337,11 +337,33 @@ DLP: Oracle Stream Analytics 19.1.0.0.0 (Oracle Stream Analytics)
 앞서 다운로드한 Database 또는 GoldenGate 항목이 남아 있다면 다음 화면에서
 기존 항목을 해제해야 한다.
 
+### 4.2 Download Queue에서 Linux x86-64 선택
+
+Download Queue에서는 `Oracle Stream Analytics 26.1.0.0.0`의 상위 항목과
+하위 release checkbox가 모두 선택되어 있는지 확인한다. 같은 browser
+session에서 앞서 받은 Database, GoldenGate for Oracle, GoldenGate DAA가
+남아 있다면 해당 제품의 상위 checkbox를 모두 해제한다. 이번 WGET script에는
+Oracle Stream Analytics 파일만 포함되어야 한다.
+
+`Platforms / Languages`는 `Linux x86-64`를 선택한다. 검증 화면에서
+Oracle Stream Analytics 26.1 release의 표시 크기는 `1.6 GB`다. 다음 세
+항목을 확인한 뒤 오른쪽 위의 `Continue`를 클릭한다.
+
+- 선택 제품: `Oracle Stream Analytics 26.1.0.0.0`
+- Platform: `Linux x86-64`
+- Download Queue: Oracle Stream Analytics 한 제품만 선택
+
+![Download Queue에서 Oracle Stream Analytics 26.1과 Linux x86-64 선택](assets/osa-02-edelivery-download-queue.png)
+
+`1.6 GB`는 이 Download Queue에 표시되는 Product Pack release 크기다. 뒤의
+file list에서 실제로 받을 installer의 파일명, 제품 설명, 개별 파일 크기를
+다시 확인한다.
+
 ## 다음 업데이트 대상
 
-OSA/GGSA의 Download Queue, Linux x86-64 installer 선택, 라이선스 동의,
-WGET script 실행, `V1054826-01.zip` 검증과 JDK 21 다운로드 절차는 실제 수행
-화면과 terminal 결과를 받는 순서대로 이 절에 계속 추가한다.
+OSA/GGSA의 라이선스 동의, 실제 installer 선택, WGET script 실행,
+`V1054826-01.zip` 검증과 JDK 21 다운로드 절차는 실제 수행 화면과 terminal
+결과를 받는 순서대로 이 절에 계속 추가한다.
 ZooKeeper, Kafka, Spark는 현재 Lab Kit의 Dockerfile이 Apache Archive에서
 자동으로 내려받고 고정된 SHA-512 checksum으로 검증하므로 독자가 별도로
 다운로드하지 않는다.
