@@ -23,7 +23,7 @@ JDK는 [Oracle Java Downloads](https://www.oracle.com/java/technologies/download
 |---|---|---|---|
 | Oracle AI Database 26ai EE, Linux x86-64 | `V1054592-01.zip` | `/home/oracle/oracle/pkg` | 2.3G, SHA-256 `2a5d2583df076209e624dff750829f9a562473c27c8f926d546cf9ad2a1a2efd` |
 | Oracle GoldenGate for Oracle, Linux x86-64 | `V1054774-01.zip` | `/home/oracle/oracle/pkg` | 497M, SHA-256 `cd9220e74c7e3afe73bd00c40778faf8bee6cb0fb18140eee0e0ad9d4d140f96` |
-| GoldenGate for Distributed Applications and Analytics, Linux x86-64 | `V1054834-01.zip` | `/home/oracle/oracle/pkg` | eDelivery 표시 520.7 MB, SHA-256 `8971fdfeb734a30df09b486f3c49a99ff4335a0daced21a8f70783d783413c45` |
+| GoldenGate for Distributed Applications and Analytics, Linux x86-64 | `V1054834-01.zip` | `/home/oracle/oracle/pkg` | 521M, SHA-256 `8971fdfeb734a30df09b486f3c49a99ff4335a0daced21a8f70783d783413c45` |
 | Oracle Stream Analytics 26ai, Linux x86-64 | `V1054826-01.zip` | `/home/oracle/centos/pkg` | 1.7G, SHA-256 `3da480b24b2dcd903e8f9ab2ed2e21937de8c5dee97260cc0ec86ed0ae0df341` |
 | Oracle JDK 21, Linux x64 RPM | `jdk-21_linux-x64_bin.rpm` | `/home/oracle/centos/pkg` | 190M, SHA-256 `1668ce528714a2af23383416f5a698ee584f12189b3fa0e2b9630d993a9823c0` |
 
@@ -736,9 +736,16 @@ JDK RPM이 Lab Kit의 지정 위치와 고정 파일명으로 준비됐고, 일�
 
 ```text
 [root@DESKTOP-4F78VMG pkg]# cd /home/oracle
+[root@DESKTOP-4F78VMG oracle]# pwd
+/home/oracle
 [root@DESKTOP-4F78VMG oracle]# ls -lh oracle/pkg/V105*.zip
+-rw-r--r-- 1 root root 2.3G Jan 23  2026 oracle/pkg/V1054592-01.zip
+-rw-r--r-- 1 root root 497M Jan 29  2026 oracle/pkg/V1054774-01.zip
+-rw-r--r-- 1 root root 521M Feb 27  2026 oracle/pkg/V1054834-01.zip
 [root@DESKTOP-4F78VMG oracle]# ls -lh centos/pkg/V1054826-01.zip
+-rw-r--r-- 1 root root 1.7G Feb 10  2026 centos/pkg/V1054826-01.zip
 [root@DESKTOP-4F78VMG oracle]# ls -lh centos/pkg/jdk-21_linux-x64_bin.rpm
+-rw-r--r-- 1 root root 190M Oct 29 15:49 centos/pkg/jdk-21_linux-x64_bin.rpm
 ```
 
 이어서 각 파일의 SHA-256을 계산한다. 명령을 파일별로 나눠 두면 어떤 파일에서
@@ -747,10 +754,16 @@ JDK RPM이 Lab Kit의 지정 위치와 고정 파일명으로 준비됐고, 일�
 
 ```text
 [root@DESKTOP-4F78VMG oracle]# sha256sum oracle/pkg/V1054592-01.zip
+2a5d2583df076209e624dff750829f9a562473c27c8f926d546cf9ad2a1a2efd  oracle/pkg/V1054592-01.zip
 [root@DESKTOP-4F78VMG oracle]# sha256sum oracle/pkg/V1054774-01.zip
+cd9220e74c7e3afe73bd00c40778faf8bee6cb0fb18140eee0e0ad9d4d140f96  oracle/pkg/V1054774-01.zip
 [root@DESKTOP-4F78VMG oracle]# sha256sum oracle/pkg/V1054834-01.zip
+8971fdfeb734a30df09b486f3c49a99ff4335a0daced21a8f70783d783413c45  oracle/pkg/V1054834-01.zip
 [root@DESKTOP-4F78VMG oracle]# sha256sum centos/pkg/V1054826-01.zip
+3da480b24b2dcd903e8f9ab2ed2e21937de8c5dee97260cc0ec86ed0ae0df341  centos/pkg/V1054826-01.zip
 [root@DESKTOP-4F78VMG oracle]# sha256sum centos/pkg/jdk-21_linux-x64_bin.rpm
+1668ce528714a2af23383416f5a698ee584f12189b3fa0e2b9630d993a9823c0  centos/pkg/jdk-21_linux-x64_bin.rpm
+[root@DESKTOP-4F78VMG oracle]#
 ```
 
 출력값은 문서 첫머리의 `다운로드하고 배치할 필수 media` 표와 대조한다. 파일이
@@ -765,9 +778,9 @@ JDK RPM이 Lab Kit의 지정 위치와 고정 파일명으로 준비됐고, 일�
 
 ## 다음 업데이트 대상
 
-다섯 파일의 일괄 확인 transcript를 추가하고, 확정된 SHA-256으로 checksum
-manifest와 자동 preflight 검사를 구현한다. 검사를 통과한 뒤 Oracle Database,
-GoldenGate for Oracle, GoldenGate for DAA image를 일괄 build한다.
+확정된 SHA-256으로 checksum manifest와 자동 preflight 검사를 구현한다.
+검사를 통과한 뒤 Oracle Database, GoldenGate for Oracle, GoldenGate for DAA
+image를 일괄 build한다.
 ZooKeeper, Kafka, Spark는 현재 Lab Kit의 Dockerfile이 Apache Archive에서
 자동으로 내려받고 고정된 SHA-512 checksum으로 검증하므로 독자가 별도로
 다운로드하지 않는다.
