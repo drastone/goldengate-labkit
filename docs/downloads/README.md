@@ -485,11 +485,58 @@ server에서 나중에 다시 다운로드한다면 `Generate Token`을 다시 �
 token을 사용한다. Token 문자열과 browser 주소의 callback code는 terminal
 capture, 문서, GitHub issue 또는 commit에 남기지 않는다.
 
+### 4.8 Oracle Stream Analytics installer 다운로드 완료
+
+Token을 붙여넣고 Enter를 누르면 WGET script가 background download를
+시작한다. 다음 검증에서는 `1.6 GB` installer를 내려받는 동안 약 16분간
+추가 진행률이 표시되지 않았다. `Download initiated (background)`와
+`All download(s) initiated in background`가 표시됐다면 prompt가 바로
+돌아오지 않아도 terminal을 닫거나 `Ctrl+C`를 누르지 말고 완료 메시지를
+기다린다.
+
+다음은 실제 수행 결과에서 access token만 마스킹한 transcript다.
+
+```text
+[root@DESKTOP-4F78VMG pkg]# sh wget_oracle_stream_analytics_26ai.sh
+Please paste your access token and press Enter:
+[ACCESS TOKEN MASKED]
+[INFO] [2026-10-29 14:40:24] ==== Script Started ====
+[INFO] [2026-10-29 14:40:24] Download initiated (background) for: V1054826-01.zip
+[INFO] [2026-10-29 14:40:24] All download(s) initiated in background.
+Please check logfile for more details: ./wgetlog-10-29-26-14:39.log
+[INFO] [2026-10-29 14:56:40] Download completed: V1054826-01.zip (saved to: ./V1054826-01.zip)
+[INFO] [2026-10-29 14:56:40] ==== Script Finished ====
+[root@DESKTOP-4F78VMG pkg]#
+```
+
+`saved to: ./V1054826-01.zip`의 `./`는 WGET script를 실행한 현재 directory를
+뜻한다. 다음 명령으로 `/home/oracle/centos/pkg`에서 실행했는지 확인하고,
+파일 크기와 SHA-256을 계산한다.
+
+```text
+[root@DESKTOP-4F78VMG pkg]# pwd
+[root@DESKTOP-4F78VMG pkg]# ls -lh V1054826-01.zip
+[root@DESKTOP-4F78VMG pkg]# sha256sum V1054826-01.zip
+```
+
+`pwd`가 `/home/oracle/oracle/pkg`라면 다운로드를 다시 하지 말고 완성된 ZIP을
+다음처럼 옮긴 뒤 `centos/pkg`에서 검증한다.
+
+```text
+[root@DESKTOP-4F78VMG pkg]# mv V1054826-01.zip /home/oracle/centos/pkg/
+[root@DESKTOP-4F78VMG pkg]# cd /home/oracle/centos/pkg
+[root@DESKTOP-4F78VMG pkg]# ls -lh V1054826-01.zip
+[root@DESKTOP-4F78VMG pkg]# sha256sum V1054826-01.zip
+```
+
+현재 단계에서는 독자가 실제로 확인한 파일 크기와 SHA-256 결과를 기록한다.
+최종 Lab Kit checksum manifest에는 전체 제품 media를 한 서버에 모아 다시
+검증한 뒤 확정한 값만 반영한다.
+
 ## 다음 업데이트 대상
 
-OSA/GGSA `V1054826-01.zip` 다운로드 완료 transcript, 파일 크기와 SHA-256
-검증, JDK 21 다운로드 절차는 실제 수행 화면과 terminal 결과를 받는 순서대로
-이 절에 계속 추가한다.
+OSA/GGSA `V1054826-01.zip`의 실제 파일 크기와 SHA-256 결과, JDK 21 다운로드
+절차는 실제 수행 화면과 terminal 결과를 받는 순서대로 이 절에 계속 추가한다.
 ZooKeeper, Kafka, Spark는 현재 Lab Kit의 Dockerfile이 Apache Archive에서
 자동으로 내려받고 고정된 SHA-512 checksum으로 검증하므로 독자가 별도로
 다운로드하지 않는다.
