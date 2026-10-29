@@ -1,26 +1,31 @@
 # Oracle 제품 설치 파일 다운로드 가이드
 
-이 문서는 `Oracle GoldenGate 실전 데이터 플랫폼` Lab Kit에서 사용하는 대표
-Oracle 제품 3종을 Oracle Software Delivery Cloud에서 직접 내려받는 전체
-절차를 설명한다.
+이 문서는 `Oracle GoldenGate 실전 데이터 플랫폼` Lab Kit에서 사용하는
+Oracle 제품 media와 JDK를 공식 Oracle 사이트에서 직접 내려받는 전체 절차를
+설명한다.
 
 Oracle 제품 설치 파일과 라이선스가 적용되는 바이너리는 이 GitHub
-저장소와 Lab Kit Release에 포함하지 않는다. 독자는 본인의 Oracle 계정으로
-[Oracle Software Delivery Cloud](https://edelivery.oracle.com/)에 로그인하고,
-현재 표시되는 라이선스 조건을 확인한 뒤 직접 내려받아야 한다.
+저장소와 Lab Kit Release에 포함하지 않는다. Oracle Database, GoldenGate와
+Stream Analytics media는 본인의 Oracle 계정으로
+[Oracle Software Delivery Cloud](https://edelivery.oracle.com/)에서 받고,
+JDK는 [Oracle Java Downloads](https://www.oracle.com/java/technologies/downloads/)
+를 기본 경로로 사용한다. 독자는 각 사이트에 표시되는 현재 라이선스 조건을
+확인한 뒤 직접 내려받아야 한다.
 
 화면의 제품명, release, 파일 크기와 part number는 Oracle의 제품 업데이트에
 따라 달라질 수 있다. 이 문서의 화면은 2026년 10월 29일 검증 기준이며,
 실제 다운로드 시에는 eDelivery에 표시되는 최신 정보와 `View Digest Details`를
 우선한다.
 
-## 다운로드할 대표 제품 3종
+## 다운로드하고 배치할 필수 media
 
-| 제품 | eDelivery 파일명 | 배치 위치 | 확인 기준 |
+| 제품 | Lab Kit 파일명 | 배치 위치 | 확인 기준 |
 |---|---|---|---|
 | Oracle AI Database 26ai EE, Linux x86-64 | `V1054592-01.zip` | `/home/oracle/oracle/pkg` | 2.3G, SHA-256 `2a5d2583df076209e624dff750829f9a562473c27c8f926d546cf9ad2a1a2efd` |
 | Oracle GoldenGate for Oracle, Linux x86-64 | `V1054774-01.zip` | `/home/oracle/oracle/pkg` | 497M, SHA-256 `cd9220e74c7e3afe73bd00c40778faf8bee6cb0fb18140eee0e0ad9d4d140f96` |
 | GoldenGate for Distributed Applications and Analytics, Linux x86-64 | `V1054834-01.zip` | `/home/oracle/oracle/pkg` | eDelivery 표시 520.7 MB, SHA-256 `8971fdfeb734a30df09b486f3c49a99ff4335a0daced21a8f70783d783413c45` |
+| Oracle Stream Analytics 26ai, Linux x86-64 | `V1054826-01.zip` | `/home/oracle/centos/pkg` | 1.7G, SHA-256 `3da480b24b2dcd903e8f9ab2ed2e21937de8c5dee97260cc0ec86ed0ae0df341` |
+| Oracle JDK 21, Linux x64 RPM | `jdk-21_linux-x64_bin.rpm` | `/home/oracle/centos/pkg` | 190M, SHA-256 `1668ce528714a2af23383416f5a698ee584f12189b3fa0e2b9630d993a9823c0` |
 
 ## 공통 준비와 주의 사항
 
@@ -704,10 +709,31 @@ jdk-21.0.13.0.3_linux-x64_bin.rpm
 파일 크기와 SHA-256 결과는 다음 단계의 검증 기록과 최종 product media
 checksum manifest 작성에 사용한다.
 
+### 5.5 `centos/pkg` 최종 배치와 SHA-256 확인
+
+이동과 권한 정리가 끝난 뒤 실제로 확인한 결과는 다음과 같다.
+
+```text
+[root@DESKTOP-4F78VMG Downloads]# cd /home/oracle/centos/pkg
+[root@DESKTOP-4F78VMG pkg]# chmod 644 jdk-21_linux-x64_bin.rpm
+[root@DESKTOP-4F78VMG pkg]# pwd
+/home/oracle/centos/pkg
+[root@DESKTOP-4F78VMG pkg]# ls -lh jdk-21_linux-x64_bin.rpm
+-rw-r--r-- 1 root root 190M Oct 29 15:49 jdk-21_linux-x64_bin.rpm
+[root@DESKTOP-4F78VMG pkg]# sha256sum jdk-21_linux-x64_bin.rpm
+1668ce528714a2af23383416f5a698ee584f12189b3fa0e2b9630d993a9823c0  jdk-21_linux-x64_bin.rpm
+[root@DESKTOP-4F78VMG pkg]#
+```
+
+JDK RPM이 Lab Kit의 지정 위치와 고정 파일명으로 준비됐고, 일반 읽기용 권한
+`644`가 적용됐다. 이 SHA-256은 JDK 21.0.13.0.3 Linux x64 RPM을 다운로드해
+검증한 값이다. JDK update가 바뀌면 파일명, 크기와 SHA-256도 다시 확인한다.
+
 ## 다음 업데이트 대상
 
-Oracle JDK 21 RPM을 `/home/oracle/centos/pkg`로 옮긴 뒤의 파일 크기와
-SHA-256 결과를 실제 수행 결과에 따라 계속 추가한다.
+필수 media 다운로드가 끝나면 다섯 파일의 위치, 크기와 SHA-256을 한 번에
+확인한다. 그 결과를 확정한 뒤 Oracle Database, GoldenGate for Oracle,
+GoldenGate for DAA image를 일괄 build하는 단계로 넘어간다.
 ZooKeeper, Kafka, Spark는 현재 Lab Kit의 Dockerfile이 Apache Archive에서
 자동으로 내려받고 고정된 SHA-512 checksum으로 검증하므로 독자가 별도로
 다운로드하지 않는다.
