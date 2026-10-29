@@ -626,6 +626,25 @@ Oracle Technology Network License Agreement가 이전 JDK 21 license와 다르�
 사용한다. JDK update에 따라 version과 파일 크기는 달라질 수 있으므로 제품
 종류와 architecture를 기준으로 선택한다.
 
+### 5.2 Oracle Java SE license 확인과 동의
+
+`jdk-21.0.13.0.3_linux-x64_bin.rpm` 링크를 클릭하면 Oracle Technology Network
+License Agreement 확인 창이 열린다. 안내된 license 원문을 직접 검토하고,
+사용 목적에 적용되는 조건을 확인한 뒤 동의하는 경우에만
+`I reviewed and accept the Oracle Technology Network License Agreement for
+Oracle Java SE` checkbox를 선택한다.
+
+![Oracle JDK 21 다운로드 전 Java SE license 확인 및 동의](assets/jdk21-02-oracle-license-accept.png)
+
+Checkbox를 선택하면 아래의
+`Download jdk-21.0.13.0.3_linux-x64_bin.rpm` 버튼이 활성화된다. 버튼을
+클릭하면 Oracle login 화면으로 이동한다. Oracle 계정으로 로그인한 뒤 RPM을
+Windows Downloads 폴더에 저장한다.
+
+License 문구, 로그인 요구 사항, package version은 Oracle 정책과 update에
+따라 변경될 수 있다. 이 저장소는 JDK RPM을 재배포하지 않으며, 각 독자가
+자신의 사용 조건을 확인하고 Oracle 공식 사이트에서 직접 다운로드한다.
+
 ## 다음 업데이트 대상
 
 Oracle JDK 21 RPM을 Windows Downloads 폴더에서 `/home/oracle/centos/pkg`로
