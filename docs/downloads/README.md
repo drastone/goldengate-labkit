@@ -729,11 +729,45 @@ JDK RPM이 Lab Kit의 지정 위치와 고정 파일명으로 준비됐고, 일�
 `644`가 적용됐다. 이 SHA-256은 JDK 21.0.13.0.3 Linux x64 RPM을 다운로드해
 검증한 값이다. JDK update가 바뀌면 파일명, 크기와 SHA-256도 다시 확인한다.
 
+## 6. 필수 media 일괄 확인
+
+다섯 파일을 모두 준비한 뒤 바로 image를 build하지 않고, `/home/oracle`에서
+배치 위치와 파일 크기를 한 번에 확인한다.
+
+```text
+[root@DESKTOP-4F78VMG pkg]# cd /home/oracle
+[root@DESKTOP-4F78VMG oracle]# ls -lh oracle/pkg/V105*.zip
+[root@DESKTOP-4F78VMG oracle]# ls -lh centos/pkg/V1054826-01.zip
+[root@DESKTOP-4F78VMG oracle]# ls -lh centos/pkg/jdk-21_linux-x64_bin.rpm
+```
+
+이어서 각 파일의 SHA-256을 계산한다. 명령을 파일별로 나눠 두면 어떤 파일에서
+오류가 발생했는지 바로 구분할 수 있고, 긴 명령을 입력하면서 경로를 빠뜨릴
+가능성도 줄어든다.
+
+```text
+[root@DESKTOP-4F78VMG oracle]# sha256sum oracle/pkg/V1054592-01.zip
+[root@DESKTOP-4F78VMG oracle]# sha256sum oracle/pkg/V1054774-01.zip
+[root@DESKTOP-4F78VMG oracle]# sha256sum oracle/pkg/V1054834-01.zip
+[root@DESKTOP-4F78VMG oracle]# sha256sum centos/pkg/V1054826-01.zip
+[root@DESKTOP-4F78VMG oracle]# sha256sum centos/pkg/jdk-21_linux-x64_bin.rpm
+```
+
+출력값은 문서 첫머리의 `다운로드하고 배치할 필수 media` 표와 대조한다. 파일이
+없거나 SHA-256이 다르면 Docker build를 시작하지 않는다. 잘못된 경로를 먼저
+확인하고, 파일이 손상됐거나 다른 release라면 해당 파일만 공식 사이트에서
+다시 다운로드한다.
+
+다섯 파일이 모두 일치하면 다운로드 준비가 완료된 것이다. 다음 단계에서는
+이 값을 checksum manifest로 만들고 `preflight_downloads.sh`가 자동 검증하도록
+한 뒤 Oracle Database, GoldenGate for Oracle, GoldenGate for DAA image를
+일괄 build한다.
+
 ## 다음 업데이트 대상
 
-필수 media 다운로드가 끝나면 다섯 파일의 위치, 크기와 SHA-256을 한 번에
-확인한다. 그 결과를 확정한 뒤 Oracle Database, GoldenGate for Oracle,
-GoldenGate for DAA image를 일괄 build하는 단계로 넘어간다.
+다섯 파일의 일괄 확인 transcript를 추가하고, 확정된 SHA-256으로 checksum
+manifest와 자동 preflight 검사를 구현한다. 검사를 통과한 뒤 Oracle Database,
+GoldenGate for Oracle, GoldenGate for DAA image를 일괄 build한다.
 ZooKeeper, Kafka, Spark는 현재 Lab Kit의 Dockerfile이 Apache Archive에서
 자동으로 내려받고 고정된 SHA-512 checksum으로 검증하므로 독자가 별도로
 다운로드하지 않는다.
