@@ -685,10 +685,14 @@ package를 찾기 어렵다면 [Oracle Software Delivery Cloud](https://edeliver
 `/mnt/c`의 Windows file system에서는 실행 권한이 모두 표시될 수 있다. RPM은
 실행 파일로 직접 실행하지 않으므로 Linux file system으로 옮긴 뒤 권한을
 `644`로 정리한다. 이동하면서 version 포함 파일명을 Lab Kit 고정 파일명으로
-바꾼다.
+바꾼다. 긴 version 문자열을 직접 입력하지 않도록 먼저 wildcard 조회 결과가
+한 파일인지 확인한다. 두 개 이상 표시되면 불필요한 이전 version을 다른
+directory로 옮긴 뒤 진행한다.
 
 ```text
-[root@DESKTOP-4F78VMG Downloads]# mv jdk-21.0.13.0.3_linux-x64_bin.rpm /home/oracle/centos/pkg/jdk-21_linux-x64_bin.rpm
+[root@DESKTOP-4F78VMG Downloads]# ls -1 jdk-21*_linux-x64_bin.rpm
+jdk-21.0.13.0.3_linux-x64_bin.rpm
+[root@DESKTOP-4F78VMG Downloads]# mv jdk-21*_linux-x64_bin.rpm /home/oracle/centos/pkg/jdk-21_linux-x64_bin.rpm
 [root@DESKTOP-4F78VMG Downloads]# cd /home/oracle/centos/pkg
 [root@DESKTOP-4F78VMG pkg]# chmod 644 jdk-21_linux-x64_bin.rpm
 [root@DESKTOP-4F78VMG pkg]# pwd
