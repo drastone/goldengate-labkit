@@ -359,11 +359,31 @@ Oracle Stream Analytics 26.1 release의 표시 크기는 `1.6 GB`다. 다음 세
 file list에서 실제로 받을 installer의 파일명, 제품 설명, 개별 파일 크기를
 다시 확인한다.
 
+### 4.3 Oracle License Agreement 확인
+
+`Continue`를 클릭하면 Oracle Stream Analytics에 적용되는 license agreement가
+표시된다. 화면 오른쪽의 scroll을 내려 현재 계정과 제품에 적용되는 전체
+내용을 직접 확인한다. 내용을 검토한 뒤 왼쪽 아래의
+`I reviewed and accept the Oracle License Agreement` checkbox를 선택하고,
+오른쪽 아래의 `Continue`를 클릭한다.
+
+![Oracle Stream Analytics License Agreement 확인 및 동의](assets/osa-03-edelivery-license-agreement.png)
+
+화면에 표시되는 agreement의 제목과 세부 문구는 계정 유형, 제품 release,
+다운로드 시점에 따라 달라질 수 있다. 검증 화면에는 Oracle 직원 계정의
+내부 사용 및 고객 재배포 제한이 별도로 표시됐다. 이 문구는 모든 독자에게
+동일하게 표시된다고 가정하지 않으며, 각 독자는 자신의 화면에 나타나는
+조건을 직접 확인해야 한다.
+
+이 GitHub 저장소와 Lab Kit Release는 Oracle Stream Analytics installer를
+재배포하지 않는다. 독자는 본인의 Oracle 계정과 사용 권한으로 license에
+동의하고 제품 media를 직접 내려받는다.
+
 ## 다음 업데이트 대상
 
-OSA/GGSA의 라이선스 동의, 실제 installer 선택, WGET script 실행,
-`V1054826-01.zip` 검증과 JDK 21 다운로드 절차는 실제 수행 화면과 terminal
-결과를 받는 순서대로 이 절에 계속 추가한다.
+OSA/GGSA의 실제 installer 선택, WGET script 실행, `V1054826-01.zip` 검증과
+JDK 21 다운로드 절차는 실제 수행 화면과 terminal 결과를 받는 순서대로
+이 절에 계속 추가한다.
 ZooKeeper, Kafka, Spark는 현재 Lab Kit의 Dockerfile이 Apache Archive에서
 자동으로 내려받고 고정된 SHA-512 checksum으로 검증하므로 독자가 별도로
 다운로드하지 않는다.
