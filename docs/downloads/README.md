@@ -668,11 +668,42 @@ package를 찾기 어렵다면 [Oracle Software Delivery Cloud](https://edeliver
 파일명은 달라질 수 있다. 다운로드한 version 포함 파일명은 뒤 단계에서 Lab Kit
 기준 이름인 `jdk-21_linux-x64_bin.rpm`으로 변경하고 SHA-256을 기록한다.
 
+### 5.4 Windows Downloads에서 RPM 확인
+
+다운로드가 끝나면 WSL terminal에서 Windows Downloads 폴더로 이동해 실제
+파일명과 크기를 확인한다. 다음은 JDK 21.0.13.0.3 x64 RPM을 받은 결과다.
+
+```text
+[root@DESKTOP-4F78VMG pkg]# cd /mnt/c/Users/<WindowsUser>/Downloads/
+[root@DESKTOP-4F78VMG Downloads]# pwd
+/mnt/c/Users/<WindowsUser>/Downloads
+[root@DESKTOP-4F78VMG Downloads]# ls -ltrh jdk-21.0.13.0.3_linux-x64_bin.rpm
+-rwxrwxrwx 1 root root 190M Oct 29 15:49 jdk-21.0.13.0.3_linux-x64_bin.rpm
+[root@DESKTOP-4F78VMG Downloads]#
+```
+
+`/mnt/c`의 Windows file system에서는 실행 권한이 모두 표시될 수 있다. RPM은
+실행 파일로 직접 실행하지 않으므로 Linux file system으로 옮긴 뒤 권한을
+`644`로 정리한다. 이동하면서 version 포함 파일명을 Lab Kit 고정 파일명으로
+바꾼다.
+
+```text
+[root@DESKTOP-4F78VMG Downloads]# mv jdk-21.0.13.0.3_linux-x64_bin.rpm /home/oracle/centos/pkg/jdk-21_linux-x64_bin.rpm
+[root@DESKTOP-4F78VMG Downloads]# cd /home/oracle/centos/pkg
+[root@DESKTOP-4F78VMG pkg]# chmod 644 jdk-21_linux-x64_bin.rpm
+[root@DESKTOP-4F78VMG pkg]# pwd
+/home/oracle/centos/pkg
+[root@DESKTOP-4F78VMG pkg]# ls -lh jdk-21_linux-x64_bin.rpm
+[root@DESKTOP-4F78VMG pkg]# sha256sum jdk-21_linux-x64_bin.rpm
+```
+
+파일 크기와 SHA-256 결과는 다음 단계의 검증 기록과 최종 product media
+checksum manifest 작성에 사용한다.
+
 ## 다음 업데이트 대상
 
-Oracle JDK 21 RPM을 Windows Downloads 폴더에서 `/home/oracle/centos/pkg`로
-옮겨 Lab Kit 기준 파일명으로 변경하고, 파일 크기와 SHA-256을 확인하는 절차를
-실제 수행 결과에 따라 계속 추가한다.
+Oracle JDK 21 RPM을 `/home/oracle/centos/pkg`로 옮긴 뒤의 파일 크기와
+SHA-256 결과를 실제 수행 결과에 따라 계속 추가한다.
 ZooKeeper, Kafka, Spark는 현재 Lab Kit의 Dockerfile이 Apache Archive에서
 자동으로 내려받고 고정된 SHA-512 checksum으로 검증하므로 독자가 별도로
 다운로드하지 않는다.
