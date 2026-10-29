@@ -379,11 +379,37 @@ file list에서 실제로 받을 installer의 파일명, 제품 설명, 개별 �
 재배포하지 않는다. 독자는 본인의 Oracle 계정과 사용 권한으로 license에
 동의하고 제품 media를 직접 내려받는다.
 
+### 4.4 Installer 확인과 WGET script 다운로드
+
+License agreement를 통과하면 실제 다운로드 파일 목록이 표시된다. 다음 한
+파일만 선택되어 있는지 확인한다.
+
+```text
+V1054826-01.zip
+Oracle Stream Analytics 26.1.0.0.0 for Linux x86-64
+Size: 1.6 GB
+```
+
+화면 아래쪽의 `Total 1 distinct files`와 `Total Size 1.6 GB`도 함께 확인한다.
+파일이 두 개 이상 보이거나 전체 크기가 다르면 이전 Download Queue로 돌아가
+불필요한 제품이 선택되어 있지 않은지 점검한다.
+
+선택한 파일이 맞으면 화면 위쪽 또는 아래쪽의 `WGET Options`를 클릭한다.
+`WGET Options for Selected Files` 팝업이 열리면 `Download wget.sh`를 클릭해
+Oracle Stream Analytics installer용 WGET script를 Windows Downloads 폴더에
+저장한다.
+
+![Oracle Stream Analytics installer 확인과 WGET script 다운로드](assets/osa-04-edelivery-wget-selection.png)
+
+같은 팝업의 `Generate Token`은 WGET script 실행 직전에 사용한다. Access
+token의 유효 시간이 짧을 수 있으므로 script를 먼저 WSL의 지정 위치로 옮기고
+실행 준비를 마친 뒤 새 token을 생성한다.
+
 ## 다음 업데이트 대상
 
-OSA/GGSA의 실제 installer 선택, WGET script 실행, `V1054826-01.zip` 검증과
-JDK 21 다운로드 절차는 실제 수행 화면과 terminal 결과를 받는 순서대로
-이 절에 계속 추가한다.
+OSA/GGSA용 WGET script 이동과 실행, access token 입력,
+`V1054826-01.zip` 다운로드·검증과 JDK 21 다운로드 절차는 실제 수행 화면과
+terminal 결과를 받는 순서대로 이 절에 계속 추가한다.
 ZooKeeper, Kafka, Spark는 현재 Lab Kit의 Dockerfile이 Apache Archive에서
 자동으로 내려받고 고정된 SHA-512 checksum으로 검증하므로 독자가 별도로
 다운로드하지 않는다.
