@@ -50,7 +50,24 @@ Installation successful!
 [oracle@DESKTOP-XXXX ~]$
 ```
 
-이 설치 흐름에서는 `oracle` 사용자가 이미 만들어지므로 이후에 `useradd oracle`을 다시 실행하지 않는다. System package와 group 설정에 root 권한이 필요할 때는 `oracle` shell에서 `sudo -i`를 실행한다. 첫 실행에서는 `We trust you have received the usual lecture...`로 시작하는 표준 안내문과 `[sudo] password for oracle:` prompt가 표시될 수 있다. 안내문은 오류가 아니며, 설치 때 지정한 `oracle` password를 입력한 뒤 prompt가 `[root@DESKTOP-XXXX ~]#`로 바뀌면 정상이다.
+이 설치 흐름에서는 `oracle` 사용자와 `/home/oracle`이 이미 만들어지므로 이후에 `useradd oracle`을 다시 실행하지 않는다. System 설정에 root 권한이 필요할 때는 `oracle` shell에서 `sudo -i`를 실행한다. 첫 실행에서는 `We trust you have received the usual lecture...`로 시작하는 표준 안내문과 `[sudo] password for oracle:` prompt가 표시될 수 있다. 안내문은 오류가 아니며, 설치 때 지정한 `oracle` password를 입력한 뒤 prompt가 `[root@DESKTOP-XXXX ~]#`로 바뀌면 정상이다.
+
+GoldenGate Lab Kit의 Base Linux는 Docker 설치와 image build를 root로 수행하므로 `/etc/wsl.conf`에서 systemd와 기본 root 로그인을 사용한다. `oracle` account와 `/home/oracle`은 삭제하지 않으며, Base Linux의 소유권은 `oracle:oracle`을 사용한다. `oinstall`과 `dba`는 Oracle 관련 container 내부에서 별도로 관리한다.
+
+```ini
+[boot]
+systemd=true
+
+[user]
+default=root
+```
+
+최초 사용자 생성이 중단되어 `id oracle`이 실패할 때만 root shell에서 다음 명령으로 복구한다. `oracle`이 이미 존재하면 실행하지 않는다.
+
+```bash
+useradd -m -U -G wheel oracle
+passwd oracle
+```
 
 ## 직접 설치
 
