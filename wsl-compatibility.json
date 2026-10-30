@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "status": "supported",
+  "distribution": "OracleLinux_8_10",
+  "osVersion": "8.10",
+  "labkitVersion": "v0.30",
+  "validatedAt": "2026-10-30"
+}
