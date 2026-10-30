@@ -32,7 +32,7 @@ type .\setup.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\setup.ps1
 ```
 
-스크립트는 검증된 배포판과 Microsoft WSL catalog를 비교하고, 실제 설치 명령을 화면에 보여 준다. `Y` 또는 `YES`를 입력한 경우에만 설치하며, Enter 또는 `N`을 입력하면 설치하지 않는다.
+스크립트는 GitHub에 공지된 검증 배포판과 실제 설치 명령을 화면에 보여 준다. `Y` 또는 `YES`를 입력한 경우에만 Windows의 `wsl.exe`에 설치를 요청하며, Enter 또는 `N`을 입력하면 설치하지 않는다. 해당 배포판이 Microsoft WSL catalog에 없으면 `wsl.exe`가 설치하지 않고 오류를 반환한다.
 
 ## 직접 설치
 

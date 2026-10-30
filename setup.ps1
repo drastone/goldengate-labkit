@@ -8,12 +8,7 @@ if ($info.status -ne "supported" -or $distro -notmatch '^OracleLinux_[0-9]+_[0-9
 }
 
 Write-Host "Validated distribution: $distro"
-$catalog = wsl.exe --list --online
-if ($LASTEXITCODE -ne 0 -or -not ($catalog | Select-String -SimpleMatch $distro -Quiet)) {
-    throw "$distro is not available in the Microsoft WSL catalog."
-}
-
-Write-Host "Microsoft WSL catalog check: OK"
+Write-Host "Validated OS version: $($info.osVersion)"
 Write-Host "Command to run: wsl.exe --install -d $distro"
 if ((Read-Host "Run this command? [Y/N]") -notmatch '^(Y|YES)$') {
     Write-Host "Installation canceled."
@@ -21,4 +16,6 @@ if ((Read-Host "Run this command? [Y/N]") -notmatch '^(Y|YES)$') {
 }
 
 wsl.exe --install -d $distro
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+if ($LASTEXITCODE -ne 0) {
+    throw "WSL rejected the installation request with exit code $LASTEXITCODE."
+}
