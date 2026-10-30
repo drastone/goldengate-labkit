@@ -50,7 +50,7 @@ Installation successful!
 [oracle@DESKTOP-XXXX ~]$
 ```
 
-이 설치 흐름에서는 `oracle` 사용자가 이미 만들어지므로 이후에 `useradd oracle`을 다시 실행하지 않는다. System package와 group 설정에 root 권한이 필요할 때는 `oracle` shell에서 `sudo -i`를 실행한다.
+이 설치 흐름에서는 `oracle` 사용자가 이미 만들어지므로 이후에 `useradd oracle`을 다시 실행하지 않는다. System package와 group 설정에 root 권한이 필요할 때는 `oracle` shell에서 `sudo -i`를 실행한다. 첫 실행에서는 `We trust you have received the usual lecture...`로 시작하는 표준 안내문과 `[sudo] password for oracle:` prompt가 표시될 수 있다. 안내문은 오류가 아니며, 설치 때 지정한 `oracle` password를 입력한 뒤 prompt가 `[root@DESKTOP-XXXX ~]#`로 바뀌면 정상이다.
 
 ## 직접 설치
 
