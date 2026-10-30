@@ -62,6 +62,22 @@ systemd=true
 default=root
 ```
 
+설정 파일을 저장한 뒤 Linux shell에서 빠져나와 PowerShell에서 WSL을 완전히 종료하고 다시 실행한다. Terminal 창만 닫아서는 설정이 적용되지 않는다.
+
+```powershell
+wsl --shutdown
+wsl -d OracleLinux_8_10
+```
+
+재실행된 Linux shell에서 다음 결과가 각각 `root`, `systemd`인지 확인한 뒤 SSH Server와 Docker 설치를 진행한다.
+
+```bash
+whoami
+ps -p 1 -o comm=
+```
+
+systemd 적용 전에 `systemctl`을 실행하면 `System has not been booted with systemd as init system (PID 1). Can't operate.` 오류가 발생한다.
+
 최초 사용자 생성이 중단되어 `id oracle`이 실패할 때만 root shell에서 다음 명령으로 복구한다. `oracle`이 이미 존재하면 실행하지 않는다.
 
 ```bash
