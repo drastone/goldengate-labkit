@@ -32,15 +32,24 @@ tar -xzf goldengate-labkit.tar.gz --strip-components=1
 압축을 해제한 후 도서의 안내에 따라 라이선스가 적용되는 제품 파일을
 `oracle/pkg`와 `centos/pkg`에 배치합니다. ZooKeeper, Kafka, Spark는
 Big Data/Analytics 이미지를 만들 때 Apache Archive에서 자동으로 내려받고
-고정된 SHA-512 체크섬으로 검증합니다. Docker Engine과 Docker Compose
-plugin이 준비된 다음에는 아래 사전 점검을 실행합니다.
+고정된 SHA-512 체크섬으로 검증합니다.
 
 Oracle 제품 파일명, 배치 위치, checksum은
 [제품 설치 파일 다운로드 목록](docs/downloads/README.md)에서 확인합니다.
 
+긴 Docker build 명령의 입력 오류를 줄이기 위해 v0.31부터 기본 image build
+script를 제공합니다. 실행 전에 내용을 확인합니다.
+
 ```bash
 cd /home/oracle
-bash check_labkit.sh
+cat build_base_images.sh
+sh build_base_images.sh
+```
+
+세 Oracle 기본 image가 준비된 다음 전체 사전 점검을 실행합니다.
+
+```bash
+sh check_labkit.sh
 ```
 
 사전 점검에서 오류가 남아 있는 동안에는 `create_docker.sh`를 실행하지
