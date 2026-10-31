@@ -38,13 +38,20 @@ Oracle 제품 파일명, 배치 위치, checksum은
 [제품 설치 파일 다운로드 목록](docs/downloads/README.md)에서 확인합니다.
 
 긴 Docker build 명령의 입력 오류를 줄이기 위해 v0.31부터 기본 image build
-script를 제공합니다. 실행 전에 내용을 확인합니다.
+script를 제공합니다. v0.32부터는 파일 위치와 checksum, Docker Engine,
+여유 공간을 build 전에 확인하는 `--check-only`와 자동 로그 저장 기능도
+제공합니다.
 
 ```bash
 cd /home/oracle
 cat build_base_images.sh
+sh build_base_images.sh --check-only
 sh build_base_images.sh
 ```
+
+점검과 build 출력은 `/home/oracle/logs` 아래의 timestamp가 포함된 log 파일에
+화면 출력과 동시에 저장됩니다. 로그 끝에는 종료 시각, 총 소요 시간과
+성공 또는 실패 결과가 함께 기록됩니다.
 
 세 Oracle 기본 image가 준비된 다음 전체 사전 점검을 실행합니다.
 
