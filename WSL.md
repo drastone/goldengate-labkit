@@ -92,6 +92,34 @@ wsl --install -d OracleLinux_8_10
 
 ## WSL 오류 문제 해결
 
+### 최초 설치 초기화
+
+이 절은 Oracle Linux를 처음 설치한 직후 UNIX 사용자 이름을 `oracle`이 아닌 값으로 만들었거나 최초 설정이 중단됐고, 아직 배포판 안에 보관할 실습 파일이 없을 때만 사용한다.
+
+> **주의:** `wsl --unregister`는 지정한 배포판과 그 안의 모든 Linux 파일을 영구 삭제한다. Lab Kit, 제품 media, script 또는 실습 data를 만든 뒤에는 이 방법으로 초기화하지 않는다.
+
+비밀번호만 변경하려는 경우에는 배포판을 초기화하지 않는다. `oracle` shell에서 `passwd`를 실행해 공통 실습용 password인 **WElcome1234##**로 변경한다.
+
+초기화가 필요한 경우 Linux shell에서 `exit`를 실행해 일반 PowerShell로 돌아온다. 배포판 이름을 확인하고 WSL을 완전히 종료한 뒤 등록을 해제한다.
+
+```text
+[user@DESKTOP-XXXX ~]$ exit
+logout
+PS C:\Users\reader> wsl --list -v
+
+PS C:\Users\reader> wsl --shutdown
+
+PS C:\Users\reader> wsl --unregister OracleLinux_8_10
+Unregistering.
+The operation completed successfully.
+```
+
+`wsl --list -v`에서 `OracleLinux_8_10`이 더 이상 표시되지 않는지 확인한다. `setup.ps1`을 내려받은 directory에서 설치 script를 다시 실행하고, 최초 사용자 이름에는 `oracle`을 입력한다.
+
+```powershell
+PS C:\Users\reader> powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\setup.ps1
+```
+
 ### `oracle` 계정 복구
 
 이 절은 `id oracle`을 실행했을 때 `id: 'oracle': no such user`가 표시되는 경우에만 수행한다. `uid=... (oracle)`이 정상적으로 표시되면 `useradd`와 `passwd`를 실행하지 않는다.
