@@ -94,3 +94,44 @@ wsl --install -d OracleLinux_8_10
 ```
 
 목록에 해당 이름이 없으면 다른 major version을 임의로 대신 설치하지 않는다.
+
+## WSL 오류 문제 해결
+
+### `0x80370102`가 반복될 때
+
+이 절은 정상 설치 과정에서 따라 하는 필수 단계가 아니다. `wsl --list -v`에서 배포판이 `VERSION 2`로 보이고 Linux shell이 정상적으로 열리면 아래 명령을 실행하지 않는다.
+
+WSL2 설치 또는 시작 시 `0x80370102`가 발생하면 다음 순서로 확인한다.
+
+1. 작업 관리자의 `성능 > CPU`에서 `가상화: 사용`인지 확인한다.
+2. BIOS/UEFI에서 Intel VT-x, AMD-V 또는 SVM이 활성화되어 있는지 확인한다.
+3. Windows의 `Windows Subsystem for Linux`와 `Virtual Machine Platform` 기능을 활성화하고 Windows를 재부팅한다.
+4. 위 조건을 모두 확인하고 재부팅했는데도 같은 오류가 반복될 때만 `hypervisorlaunchtype`을 확인한다.
+
+`bcdedit`는 Windows Boot Configuration Data 저장소를 조회하거나 변경하므로 관리자 권한이 필요하다. 일반 PowerShell에서 다음 명령으로 관리자 PowerShell을 연다.
+
+```powershell
+PS C:\Users\reader> Start-Process PowerShell -Verb RunAs
+```
+
+사용자 계정 컨트롤 창에서 `예`를 선택하고, 새 창 제목에 `관리자: Windows PowerShell` 또는 `Administrator: Windows PowerShell`이 표시되는지 확인한다. 새 관리자 창의 prompt는 일반적으로 `PS C:\WINDOWS\system32>`로 시작한다.
+
+관리자 PowerShell에서 현재 값을 확인한다.
+
+```powershell
+PS C:\WINDOWS\system32> bcdedit /enum | findstr -i hypervisorlaunchtype
+hypervisorlaunchtype    Off
+```
+
+결과가 `Off`일 때만 `Auto`로 변경하고 재부팅한다.
+
+```powershell
+PS C:\WINDOWS\system32> bcdedit /set hypervisorlaunchtype Auto
+The operation completed successfully.
+
+PS C:\WINDOWS\system32> shutdown /r /t 0
+```
+
+값이 이미 `Auto`라면 변경 명령을 실행하지 않는다. 항목이 표시되지 않으면 값을 임의로 추가하지 말고 BIOS/UEFI 가상화와 두 Windows 기능의 활성화 여부부터 다시 확인한다. 일반 PowerShell에서 `bcdedit`를 실행하면 액세스가 거부될 수 있다.
+
+Microsoft의 [WSL 문제 해결 문서](https://learn.microsoft.com/windows/wsl/troubleshooting)와 [Windows 가상화 활성화 안내](https://support.microsoft.com/windows/experience/enable-virtualization-on-windows)도 함께 확인한다. 오류가 해결되지 않으면 표시된 오류 코드와 Windows version을 기록한 뒤 Lab Kit 저장소의 issue로 문의한다.
