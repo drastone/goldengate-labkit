@@ -78,12 +78,7 @@ ps -p 1 -o comm=
 
 systemd 적용 전에 `systemctl`을 실행하면 `System has not been booted with systemd as init system (PID 1). Can't operate.` 오류가 발생한다.
 
-최초 사용자 생성이 중단되어 `id oracle`이 실패할 때만 root shell에서 다음 명령으로 복구한다. `oracle`이 이미 존재하면 실행하지 않는다.
-
-```bash
-useradd -m -U -G wheel oracle
-passwd oracle
-```
+최초 사용자 생성이 중단되어 `id oracle`이 실패하면 아래 `WSL 오류 문제 해결`의 `oracle 계정 복구` 절을 따른다. `oracle`이 이미 존재하면 복구 명령을 실행하지 않는다.
 
 ## 직접 설치
 
@@ -96,6 +91,35 @@ wsl --install -d OracleLinux_8_10
 목록에 해당 이름이 없으면 다른 major version을 임의로 대신 설치하지 않는다.
 
 ## WSL 오류 문제 해결
+
+### `oracle` 계정 복구
+
+이 절은 `id oracle`을 실행했을 때 `id: 'oracle': no such user`가 표시되는 경우에만 수행한다. `uid=... (oracle)`이 정상적으로 표시되면 `useradd`와 `passwd`를 실행하지 않는다.
+
+일반 PowerShell에서 Oracle Linux를 root 사용자로 실행하고 계정이 실제로 없는지 다시 확인한다.
+
+```text
+PS C:\Users\reader> wsl -d OracleLinux_8_10 -u root
+[root@DESKTOP-XXXX ~]# id oracle
+id: 'oracle': no such user
+```
+
+위와 같이 계정이 없을 때만 `oracle` 사용자와 home directory를 만들고 공통 실습용 password를 지정한다. `New password:`와 `Retype new password:`에는 모두 **WElcome1234##**를 입력한다. 입력 중에는 화면에 문자나 별표가 표시되지 않는다.
+
+```text
+[root@DESKTOP-XXXX ~]# useradd -m -U -G wheel oracle
+
+[root@DESKTOP-XXXX ~]# passwd oracle
+Changing password for user oracle.
+New password:
+Retype new password:
+passwd: all authentication tokens updated successfully.
+
+[root@DESKTOP-XXXX ~]# id oracle
+uid=<UID>(oracle) gid=<GID>(oracle) groups=<GID>(oracle),<wheel GID>(wheel)
+```
+
+마지막 `id oracle` 결과에 사용자와 primary group이 모두 `oracle`로 표시되면 복구가 완료된 것이다. `/etc/wsl.conf`의 `[user] default=root` 설정은 그대로 유지하며, Base Linux에 `oinstall`이나 `dba` group을 별도로 만들지 않는다.
 
 ### `0x80370102`가 반복될 때
 
