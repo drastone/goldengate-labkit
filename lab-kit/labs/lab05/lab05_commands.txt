@@ -1,0 +1,48 @@
+cd /home/oracle/labs/lab05
+
+docker exec -it demo_osrc_23ai bash
+sqlplus soe/soe@orclpdb1
+
+create table soe.employee (
+  id number not null primary key,
+  name varchar2(100),
+  email varchar2(100),
+  age number,
+  phonenumber varchar2(20),
+  job varchar2(100),
+  created date
+);
+
+insert into soe.employee values (1,'Vincent','Vincent@gmail.com',30,'010-1111-2222','DBA',sysdate);
+commit;
+
+insert into soe.employee values (2,'Daniel','daniel@gmail.com',30,'010-1111-3333','Data Scientist',sysdate);
+commit;
+
+update soe.employee set job = 'Data Engineer' where id = 2;
+commit;
+
+delete from soe.employee where id = 1;
+commit;
+
+exit
+exit
+
+docker exec -it -u ogg demo_ogg_23ai adminclient
+connect http://localhost as oggadmin !
+stats c01
+stats d01
+info all
+exit
+
+docker exec -it demo_otrg_23ai bash
+sqlplus soe/soe@orclpdb1
+set linesize 80
+col id for 999
+col name for a10
+col email for a25
+col age for 99
+col job for a20
+select id, name, email, age, job from soe.employee order by id;
+exit
+exit
