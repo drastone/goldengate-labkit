@@ -48,12 +48,20 @@ SQL
 )"
 database_log_mode="$(printf '%s' "${database_log_mode}" | tr -d '[:space:]')"
 
-if [ "${database_log_mode}" != "ARCHIVELOG" ]; then
-  log "ERROR: database must be in ARCHIVELOG mode; current value=${database_log_mode:-unknown}"
-  exit 1
-fi
-
-log "OK: database is in ARCHIVELOG mode"
+case "${database_log_mode}" in
+  ARCHIVELOG)
+    log "OK: database is in ARCHIVELOG mode"
+    ;;
+  NOARCHIVELOG)
+    log "INFO: database is in NOARCHIVELOG mode; archive log cleanup is not applicable yet"
+    log "OK: archive log cleanup skipped; no action is required at this stage"
+    exit 0
+    ;;
+  *)
+    log "ERROR: could not determine database log mode; current value=${database_log_mode:-unknown}"
+    exit 1
+    ;;
+esac
 
 # Integrated Extract registration normally lets RMAN retain logs needed by its
 # upstream capture. Verify the registered capture checkpoint explicitly as an
