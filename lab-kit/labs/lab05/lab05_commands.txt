@@ -42,23 +42,23 @@ cat lab05_commands.txt
 docker exec -it demo_osrc_23ai bash
 sqlplus soe/soe@orclpdb1
 
-create table soe.employee (
+create table soe.staff (
   id number not null primary key,
   name varchar2(100),
   email varchar2(100),
   age number,
   phonenumber varchar2(20),
-  designation varchar2(100),
+  job varchar2(100),
   created date
 );
 
-insert into soe.employee values (1,'Vincent','Vincent@gmail.com',30,'010-1111-2222','DBA',sysdate);
+insert into soe.staff values (1,'Vincent','Vincent@gmail.com',30,'010-1111-2222','DBA',sysdate);
 commit;
-insert into soe.employee values (2,'Daniel','daniel@gmail.com',30,'010-1111-3333','Data Scientist',sysdate);
+insert into soe.staff values (2,'Daniel','daniel@gmail.com',30,'010-1111-3333','Data Scientist',sysdate);
 commit;
-update soe.employee set designation = 'Data Engineer' where id = 2;
+update soe.staff set job = 'Data Engineer' where id = 2;
 commit;
-delete from soe.employee where id = 1;
+delete from soe.staff where id = 1;
 commit;
 
 docker exec -it -u ogg demo_ogg_23ai adminclient
@@ -72,9 +72,9 @@ col id for 999
 col name for a10
 col email for a25
 col age for 99
-col designation for a20
-select id, name, email, age, designation
-from soe.employee
+col job for a20
+select id, name, email, age, job
+from soe.staff
 order by id;
 
 info all
