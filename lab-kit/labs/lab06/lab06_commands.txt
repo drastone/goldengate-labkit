@@ -5,24 +5,6 @@ sqlplus "soe/soe@orclpdb1" @create_objects_v1_2.sql
 sh gen_0.sh 2
 sh gen_base.sh 100 1
 
-select current_scn as base_scn
-from v$database;
-
-docker exec -it demo_otrg_23ai bash
-sqlplus soe/soe@orclpdb1
-create database link to_src
-  connect to soe identified by soe
-  using 'oracle_src_23ai:1521/ORCLPDB1';
-select 1 as ping from dual@to_src;
-truncate table soe.employee;
-insert into soe.employee
-select * from soe.employee@to_src as of scn 4566117;
-commit;
-
-stop c01
-send d01 status
-send d02 status
-
 create table soe.daily_fund_price (
   dt varchar2(8),
   fund_code varchar2(20),
@@ -50,6 +32,22 @@ view params d01
 start d01
 info all
 
+docker exec -it demo_otrg_23ai bash
+sqlplus / as sysdba
+alter session set container=ORCLPDB1;
+grant create database link to soe;
+exit
+sqlplus soe/soe@orclpdb1
+create database link to_src
+connect to soe identified by soe
+using 'oracle_src_23ai:1521/ORCLPDB1';
+select 1 as ping
+from dual@to_src;
+
+exit
+exit
+docker exec -it demo_osrc_23ai bash
+sqlplus soe/soe@orclpdb1
 select current_scn as base_scn
 from v$database;
 
@@ -64,17 +62,10 @@ set job = 'Senior Data Engineer'
 where id = 2;
 commit;
 
-docker exec -it demo_otrg_23ai bash
-sqlplus / as sysdba
-alter session set container=ORCLPDB1;
-grant create database link to soe;
 exit
+exit
+docker exec -it demo_otrg_23ai bash
 sqlplus soe/soe@orclpdb1
-create database link to_src
-connect to soe identified by soe
-using 'oracle_src_23ai:1521/ORCLPDB1';
-select 1 as ping
-from dual@to_src;
 truncate table soe.employee;
 insert into soe.employee
 select * from soe.employee@to_src as of scn 4566117;
