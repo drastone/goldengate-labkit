@@ -8,8 +8,12 @@ sh gen_base.sh 100 1
 select current_scn as base_scn
 from v$database;
 
-create public database link to_src
-  connect to soe identified by soe using 'ORCLPDB1_SRC';
+docker exec -it demo_otrg_23ai bash
+sqlplus soe/soe@orclpdb1
+create database link to_src
+  connect to soe identified by soe
+  using 'oracle_src_23ai:1521/ORCLPDB1';
+select 1 as ping from dual@to_src;
 truncate table soe.employee;
 insert into soe.employee
 select * from soe.employee@to_src as of scn 4566117;
@@ -60,13 +64,15 @@ set job = 'Senior Data Engineer'
 where id = 2;
 commit;
 
+docker exec -it demo_otrg_23ai bash
+sqlplus / as sysdba
+alter session set container=ORCLPDB1;
 grant create database link to soe;
+exit
+sqlplus soe/soe@orclpdb1
 create database link to_src
 connect to soe identified by soe
-using '(DESCRIPTION=
-  (ADDRESS=(PROTOCOL=TCP)(HOST=oracle_src_23ai)(PORT=1521))
-  (CONNECT_DATA=(SERVICE_NAME=ORCLPDB1))
-)';
+using 'oracle_src_23ai:1521/ORCLPDB1';
 select 1 as ping
 from dual@to_src;
 truncate table soe.employee;
