@@ -1,33 +1,11 @@
-docker exec -it demo_centos bash
-su - oracle
-cd /u01/oggbd19
-unzip -oq /home/oracle/pkg/OGG_BigData_Linux_x64_19.1.0.0.5.zip
-tar xvf OGG_BigData_Linux_x64_19.1.0.0.5.tar
-cat setOggBD19.sh
-source setOggBD19.sh
-echo $JAVA_HOME
-create subdirs
+# Base Linux terminal: confirm the DAA runtime containers
+docker ps --format 'table {{.Names}}\t{{.Status}}' --filter name=demo_centos --filter name=demo_ogg_23ai --filter name=demo_oggbd_23ai
 
-cp /home/oracle/pkg/custom_handler.zip /u01/oggbd19/ggjava/
-cd /u01/oggbd19/ggjava
-unzip custom_handler.zip
-cp *.jar ./resources/lib
-javac -d /u01/oggbd19/ggjava/resources/classes -cp .:./resources/lib/* ConnectionFactory.java
-javac -d /u01/oggbd19/ggjava/resources/classes -cp ggjava/*:./resources/lib/*:./resources/classes:. CustomHandler.java
-cp custom.prm ../dirprm/
-cp custom.properties ../dirprm/
+# Confirm the DAA runtime and deployment configuration directories
+docker exec demo_oggbd_23ai sh -lc 'printf "OGG_HOME=%s\n" "$OGG_HOME"; ls -ld /u01/ogg /u02/Deployment/etc/conf/ogg'
 
-edit params custom
-view params custom
-add replicat custom exttrail ./dirdat/da
-edit param mgr
-start mgr
-alter custom begin now
-start custom NOFILTERDUPTRANSACTIONS
+# Confirm the Kafka Replicat files that Chapter 8 will inspect and use
+docker exec demo_oggbd_23ai sh -lc 'ls -1 /u02/Deployment/etc/conf/ogg/kaf01.prm /u02/Deployment/etc/conf/ogg/kaf01.props /u02/Deployment/etc/conf/ogg/kaf01-producer.properties'
 
-edit params p02
-view params p02
-add extract p02 exttrailsource ./dirdat/ca
-add rmttrail ./dirdat/da extract p02 megabytes 10
-start p02
-info all
+# Preview the Chapter 8 Distribution Path command; do not execute it yet
+docker exec demo_ogg_23ai cat /u01/ogg/scripts/obey/add_dpkaf01.oby
