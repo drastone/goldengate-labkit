@@ -68,12 +68,7 @@ view params d01
 start d01
 info all
 
-docker exec -it demo_otrg_23ai bash
-sqlplus / as sysdba
-alter session set container=ORCLPDB1;
-grant create database link to soe;
-exit
-sqlplus soe/soe@orclpdb1
+# Target DB SOE SQL*Plus terminal: create the Source database link
 create database link to_src
 connect to soe identified by soe
 using 'oracle_src_23ai:1521/ORCLPDB1';
