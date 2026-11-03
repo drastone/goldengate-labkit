@@ -239,3 +239,52 @@ drop table soe.employee_dw purge;
 # Source DB SOE SQL*Plus terminal: remove the lab row; D01 applies the delete to Target
 delete from soe.employee where id = 61;
 commit;
+
+# Admin Client terminal: create a temporary Core Extract for text/SAM output
+dblogin useridalias src_ogg domain OracleGoldenGate
+edit params txt01
+
+# Paste the following lines into the TXT01 parameter editor, then save
+EXTRACT TXT01
+USERIDALIAS src_ogg DOMAIN OracleGoldenGate
+TRANLOGOPTIONS INTEGRATEDPARAMS (max_sga_size 128)
+OUTPUTFORMAT TEXT, DELIMITER '|', NONAMES, OP, IND, _TRANSTMTS, _WHOLEFILE, TS
+EXTFILE /u02/Deployment/var/lib/data/employee.sam, PURGE
+TABLE SOE.EMPLOYEE;
+
+# Back at the Admin Client prompt
+view params txt01
+add extract TXT01, integrated tranlog, begin now
+register extract TXT01 database
+start TXT01
+info TXT01
+
+# Source DB SOE SQL*Plus terminal: generate separate INSERT, UPDATE, DELETE transactions
+select count(*) as existing_rows
+from soe.employee
+where id = 990006;
+
+insert into soe.employee
+values (990006, 'SAM_DEMO', 'sam_demo@example.com', 31,
+        '010-9999-0006', 'Data Engineer', sysdate);
+commit;
+
+update soe.employee
+set job = 'Senior Data Engineer'
+where id = 990006;
+commit;
+
+delete from soe.employee where id = 990006;
+commit;
+
+# Base Linux terminal: inspect the generated SAM file without closing Admin Client
+docker exec demo_ogg_23ai cat /u02/Deployment/var/lib/data/employee.sam
+
+# Admin Client terminal: remove only the temporary TXT01 Extract
+stop TXT01
+unregister extract TXT01 database
+delete extract TXT01!
+
+# Base Linux terminal: remove temporary lab files
+docker exec demo_ogg_23ai rm -f /u02/Deployment/var/lib/data/employee.sam
+docker exec demo_ogg_23ai rm -f /u02/Deployment/etc/conf/ogg/txt01.prm
