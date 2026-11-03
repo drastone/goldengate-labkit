@@ -265,12 +265,13 @@ from soe.employee
 where id = 990006;
 
 insert into soe.employee
+  (id, name, email, age, phonenumber, designation, created)
 values (990006, 'SAM_DEMO', 'sam_demo@example.com', 31,
         '010-9999-0006', 'Data Engineer', sysdate);
 commit;
 
 update soe.employee
-set job = 'Senior Data Engineer'
+set designation = 'Senior Data Engineer'
 where id = 990006;
 commit;
 
