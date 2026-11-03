@@ -48,7 +48,7 @@ create table soe.employee (
   email varchar2(100),
   age number,
   phonenumber varchar2(20),
-  job varchar2(100),
+  designation varchar2(100),
   created date
 );
 
@@ -56,7 +56,7 @@ insert into soe.employee values (1,'Vincent','Vincent@gmail.com',30,'010-1111-22
 commit;
 insert into soe.employee values (2,'Daniel','daniel@gmail.com',30,'010-1111-3333','Data Scientist',sysdate);
 commit;
-update soe.employee set job = 'Data Engineer' where id = 2;
+update soe.employee set designation = 'Data Engineer' where id = 2;
 commit;
 delete from soe.employee where id = 1;
 commit;
@@ -72,8 +72,8 @@ col id for 999
 col name for a10
 col email for a25
 col age for 99
-col job for a20
-select id, name, email, age, job
+col designation for a20
+select id, name, email, age, designation
 from soe.employee
 order by id;
 

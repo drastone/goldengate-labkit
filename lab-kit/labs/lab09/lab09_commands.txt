@@ -39,7 +39,7 @@ SELECT op_type,
        trail_pos,
        json_extract_scalar(payload_json, '$.ID') AS id,
        json_extract_scalar(payload_json, '$.NAME') AS name,
-       json_extract_scalar(payload_json, '$.JOB') AS job,
+       json_extract_scalar(payload_json, '$.DESIGNATION') AS designation,
        ingestion_time
 FROM iceberg.insurance.soe_employee_cdc_raw
 ORDER BY ingestion_time DESC
