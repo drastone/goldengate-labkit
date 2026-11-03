@@ -1,80 +1,88 @@
-cd /home/oracle/labs/lab06
-
-# Source DB: 업무 object와 sample transaction 생성
 docker exec -it demo_osrc_23ai bash
-cd /home/oracle/script/osa/23ai
+cd /home/oracle/script/osa
 sqlplus "soe/soe@orclpdb1" @create_objects_v1_2.sql
+
 sh gen_0.sh 2
 sh gen_base.sh 100 1
-exit
 
-# OGG Hub: Extract와 Replicat 상태 확인
-docker exec -it -u ogg demo_ogg_23ai adminclient
-connect http://localhost as oggadmin !
-info all
-stats c01
-stats d01
-exit
+select current_scn as base_scn
+from v$database;
 
-# Source DB: 초기 적재 기준 SCN 확인과 후속 변경 생성
-docker exec -it demo_osrc_23ai bash
-sqlplus soe/soe@orclpdb1
-select current_scn as base_scn from v$database;
-insert into soe.employee values (3,'Sophia','sophia@gmail.com',28,'010-1111-4444','Data Analyst',sysdate);
-insert into soe.employee values (4,'Ethan','ethan@gmail.com',35,'010-1111-5555','Backend Developer',sysdate);
-insert into soe.employee values (5,'Mia','mia@gmail.com',32,'010-1111-6666','Product Manager',sysdate);
-update soe.employee set job='Senior Data Engineer' where id=2;
-commit;
-exit
-exit
-
-# Target DB: <BASE_SCN>을 위에서 확인한 실제 SCN으로 바꾼다.
-docker exec -it demo_otrg_23ai bash
-sqlplus soe/soe@orclpdb1
-create database link to_src connect to soe identified by soe using '(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oracle_src_23ai)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=ORCLPDB1)))';
-select 1 as ping from dual@to_src;
+create public database link to_src
+  connect to soe identified by soe using 'ORCLPDB1_SRC';
 truncate table soe.employee;
-insert into soe.employee select * from soe.employee@to_src as of scn <BASE_SCN>;
+insert into soe.employee
+select * from soe.employee@to_src as of scn 4566117;
 commit;
-exit
-exit
 
-# OGG Hub: D02 parameter에는 다음 네 줄을 저장한다.
-docker exec -it -u ogg demo_ogg_23ai adminclient
-connect http://localhost as oggadmin !
-edit params d02
-REPLICAT D02
-USERIDALIAS trg_ogg DOMAIN OracleGoldenGate
-DISCARDFILE D02.dsc, APPEND
-MAP SOE.employee, TARGET SOE.employee;
-
-view params d02
-dblogin useridalias trg_ogg domain OracleGoldenGate
-add replicat d02 exttrail ca
-start replicat d02 atcsn <BASE_SCN>
-send d02 status
-stats d02
-
-# D01과 D02가 모두 At EOF이고 Sequence/RBA가 같을 때만 전환한다.
 stop c01
 send d01 status
 send d02 status
-stop d02
-delete replicat d02
-stop d01
+
+create table soe.daily_fund_price (
+  dt varchar2(8),
+  fund_code varchar2(20),
+  price number
+);
+alter table soe.daily_fund_price add description varchar2(50);
+
+stats c01
+stats d01
+
+desc soe.daily_fund_price;
+col table_name for a30
+col status for a30
+select table_name, status
+from user_tables
+where table_name = 'DAILY_FUND_PRICE';
+select column_name, data_type
+from user_tab_columns
+where table_name = 'DAILY_FUND_PRICE'
+order by column_id;
+
 edit params d01
-
-# D01 parameter에서 다음 줄을 삭제한 뒤 저장한다.
-TABLEEXCLUDE soe.employee;
-
+view params d01
+stop d01
 start d01
-start c01
 info all
-exit
 
-# Target DB: 최종 데이터 확인
-docker exec -it demo_otrg_23ai bash
-sqlplus soe/soe@orclpdb1
+select current_scn as base_scn
+from v$database;
+
+insert into soe.employee
+values (3, 'Sophia', 'sophia@gmail.com', 28, '010-1111-4444', 'Data Analyst', sysdate);
+insert into soe.employee
+values (4, 'Ethan', 'ethan@gmail.com', 35, '010-1111-5555', 'Backend Developer', sysdate);
+insert into soe.employee
+values (5, 'Mia', 'mia@gmail.com', 32, '010-1111-6666', 'Product Manager', sysdate);
+update soe.employee
+set job = 'Senior Data Engineer'
+where id = 2;
+commit;
+
+grant create database link to soe;
+create database link to_src
+connect to soe identified by soe
+using '(DESCRIPTION=
+  (ADDRESS=(PROTOCOL=TCP)(HOST=oracle_src_23ai)(PORT=1521))
+  (CONNECT_DATA=(SERVICE_NAME=ORCLPDB1))
+)';
+select 1 as ping
+from dual@to_src;
+truncate table soe.employee;
+insert into soe.employee
+select * from soe.employee@to_src as of scn 4566117;
+commit;
+
+edit params d02
+view params d02
+dblogin useridalias trg_ogg
+add replicat d02 exttrail ca
+info all
+start replicat d02 atcsn 4566117
+send d02 status
+stats d02
+
 set linesize 160
 set pagesize 100
 col id for 999
@@ -84,17 +92,34 @@ col age for 99
 col phonenumber for a15
 col job for a25
 col created for a20
-select id,name,email,age,phonenumber,job,to_char(created,'YYYY-MM-DD HH24:MI:SS') as created from soe.employee order by id;
-exit
-exit
+select id,
+       name,
+       email,
+       age,
+       phonenumber,
+       job,
+       to_char(created, 'YYYY-MM-DD HH24:MI:SS') as created
+from soe.employee
+order by id;
 
-# Trail file 확인
-docker exec -it -u ogg demo_ogg_23ai bash
+stop c01
+send d01 status
+send d02 status
+stop d02
+delete replicat d02
+info all
+stop d01
+edit params d01
+start d01
+start c01
+info all
+
 ls -ltr /u02/Deployment/var/lib/data
 /u01/ogg/bin/logdump
 open /u02/Deployment/var/lib/data/ca000000000
 ghdr on
 detail on
 next
-exit
-exit
+next
+n
+n

@@ -1,29 +1,24 @@
-cd /home/oracle/labs/lab10
+mkdir tmp2
+cd tmp2
+unzip ../pkg/213000_fbo_ggs_Linux_x64_Oracle_services_shiphome.zip
 
-# 현재 OGG Hub Microservices deployment 확인
-docker exec -it demo_ogg_23ai bash
-/u01/ogg/bin/adminclient -v
-ls -ld /u01/ogg /u02/Deployment
-exit
+mkdir /home/oracle/msaInventory
+cat /home/oracle/msaInventory/oraInst.loc
 
-docker exec -it -u ogg demo_ogg_23ai adminclient
-connect http://localhost as oggadmin !
-info all
-info distpath all
-view GLOBALS
-exit
+cd /home/oracle/tmp2/fbo_ggs_Linux_x64_Oracle_services_shiphome/Disk1/
+sed -i 's|INSTALL_OPTION=|INSTALL_OPTION=ora21c|g' ./response/oggcore.rsp
+sed -i 's|SOFTWARE_LOCATION=|SOFTWARE_LOCATION=/home/oracle/oggmsa/ogg213|g' ./response/oggcore.rsp
+RSP_FILE=/home/oracle/tmp2/fbo_ggs_Linux_x64_Oracle_services_shiphome/Disk1/response/oggcore.rsp
+./runInstaller -invPtrLoc /home/oracle/msaInventory/oraInst.loc -responseFile "$RSP_FILE" -silent
 
-# 현재 OGGBD Microservices deployment 확인
-docker exec -it demo_oggbd_23ai bash
-/u01/ogg/bin/adminclient -v
-ls -ld /u01/ogg /u02/Deployment
-exit
+cd /home/oracle/oggmsa/ogg213/bin
+./oggca.sh -responseFile /home/oracle/msa/source/oggca.rsp -silent
+./oggca.sh -responseFile /home/oracle/msa/target/oggca.rsp -silent
 
-docker exec -it -u ogg demo_oggbd_23ai adminclient
-connect http://localhost as oggadmin !
-info all
-exit
-
-# Base Linux에서 container port와 공개 범위 확인
-docker port demo_ogg_23ai
-docker port demo_oggbd_23ai
+cd /home/oracle/oggmsa/oggSM/bin
+export OGG_HOME=/home/oracle/oggmsa/ogg213
+export DEPLOYMENT_HOME=/home/oracle/oggmsa/oggSM
+export OGG_ETC_HOME=/home/oracle/oggmsa/oggSM/etc
+export OGG_VAR_HOME=/home/oracle/oggmsa/oggSM/var
+./startSM.sh
+netstat -antup | grep LISTEN | grep 55

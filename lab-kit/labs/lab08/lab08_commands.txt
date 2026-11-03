@@ -1,11 +1,9 @@
-cd /home/oracle/labs/lab08
-
-# Kafka 상태와 topic 확인
 docker exec -it demo_centos bash
-kafka-topics.sh --bootstrap-server localhost:9092 --list
-exit
+systemctl start kafka
+systemctl status kafka
+kafka-topics.sh --create --topic oggtopic2 --bootstrap-server 172.28.0.11:9092 --replication-factor 1 --partitions 1
+kafka-topics.sh --bootstrap-server 172.28.0.11:9092 --list
 
-# OGG Hub에서 OGGBD로 Distribution Path 생성
 docker exec -it -u ogg demo_ogg_23ai adminclient
 connect http://localhost as oggadmin !
 info distpath all
@@ -13,77 +11,66 @@ alter credentialstore add user oggadmin password WElcome1234## alias oggbd_admin
 shell cat /u01/ogg/scripts/obey/add_dpkaf01.oby
 obey /u01/ogg/scripts/obey/add_dpkaf01.oby
 start distpath dpkaf01
+info distpath all
 info distpath dpkaf01
-exit
 
-# OGGBD Kafka Replicat 구성 확인과 기동
 docker exec -it -u ogg demo_oggbd_23ai adminclient
 connect http://localhost as oggadmin !
+shell ls -l /u02/Deployment/etc/conf/ogg/kaf01*
 shell cat /u02/Deployment/etc/conf/ogg/kaf01.prm
 shell cat /u02/Deployment/etc/conf/ogg/kaf01.props
 shell cat /u02/Deployment/etc/conf/ogg/kaf01-producer.properties
-add replicat kaf01 exttrail da
+view params kaf01
+add replicat KAF01 exttrail da
 start kaf01
 info all
 stats kaf01
-exit
 
-# Kafka event 확인
 docker exec -it demo_centos bash
+kafka-topics.sh --bootstrap-server localhost:9092 --list
+kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic SOE.EMPLOYEE --from-beginning --property print.key=true --timeout-ms 30000
 /root/consume_soe_employee.sh
-exit
+KAFKA_FROM_BEGINNING=N /root/consume_soe_employee.sh
+/root/consume_soe_employee.sh SOE.OTHER_TABLE
 
-# Source Extract의 PK update 처리 설정 확인
-docker exec -it -u ogg demo_ogg_23ai adminclient
-connect http://localhost as oggadmin !
 edit params c01
-
-# C01 parameter에 다음 줄이 있는지 확인하고, 없으면 추가해 저장한다.
-TRANLOGOPTIONS _VALIDATEPKUPDATE
-LOGALLSUPCOLS
-UPDATERECORDFORMAT COMPACT
-
+view params c01
 stop c01
 start c01
 info all
-exit
+alter replicat kaf01, extseqno 4, extrba 3865
 
-# delete-insert 정책 적용
-docker exec demo_oggbd_23ai cp /u02/Deployment/etc/conf/ogg/kaf01-pk-delete-insert.props /u02/Deployment/etc/conf/ogg/kaf01.props
-docker exec -it -u ogg demo_oggbd_23ai adminclient
-connect http://localhost as oggadmin !
-stop kaf01
+docker exec -it demo_osrc_23ai bash
+cat /home/oracle/script/sql/pk_update_employee_prepare.sql
+cat /home/oracle/script/sql/pk_update_employee_run.sql
+
+shell vi /u02/Deployment/etc/conf/ogg/kaf01.props
+shell cat /u02/Deployment/etc/conf/ogg/kaf01.props
+info kaf01 detail
 start kaf01
 info kaf01
-exit
 
-# Source PK update DML 실행
-docker exec -it demo_osrc_23ai bash
 cd /home/oracle/script/sql
+pwd
+ls -ltr
+cat pk_update_employee_prepare.sql
 sqlplus "soe/soe@orclpdb1" @pk_update_employee_prepare.sql
-sqlplus "soe/soe@orclpdb1" @pk_update_employee_run.sql
-exit
 
-# PK update가 delete와 insert event로 변환됐는지 확인
 docker exec -it demo_centos bash
-KAFKA_FROM_BEGINNING=N /root/consume_soe_employee.sh
-exit
+/usr/local/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic SOE.EMPLOYEE --property print.key=true --timeout-ms 600000
 
-# ABEND 정책 재현 시 <EXTSEQNO>와 <EXTRBA>는 해당 bookmark의 실제 값으로 바꾼다.
-docker exec demo_oggbd_23ai cp /u02/Deployment/etc/conf/ogg/kaf01-pk-abend.props /u02/Deployment/etc/conf/ogg/kaf01.props
-docker exec -it -u ogg demo_oggbd_23ai adminclient
-connect http://localhost as oggadmin !
+cat pk_update_employee_run.sql
+sqlplus "soe/soe@orclpdb1" @pk_update_employee_run.sql
+
+shell vi /u02/Deployment/etc/conf/ogg/kaf01.props
+shell cat /u02/Deployment/etc/conf/ogg/kaf01.props
+shell cat /u02/Deployment/etc/conf/ogg/kaf01-pk-abend.props
 stop kaf01
-alter replicat kaf01, extseqno <EXTSEQNO>, extrba <EXTRBA>
+alter replicat kaf01, extseqno 4, extrba 3865
 start kaf01
 info all
 view report kaf01
-exit
-
-# 실습 후 delete-insert 정책으로 복구
-docker exec demo_oggbd_23ai cp /u02/Deployment/etc/conf/ogg/kaf01-pk-delete-insert.props /u02/Deployment/etc/conf/ogg/kaf01.props
-docker exec -it -u ogg demo_oggbd_23ai adminclient
-connect http://localhost as oggadmin !
+shell vi /u02/Deployment/etc/conf/ogg/kaf01.props
+shell cat /u02/Deployment/etc/conf/ogg/kaf01.props
 start kaf01
 info all
-exit

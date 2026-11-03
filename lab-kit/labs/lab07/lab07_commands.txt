@@ -1,21 +1,33 @@
-cd /home/oracle/labs/lab07
+docker exec -it demo_centos bash
+su - oracle
+cd /u01/oggbd19
+unzip -oq /home/oracle/pkg/OGG_BigData_Linux_x64_19.1.0.0.5.zip
+tar xvf OGG_BigData_Linux_x64_19.1.0.0.5.tar
+cat setOggBD19.sh
+source setOggBD19.sh
+echo $JAVA_HOME
+create subdirs
 
-# 현재 GoldenGate for Distributed Applications and Analytics 확인
-docker exec -it demo_oggbd_23ai bash
-/u01/ogg/bin/adminclient -v
-ls -ld /u01/ogg /u02/Deployment
-ls -l /u02/Deployment/etc/conf/ogg
-exit
+cp /home/oracle/pkg/custom_handler.zip /u01/oggbd19/ggjava/
+cd /u01/oggbd19/ggjava
+unzip custom_handler.zip
+cp *.jar ./resources/lib
+javac -d /u01/oggbd19/ggjava/resources/classes -cp .:./resources/lib/* ConnectionFactory.java
+javac -d /u01/oggbd19/ggjava/resources/classes -cp ggjava/*:./resources/lib/*:./resources/classes:. CustomHandler.java
+cp custom.prm ../dirprm/
+cp custom.properties ../dirprm/
 
-# OGGBD deployment 상태 확인
-docker exec -it -u ogg demo_oggbd_23ai adminclient
-connect http://localhost as oggadmin !
+edit params custom
+view params custom
+add replicat custom exttrail ./dirdat/da
+edit param mgr
+start mgr
+alter custom begin now
+start custom NOFILTERDUPTRANSACTIONS
+
+edit params p02
+view params p02
+add extract p02 exttrailsource ./dirdat/ca
+add rmttrail ./dirdat/da extract p02 megabytes 10
+start p02
 info all
-exit
-
-# OGG Hub에서 OGGBD로 전달할 obey 파일 확인
-docker exec -it -u ogg demo_ogg_23ai adminclient
-connect http://localhost as oggadmin !
-shell cat /u01/ogg/scripts/obey/add_dpkaf01.oby
-info distpath all
-exit

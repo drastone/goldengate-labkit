@@ -1,0 +1,180 @@
+docker exec -it demo_osrc_23ai bash
+sqlplus / as sysdba
+
+alter session set container=CDB$ROOT;
+show parameter enable_goldengate_replication
+alter system set enable_goldengate_replication=true scope=both;
+
+select supplemental_log_data_min,
+       supplemental_log_data_pk,
+       supplemental_log_data_ui,
+       supplemental_log_data_fk,
+       supplemental_log_data_all
+from v$database;
+
+alter database add supplemental log data;
+
+select supplemental_log_data_min,
+       supplemental_log_data_pk,
+       supplemental_log_data_ui,
+       supplemental_log_data_fk,
+       supplemental_log_data_all
+from v$database;
+
+archive log list;
+shutdown immediate;
+startup mount;
+alter database archivelog;
+alter database open;
+alter pluggable database all open;
+alter pluggable database all save state;
+archive log list;
+
+alter session set container=ORCLPDB1;
+alter profile default limit password_life_time unlimited;
+
+create tablespace SOE
+  datafile size 1G
+  autoextend on next 100M maxsize 5G;
+
+create user soe identified by soe
+  default tablespace SOE
+  temporary tablespace TEMP
+  profile default
+  account unlock;
+
+grant CONNECT, RESOURCE, CREATE VIEW, ALTER SESSION,
+      CREATE DATABASE LINK,
+      ANALYZE ANY DICTIONARY, ANALYZE ANY,
+      CREATE JOB, MANAGE SCHEDULER, MANAGE ANY QUEUE to SOE;
+
+grant EXECUTE ON dbms_lock to SOE;
+grant SELECT ON v_$database to SOE;
+alter user soe quota unlimited on SOE;
+
+create tablespace OGG
+  datafile size 100M
+  autoextend on next 50M maxsize 1G
+  extent management local uniform size 1M
+  segment space management auto;
+
+create user ogg identified by ogg
+  default tablespace OGG
+  temporary tablespace TEMP
+  profile default
+  account unlock;
+
+alter user ogg quota unlimited on OGG;
+grant CONNECT, RESOURCE to ogg;
+grant OGG_CAPTURE to ogg;
+
+alter session set container=CDB$ROOT;
+show parameter enable_goldengate_replication
+archive log list;
+
+select supplemental_log_data_min,
+       supplemental_log_data_pk,
+       supplemental_log_data_ui,
+       supplemental_log_data_fk,
+       supplemental_log_data_all
+from v$database;
+
+alter session set container=ORCLPDB1;
+
+select username, account_status, default_tablespace, profile
+from dba_users
+where username in ('SOE', 'OGG')
+order by username;
+
+select tablespace_name, autoextensible, bytes/1024/1024 as mb,
+       maxbytes/1024/1024 as max_mb
+from dba_data_files
+where tablespace_name in ('SOE', 'OGG')
+order by tablespace_name;
+
+docker exec -it demo_otrg_23ai bash
+sqlplus / as sysdba
+
+alter session set container=CDB$ROOT;
+show parameter enable_goldengate_replication
+alter system set enable_goldengate_replication=true scope=both;
+alter pluggable database all open;
+alter pluggable database all save state;
+
+alter session set container=ORCLPDB1;
+alter profile default limit password_life_time unlimited;
+
+create tablespace SOE
+  datafile size 1G
+  autoextend on next 100M maxsize 5G;
+
+create user soe identified by soe
+  default tablespace SOE
+  temporary tablespace TEMP
+  profile default
+  account unlock;
+
+grant CONNECT, RESOURCE, CREATE VIEW, ALTER SESSION,
+      CREATE DATABASE LINK,
+      ANALYZE ANY DICTIONARY, ANALYZE ANY,
+      CREATE JOB, MANAGE SCHEDULER, MANAGE ANY QUEUE to SOE;
+
+grant EXECUTE ON dbms_lock to SOE;
+grant SELECT ON v_$database to SOE;
+alter user soe quota unlimited on SOE;
+
+create tablespace OGG
+  datafile size 100M
+  autoextend on next 50M maxsize 1G
+  extent management local uniform size 1M
+  segment space management auto;
+
+create user ogg identified by ogg
+  default tablespace OGG
+  temporary tablespace TEMP
+  profile default
+  account unlock;
+
+alter user ogg quota unlimited on OGG;
+grant CONNECT, RESOURCE to ogg;
+grant OGG_APPLY to ogg;
+
+grant CREATE ANY TABLE,
+      ALTER ANY TABLE,
+      DROP ANY TABLE,
+      CREATE ANY INDEX,
+      ALTER ANY INDEX,
+      DROP ANY INDEX,
+      CREATE ANY SEQUENCE,
+      DROP ANY SEQUENCE
+to ogg;
+
+grant SELECT ANY TABLE,
+      INSERT ANY TABLE,
+      UPDATE ANY TABLE,
+      DELETE ANY TABLE
+to ogg;
+
+alter session set container=CDB$ROOT;
+show parameter enable_goldengate_replication
+alter session set container=ORCLPDB1;
+
+select username, account_status, default_tablespace, profile
+from dba_users
+where username in ('SOE', 'OGG')
+order by username;
+
+select granted_role
+from dba_role_privs
+where grantee = 'OGG'
+order by granted_role;
+
+select privilege
+from dba_sys_privs
+where grantee = 'OGG'
+order by privilege;
+
+cd /home/oracle
+sh stopDocker.sh --rm
+sh create_docker.sh
+sh status_labkit.sh

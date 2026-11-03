@@ -1,0 +1,39 @@
+docker exec -it demo_otrg_23ai bash
+sqlplus soe/soe@orclpdb1
+select id, memo, to_char(created_at, 'yyyy-mm-dd hh24:mi:ss') as created_at
+from soe.webui_sync_test
+order by id;
+
+cd /home/oracle/oracle/script/restapi-lab
+cat 00_curl_extracts_basic.sh
+sh 00_curl_extracts_basic.sh
+cat 00_set_env.sh
+source 00_set_env.sh
+sh 01_check_extracts.sh
+sh 02_check_replicats.sh
+
+cd /home/oracle/labs/lab11
+cat purge-ogghub-trails.json
+cat lab11_init.sh
+sh lab11_init.sh
+
+cat 03_create_cr01_extract.json
+cat 04_create_cr01_extract.sh
+sh 04_create_cr01_extract.sh
+sh 01_check_extracts.sh
+
+cat 05_register_cr01_extract.sh
+sh 05_register_cr01_extract.sh
+
+cat 06_create_dr01_replicat.json
+cat 07_create_dr01_replicat.sh
+sh 07_create_dr01_replicat.sh
+sh 02_check_replicats.sh
+
+cat 08_start_cr01.sh
+sh 08_start_cr01.sh
+cat 09_start_dr01.sh
+sh 09_start_dr01.sh
+
+cat 00_info_all.sh
+sh 00_info_all.sh

@@ -1,0 +1,114 @@
+desc INS2_CHURN_FP_CARE_26AI
+
+select count(*) cancel_rows
+from cancelamt
+where op_gubun='5';
+
+select count(*) care_rows
+from ins2_churn_fp_care_26ai;
+
+select cust_id,
+       cust_nm,
+       fund_name,
+       cancel_amt,
+       call_cnt_3m,
+       late_pmt_cnt,
+       ai_comment_status,
+       substr(consult_text, 1, 60) consult_text
+from ins2_churn_fp_care_26ai
+order by created_at desc
+fetch first 8 rows only;
+
+exec ins2_churn_fp_ai_pkg.generate_demo_comments(8);
+set lines 220
+col cust_nm format a10
+col status format a10
+col consult format a42
+col comment_hint format a80
+
+select cust_id,
+       cust_nm,
+       ai_comment_status status,
+       substr(consult_text, 1, 42) consult,
+       substr(ai_comment, 1, 90) comment_hint
+from ins2_churn_fp_care_26ai
+order by ai_generated_at desc
+fetch first 8 rows only;
+
+sh show_churn_candidate_care_url.sh
+
+col cust_nm format a10
+col fund_name format a20
+col consult_text format a55
+col ai_comment_status format a12
+col ai_prompt format a80
+col ai_comment format a90
+
+select cust_id,
+       cust_nm,
+       fund_name,
+       cancel_amt,
+       call_cnt_3m,
+       late_pmt_cnt,
+       ai_comment_status
+from ins2_churn_fp_care_26ai
+where cust_id = 2;
+
+select substr(consult_text, 1, 120) consult_text
+from ins2_churn_fp_care_26ai
+where cust_id = 2;
+
+select dbms_lob.substr(ai_prompt_summary, 500, 1) ai_prompt
+from ins2_churn_fp_care_26ai
+where cust_id = 2;
+
+select dbms_lob.substr(ai_comment, 500, 1) ai_comment
+from ins2_churn_fp_care_26ai
+where cust_id = 2;
+
+uname -n
+cd /home/oracle/labs/lab18
+pwd
+ls -l ai_llm_provider.conf.template
+sed -n '1,80p' ai_llm_provider.conf.template
+cp ai_llm_provider.conf.template ai_llm_provider.conf
+ls -l ai_llm_provider.conf*
+sed -n '1,80p' ai_llm_provider.conf
+vi ai_llm_provider.conf
+sh show_ai_llm_provider_config.sh
+sh setup_ai_llm_provider.sh
+
+alter session set container=ORCLPDB1;
+set lines 220 pages 80 long 10000 longchunksize 10000
+col response format a160
+select dbms_lob.substr(ggadmin.ins2_churn_llm_pkg.smoke_test, 500, 1) response
+from dual;
+
+@/home/oracle/labs/lab18/show_ai_llm_job_status.sql
+
+begin
+  ggadmin.ins2_churn_vector_pkg.refresh_vectors(500);
+  ggadmin.ins2_churn_vector_pkg.sync_care_queue;
+  ggadmin.ins2_churn_llm_pkg.generate_comments(20);
+end;
+/
+
+docker exec -it demo_osrc_23ai bash
+cd /home/oracle/script/osa/23ai
+sh gen_base.sh 20 1
+exit
+
+set lines 240 pages 80 long 10000 longchunksize 10000
+col source_cust_id format 999999
+col status format a12
+col model_name format a24
+col error_message format a60
+col llm_comment format a120
+select source_cust_id,
+       status,
+       model_name,
+       substr(error_message, 1, 60) error_message,
+       dbms_lob.substr(llm_comment, 300, 1) llm_comment
+from ggadmin.ins2_churn_llm_result
+order by updated_at desc
+fetch first 5 rows only;

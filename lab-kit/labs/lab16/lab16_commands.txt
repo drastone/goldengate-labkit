@@ -1,0 +1,35 @@
+cd /home/oracle
+df -h /mnt/d
+bash startOSA.sh
+
+cd /home/oracle
+bash stopOSA.sh
+bash stopDocker.sh
+docker ps
+sync
+fstrim -v /
+exit
+
+wsl --list -v
+$distro = "OracleLinux_8_10"
+$vhdx = (Get-ChildItem -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss | Where-Object { $_.GetValue("DistributionName") -eq $distro }).GetValue("BasePath") + "\ext4.vhdx"
+$vhdx
+wsl --shutdown
+Start-Process PowerShell -Verb RunAs
+diskpart
+select vdisk file="d:\wsl\oraclelinux_8_10\ext4.vhdx"
+attach vdisk readonly
+compact vdisk
+detach vdisk
+exit
+wsl -d OracleLinux_8_10
+df -h /mnt/d
+
+cd /home/oracle/script/osa/23ai
+pwd
+sh create_objects_v1_2.sh
+sh prepare_osa_base_data.sh
+sh gen_0.sh 2
+stats extract c01 totalsonly soe.*
+stats replicat d01 totalsonly soe.*
+stats replicat kaf01 totalsonly soe.*

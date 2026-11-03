@@ -1,0 +1,108 @@
+stop c01
+stop d01
+info all
+info distpath all
+stop distpath dpkaf01
+info distpath all
+stop kaf01
+info all
+dblogin useridalias src_ogg domain OracleGoldenGate
+delete extract c01
+unregister extract c01 database
+info all
+dblogin useridalias trg_ogg domain OracleGoldenGate
+delete replicat d01
+info all
+info distpath all
+delete distpath dpkaf01
+info distpath all
+info all
+delete replicat kaf01
+info all
+
+docker exec -it demo_ogg_23ai bash
+cd /u02/Deployment/var/lib
+pwd
+mkdir -p backup/osa_manual_reset
+cp -p data/ca* backup/osa_manual_reset/
+ls -ltr backup/osa_manual_reset/
+rm -f data/ca*
+ls -ltr data/ca*
+
+docker exec -it demo_oggbd_23ai bash
+cd /u02/Deployment/var/lib
+pwd
+mkdir -p backup/osa_manual_reset
+cp -p data/da* backup/osa_manual_reset/
+ls -ltr backup/osa_manual_reset/
+rm -f data/da*
+ls -ltr data/da*
+
+docker exec -it demo_osrc_23ai bash
+cd /home/oracle/script/osa/23ai
+pwd
+sh reset_osa_objects.sh
+
+docker exec -it demo_otrg_23ai bash
+cd /home/oracle/script/osa/23ai
+pwd
+sh reset_osa_objects.sh
+
+docker exec -it demo_centos bash
+cd /home/oracle/script/osa/23ai
+pwd
+sh reset_osa_kafka_topics.sh
+
+info all
+dblogin useridalias src_ogg domain OracleGoldenGate
+add extract c01, integrated tranlog, begin now
+add exttrail ca, extract c01, megabytes 100
+register extract c01 database
+info all
+dblogin useridalias trg_ogg domain OracleGoldenGate
+add replicat d01, exttrail ca, checkpointtable OGG.GGSCKPT
+info all
+info distpath all
+cd /home/oracle/script/osa/23ai
+shell pwd
+shell cat dpkaf01.oby
+obey dpkaf01.oby
+info distpath all
+
+docker exec -it -u ogg demo_oggbd_23ai adminclient
+connect http://localhost as oggadmin !
+info all
+add replicat kaf01, exttrail da
+info all
+start c01
+start d01
+start distpath dpkaf01
+info all
+info distpath all
+start kaf01
+info all
+
+docker exec -it demo_osrc_23ai bash
+cd /home/oracle/script/osa/23ai
+pwd
+sh create_objects_v1_2.sh
+sh prepare_osa_base_data.sh
+stats extract c01 totalsonly soe.*
+stats replicat d01 totalsonly soe.*
+stats replicat kaf01 totalsonly soe.*
+
+uname -n
+cd /home/oracle/labs/lab15
+pwd
+sh ../reset_lab_all.sh
+sh reset_lab_all.sh
+stats c01
+stats d01
+stats kaf01
+cd /home/oracle/script/osa/23ai/
+pwd
+sh create_objects_v1_2.sh
+sh prepare_osa_base_data.sh
+stats extract c01 totalsonly soe.*
+stats replicat d01 totalsonly soe.*
+stats replicat kaf01 totalsonly soe.*

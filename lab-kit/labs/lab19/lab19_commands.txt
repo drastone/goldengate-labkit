@@ -1,0 +1,34 @@
+uname -n
+cd /home/oracle
+sh stopDocker.sh
+docker stats --no-stream
+
+cd /home/oracle/labs/lab19
+sh start_lab19_lakehouse.sh
+docker stats --no-stream
+pwd
+sh create_ds_lake.sh
+sh show_ds_lake.sh
+sh start_iceberg_writer.sh
+
+docker exec -it demo_osrc_23ai bash
+cd /home/oracle/script/osa/23ai
+sh gen_base.sh 20 1
+exit
+
+uname -n
+docker logs --tail 10 demo_iceberg_writer
+sh show_ds_lake_events.sh 1
+sh show_iceberg_tables.sh
+sh show_bronze_cdc_events.sh
+
+uname -n
+cd /home/oracle/labs/lab19
+pwd
+sh build_silver_fund_activity.sh
+sh show_silver_fund_activity.sh
+sh build_gold_channel_action.sh
+sh show_gold_channel_action.sh
+sh build_gold_dashboard.sh
+sh start_gold_dashboard.sh
+docker stats --no-stream

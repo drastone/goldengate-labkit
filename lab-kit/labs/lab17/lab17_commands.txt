@@ -1,0 +1,13 @@
+pwd
+sh gen_base.sh 10 1
+cd /home/oracle/script/osa/23ai
+sh gen_base.sh 30 1
+
+cd /home/oracle
+sh chk_osa.sh
+
+cd /home/oracle
+sh reset_osa_demo.sh
+sh fix_osa_demo.sh
+docker exec demo_osrc_23ai bash -lc "cd /home/oracle/script/osa/23ai && sh gen_base.sh 10 1"
+sh chk_osa.sh

@@ -1,4 +1,43 @@
+docker exec -it -u ogg demo_ogg_23ai adminclient
+connect http://localhost as oggadmin !
+info all
+view GLOBALS
+info credentialstore
+
+ALTER CREDENTIALSTORE ADD USER ogg@oracle_src_23ai:1521/ORCLPDB1 PASSWORD ogg ALIAS src_ogg DOMAIN OracleGoldenGate
+ALTER CREDENTIALSTORE ADD USER ogg@oracle_trg_23ai:1521/ORCLPDB1 PASSWORD ogg ALIAS trg_ogg DOMAIN OracleGoldenGate
+info credentialstore
+
+DBLOGIN USERIDALIAS src_ogg DOMAIN OracleGoldenGate
+DBLOGIN USERIDALIAS trg_ogg DOMAIN OracleGoldenGate
+info profile default
+
+edit params c01
+view params c01
+
+DBLOGIN USERIDALIAS src_ogg DOMAIN OracleGoldenGate
+INFO SCHEMATRANDATA SOE
+ADD SCHEMATRANDATA SOE
+INFO SCHEMATRANDATA SOE
+add extract c01 integrated tranlog begin now
+add exttrail ca extract c01 megabytes 100
+register extract c01 database
+
+DBLOGIN USERIDALIAS trg_ogg DOMAIN OracleGoldenGate
+ADD CHECKPOINTTABLE OGG.GGSCKPT
+INFO CHECKPOINTTABLE OGG.GGSCKPT
+edit params d01
+view params d01
+dblogin useridalias trg_ogg
+add replicat d01, exttrail ca, checkpointtable OGG.GGSCKPT
+info all
+start c01
+info all
+start d01
+info all
+
 cd /home/oracle/labs/lab05
+cat lab05_commands.txt
 
 docker exec -it demo_osrc_23ai bash
 sqlplus soe/soe@orclpdb1
@@ -15,25 +54,16 @@ create table soe.employee (
 
 insert into soe.employee values (1,'Vincent','Vincent@gmail.com',30,'010-1111-2222','DBA',sysdate);
 commit;
-
 insert into soe.employee values (2,'Daniel','daniel@gmail.com',30,'010-1111-3333','Data Scientist',sysdate);
 commit;
-
 update soe.employee set job = 'Data Engineer' where id = 2;
 commit;
-
 delete from soe.employee where id = 1;
 commit;
 
-exit
-exit
-
 docker exec -it -u ogg demo_ogg_23ai adminclient
-connect http://localhost as oggadmin !
 stats c01
 stats d01
-info all
-exit
 
 docker exec -it demo_otrg_23ai bash
 sqlplus soe/soe@orclpdb1
@@ -43,6 +73,10 @@ col name for a10
 col email for a25
 col age for 99
 col job for a20
-select id, name, email, age, job from soe.employee order by id;
-exit
-exit
+select id, name, email, age, job
+from soe.employee
+order by id;
+
+info all
+view report c01
+view report d01

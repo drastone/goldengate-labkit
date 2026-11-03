@@ -1,0 +1,153 @@
+Start-Process PowerShell -Verb RunAs
+dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+shutdown /r /t 0
+
+wsl --update
+wsl --set-default-version 2
+wsl --status
+wsl --list --online
+
+curl.exe -fLO https://raw.githubusercontent.com/drastone/goldengate-labkit/main/setup.ps1
+type .\setup.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\setup.ps1
+
+whoami
+exit
+
+wsl --list -v
+wsl -d OracleLinux_8_10 -- uname -r
+wsl -d OracleLinux_8_10
+whoami
+cat /etc/os-release | grep -E '^(NAME|VERSION_ID)='
+
+sudo -i
+whoami
+cat > /etc/wsl.conf <<'EOF'
+[boot]
+systemd=true
+[user]
+default=root
+EOF
+cat /etc/wsl.conf
+exit
+exit
+
+wsl --shutdown
+wsl -d OracleLinux_8_10
+whoami
+ps -p 1 -o comm=
+id oracle
+exit
+
+wsl --list -v
+wsl --shutdown
+New-Item -ItemType Directory -Force d:\wsl\backup
+New-Item -ItemType Directory -Force d:\wsl\oraclelinux_8_10
+wsl --export OracleLinux_8_10 d:\wsl\backup\OracleLinux_8_10.tar
+Get-Item d:\wsl\backup\OracleLinux_8_10.tar | Select-Object FullName, Length
+tar -tf d:\wsl\backup\OracleLinux_8_10.tar | Select-Object -First 5
+wsl --unregister OracleLinux_8_10
+wsl --import OracleLinux_8_10 d:\wsl\oraclelinux_8_10 d:\wsl\backup\OracleLinux_8_10.tar --version 2
+wsl --list -v
+Get-Item d:\wsl\oraclelinux_8_10\ext4.vhdx | Select-Object FullName, Length
+wsl -d OracleLinux_8_10
+
+ls -ld /home /home/oracle
+whoami
+getent passwd oracle
+id oracle
+cd /home/oracle
+pwd
+
+yum install -y unzip git jq curl yum-utils openssh-server
+systemctl enable --now sshd
+systemctl is-enabled sshd && systemctl is-active sshd
+
+yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+yum install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+systemctl enable --now docker
+docker --version && docker compose version && systemctl is-active docker
+docker run --rm hello-world
+
+cd /home/oracle
+curl -fLO https://github.com/drastone/goldengate-labkit/releases/latest/download/goldengate-labkit.tar.gz
+curl -fLO https://github.com/drastone/goldengate-labkit/releases/latest/download/goldengate-labkit.tar.gz.sha256
+ls -ltr
+sha256sum -c goldengate-labkit.tar.gz.sha256
+tar -xzf goldengate-labkit.tar.gz --strip-components=1
+cat VERSION
+ls -ld oracle/pkg centos/pkg labs
+
+cd /mnt/c/Users/<WindowsUser>/Downloads/
+ls -ltr wget.sh
+mv wget.sh /home/oracle/oracle/pkg/wget_oracle_db_26ai.sh
+cd /home/oracle/oracle/pkg
+chmod 700 wget_oracle_db_26ai.sh
+ls -l wget_oracle_db_26ai.sh
+sh wget_oracle_db_26ai.sh
+ls -lh V1054592-01.zip
+sha256sum V1054592-01.zip
+
+cd /mnt/c/Users/yongsch/Downloads/
+ls -ltr wget.sh
+mv wget.sh /home/oracle/oracle/pkg/wget_oracle_goldengate_26ai.sh
+cd /home/oracle/oracle/pkg
+chmod 700 wget_oracle_goldengate_26ai.sh
+ls -ltr wget_oracle_goldengate_26ai.sh
+sh wget_oracle_goldengate_26ai.sh
+ls -lh V1054774-01.zip
+sha256sum V1054774-01.zip
+
+cd /mnt/c/Users/yongsch/Downloads/
+ls -ltr wget.sh
+mv wget.sh /home/oracle/oracle/pkg/wget_oracle_goldengate_for_DAA_26ai.sh
+cd /home/oracle/oracle/pkg/
+chmod 700 wget_oracle_goldengate_for_DAA_26ai.sh
+ls -ltr wget_oracle_goldengate_for_DAA_26ai.sh
+sh wget_oracle_goldengate_for_DAA_26ai.sh
+sha256sum V1054834-01.zip
+
+cd /mnt/c/Users/<WindowsUser>/Downloads/
+ls -ltr wget.sh
+mv wget.sh /home/oracle/centos/pkg/wget_oracle_stream_analytics_26ai.sh
+cd /home/oracle/centos/pkg
+chmod 700 wget_oracle_stream_analytics_26ai.sh
+ls -ltr wget_oracle_stream_analytics_26ai.sh
+sh wget_oracle_stream_analytics_26ai.sh
+pwd
+ls -lh V1054826-01.zip
+sha256sum V1054826-01.zip
+
+cd /mnt/c/Users/<WindowsUser>/Downloads
+ls -1 jdk-21*_linux-x64_bin.rpm
+mv jdk-21*_linux-x64_bin.rpm /home/oracle/centos/pkg/jdk-21_linux-x64_bin.rpm
+cd /home/oracle/centos/pkg
+chmod 644 jdk-21_linux-x64_bin.rpm
+pwd
+ls -lh jdk-21_linux-x64_bin.rpm
+sha256sum jdk-21_linux-x64_bin.rpm
+
+cd /home/oracle
+pwd
+ls -lh oracle/pkg/V105*.zip
+ls -lh centos/pkg/V1054826-01.zip
+ls -lh centos/pkg/jdk-21_linux-x64_bin.rpm
+sha256sum oracle/pkg/V1054592-01.zip
+sha256sum oracle/pkg/V1054774-01.zip
+sha256sum oracle/pkg/V1054834-01.zip
+sha256sum centos/pkg/V1054826-01.zip
+sha256sum centos/pkg/jdk-21_linux-x64_bin.rpm
+
+cat /home/oracle/build_base_images.sh
+sh /home/oracle/build_base_images.sh --check-only
+sh /home/oracle/build_base_images.sh
+sh check_labkit.sh
+sh create_docker.sh
+sh status_labkit.sh
+free -h
+docker stats --no-stream
+
+cd /home/oracle
+bash startDocker.sh
+sh startDocker.sh
