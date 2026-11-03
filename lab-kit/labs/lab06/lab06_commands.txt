@@ -100,21 +100,21 @@ exit
 docker exec -it demo_osrc_23ai bash
 sqlplus soe/soe@orclpdb1
 insert into soe.employee
-values (3, 'Sophia', 'sophia@gmail.com', 28, '010-1111-4444', 'Data Analyst', sysdate);
+values (33, 'Sophia', 'sophia@gmail.com', 28, '010-1111-4444', 'Data Analyst', sysdate);
 insert into soe.employee
-values (4, 'Ethan', 'ethan@gmail.com', 35, '010-1111-5555', 'Backend Developer', sysdate);
+values (34, 'Ethan', 'ethan@gmail.com', 35, '010-1111-5555', 'Backend Developer', sysdate);
 insert into soe.employee
-values (5, 'Mia', 'mia@gmail.com', 32, '010-1111-6666', 'Product Manager', sysdate);
+values (35, 'Mia', 'mia@gmail.com', 32, '010-1111-6666', 'Product Manager', sysdate);
 update soe.employee
-set job = 'Senior Data Engineer'
-where id = 2;
+set designation = 'Senior Data Engineer'
+where id = 33;
 commit;
 
 # Admin Client terminal: start temporary Replicat D02 after the base SCN
 edit params d02
 view params d02
 dblogin useridalias trg_ogg
-add replicat d02 exttrail ca
+add replicat d02, exttrail ca, checkpointtable OGG.GGSCKPT
 info all
 start replicat d02 aftercsn 4566117
 send d02 status
@@ -127,16 +127,19 @@ col name for a10
 col email for a25
 col age for 99
 col phonenumber for a15
-col job for a25
+col designation for a25
 col created for a20
+select count(*) as row_count
+from soe.employee;
 select id,
        name,
        email,
        age,
        phonenumber,
-       job,
+       designation,
        to_char(created, 'YYYY-MM-DD HH24:MI:SS') as created
 from soe.employee
+where id in (33, 34, 35)
 order by id;
 
 stop c01
