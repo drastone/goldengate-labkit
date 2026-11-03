@@ -171,3 +171,71 @@ next
 next
 n
 n
+
+# Target DB SOE SQL*Plus terminal: create the DW target table
+show user
+create table soe.employee_dw (
+  id number not null primary key,
+  name varchar2(100),
+  email varchar2(100),
+  age number,
+  phonenumber_masked varchar2(20),
+  job_title varchar2(100),
+  created date
+);
+
+# Admin Client terminal: add a second mapping to D01
+stop d01
+edit params d01
+
+# Add this mapping above MAP SOE.*, TARGET SOE.*;
+MAP SOE.EMPLOYEE, TARGET SOE.EMPLOYEE_DW,
+  COLMAP (
+    USEDEFAULTS,
+    JOB_TITLE = DESIGNATION,
+    PHONENUMBER_MASKED = @STRCAT(@STREXT(PHONENUMBER, 1, 9), '****')
+  );
+
+# Confirm that the existing wildcard mapping remains enabled
+MAP SOE.*, TARGET SOE.*;
+
+# Back at the Admin Client prompt after saving the D01 parameter file
+view params d01
+start d01
+info d01
+
+# Source DB SOE SQL*Plus terminal: generate a change after D01 restarts
+insert into soe.employee
+values (61, 'Olivia', 'olivia@gmail.com', 34, '010-7777-8888', 'Data Architect', sysdate);
+commit;
+
+# Target DB SOE SQL*Plus terminal: verify the transformed DW row
+set linesize 140
+col name for a12
+col phonenumber_masked for a20
+col job_title for a25
+select id, name, age, phonenumber_masked, job_title
+from soe.employee_dw
+where id = 61;
+
+# Admin Client terminal: verify both D01 mappings
+stats d01
+
+# Admin Client terminal: remove the temporary DW mapping from D01
+stop d01
+edit params d01
+
+# Delete the complete MAP SOE.EMPLOYEE ... EMPLOYEE_DW block added above.
+# Keep the existing MAP SOE.*, TARGET SOE.*; line enabled.
+
+# Back at the Admin Client prompt after saving the D01 parameter file
+view params d01
+start d01
+info d01
+
+# Target DB SOE SQL*Plus terminal: remove the DW lab table
+drop table soe.employee_dw purge;
+
+# Source DB SOE SQL*Plus terminal: remove the lab row; D01 applies the delete to Target
+delete from soe.employee where id = 61;
+commit;
