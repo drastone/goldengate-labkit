@@ -5,7 +5,7 @@ docker ps --format 'table {{.Names}}\t{{.Status}}' --filter name=demo_centos --f
 docker exec demo_oggbd_23ai sh -lc 'printf "OGG_HOME=%s\n" "$OGG_HOME"; ls -ld /u01/ogg /u02/Deployment/etc/conf/ogg'
 
 # Confirm the Kafka Replicat files that Chapter 8 will inspect and use
-docker exec demo_oggbd_23ai sh -lc 'ls -1 /u02/Deployment/etc/conf/ogg/kaf01.prm /u02/Deployment/etc/conf/ogg/kaf01.props /u02/Deployment/etc/conf/ogg/kaf01-producer.properties'
+docker exec demo_oggbd_23ai sh -lc 'ls -1 /u02/Deployment/etc/conf/ogg/'
 
 # Preview the Chapter 8 Distribution Path command; do not execute it yet
 docker exec demo_ogg_23ai cat /u01/ogg/scripts/obey/add_dpkaf01.oby
