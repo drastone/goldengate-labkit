@@ -39,7 +39,6 @@ create table soe.daily_fund_price (
 );
 alter table soe.daily_fund_price add description varchar2(50);
 
-stats c01
 stats d01
 
 desc soe.daily_fund_price;
