@@ -80,6 +80,7 @@ using 'oracle_src_23ai:1521/ORCLPDB1';
 select 1 as ping
 from dual@to_src;
 
+# Source DB terminal: record the initial-load base SCN
 exit
 exit
 docker exec -it demo_osrc_23ai bash
@@ -87,6 +88,21 @@ sqlplus soe/soe@orclpdb1
 select current_scn as base_scn
 from v$database;
 
+# Target DB terminal: load the Source snapshot as of the base SCN
+exit
+exit
+docker exec -it demo_otrg_23ai bash
+sqlplus soe/soe@orclpdb1
+truncate table soe.employee;
+insert into soe.employee
+select * from soe.employee@to_src as of scn 4566117;
+commit;
+
+# Source DB terminal: generate changes after the base SCN
+exit
+exit
+docker exec -it demo_osrc_23ai bash
+sqlplus soe/soe@orclpdb1
 insert into soe.employee
 values (3, 'Sophia', 'sophia@gmail.com', 28, '010-1111-4444', 'Data Analyst', sysdate);
 insert into soe.employee
@@ -98,21 +114,13 @@ set job = 'Senior Data Engineer'
 where id = 2;
 commit;
 
-exit
-exit
-docker exec -it demo_otrg_23ai bash
-sqlplus soe/soe@orclpdb1
-truncate table soe.employee;
-insert into soe.employee
-select * from soe.employee@to_src as of scn 4566117;
-commit;
-
+# Admin Client terminal: start temporary Replicat D02 after the base SCN
 edit params d02
 view params d02
 dblogin useridalias trg_ogg
 add replicat d02 exttrail ca
 info all
-start replicat d02 atcsn 4566117
+start replicat d02 aftercsn 4566117
 send d02 status
 stats d02
 
