@@ -40,9 +40,9 @@ from user_tab_columns
 where table_name = 'DAILY_FUND_PRICE'
 order by column_id;
 
+stop d01
 edit params d01
 view params d01
-stop d01
 start d01
 info all
 
