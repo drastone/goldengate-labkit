@@ -37,27 +37,28 @@ start c01
 info all
 alter replicat kaf01, extseqno 4, extrba 3865
 
-docker exec -it demo_osrc_23ai bash
-cat /home/oracle/script/sql/pk_update_employee_prepare.sql
-cat /home/oracle/script/sql/pk_update_employee_run.sql
+cd /home/oracle/labs/lab08
+cat pk_update_employee_prepare.sql
+cat pk_update_employee_run.sql
 
 shell vi /u02/Deployment/etc/conf/ogg/kaf01.props
 shell cat /u02/Deployment/etc/conf/ogg/kaf01.props
+stop kaf01
 info kaf01 detail
 start kaf01
 info kaf01
 
-cd /home/oracle/script/sql
+cd /home/oracle/labs/lab08
 pwd
 ls -ltr
 cat pk_update_employee_prepare.sql
-sqlplus "soe/soe@orclpdb1" @pk_update_employee_prepare.sql
+docker exec -i demo_osrc_23ai bash -lc 'sqlplus "soe/soe@orclpdb1"' < pk_update_employee_prepare.sql
 
 docker exec -it demo_centos bash
 /usr/local/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic SOE.EMPLOYEE --property print.key=true --timeout-ms 600000
 
 cat pk_update_employee_run.sql
-sqlplus "soe/soe@orclpdb1" @pk_update_employee_run.sql
+docker exec -i demo_osrc_23ai bash -lc 'sqlplus "soe/soe@orclpdb1"' < pk_update_employee_run.sql
 
 shell vi /u02/Deployment/etc/conf/ogg/kaf01.props
 shell cat /u02/Deployment/etc/conf/ogg/kaf01.props
