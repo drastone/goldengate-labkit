@@ -150,6 +150,14 @@ delete replicat d02
 info all
 stop d01
 edit params d01
+
+# Comment out this line in the D01 parameter editor
+--MAPEXCLUDE SOE.EMPLOYEE;
+
+# Confirm that MAP SOE.*, TARGET SOE.*; remains enabled, then save
+
+# Back at the Admin Client prompt after saving the parameter file
+view params d01
 start d01
 start c01
 info all
