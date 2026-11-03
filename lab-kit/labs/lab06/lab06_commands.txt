@@ -5,6 +5,32 @@ sqlplus "soe/soe@orclpdb1" @create_objects_v1_2.sql
 sh gen_0.sh 2
 sh gen_base.sh 100 1
 
+stop d01
+edit params d01
+
+# D01 parameter editor content
+REPLICAT D01
+USERIDALIAS trg_ogg DOMAIN OracleGoldenGate
+ASSUMETARGETDEFS
+APPLYNOOPUPDATES
+DISCARDFILE D01_PERF.dsc, PURGE, MEGABYTES 100
+REPORTCOUNT EVERY 1 MINUTES RATE
+
+DDL &
+INCLUDE MAPPED OBJTYPE TABLE INSTR 'CREATE' &
+INCLUDE MAPPED OBJTYPE TABLE INSTR 'TRUNCATE' &
+INCLUDE MAPPED OBJTYPE TABLE INSTR 'DROP' &
+INCLUDE MAPPED OBJTYPE TABLE INSTR 'ALTER' &
+EXCLUDE MAPPED OBJTYPE SEQUENCE INSTR 'CREATE' &
+EXCLUDE MAPPED OBJTYPE SEQUENCE INSTR 'DROP'
+
+MAP SOE.*, TARGET SOE.*;
+
+# Back at the Admin Client prompt after saving the parameter file
+view params d01
+start d01
+info all
+
 create table soe.daily_fund_price (
   dt varchar2(8),
   fund_code varchar2(20),
@@ -28,6 +54,11 @@ order by column_id;
 
 stop d01
 edit params d01
+
+# Add this line above MAP SOE.*, TARGET SOE.* in the D01 parameter editor
+MAPEXCLUDE SOE.EMPLOYEE;
+
+# Back at the Admin Client prompt after saving the parameter file
 view params d01
 start d01
 info all
