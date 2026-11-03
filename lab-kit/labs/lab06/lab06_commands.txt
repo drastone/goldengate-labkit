@@ -69,6 +69,7 @@ start d01
 info all
 
 # Target DB SOE SQL*Plus terminal: create the Source database link
+show user
 create database link to_src
 connect to soe identified by soe
 using 'oracle_src_23ai:1521/ORCLPDB1';
