@@ -1,0 +1,29 @@
+cd /home/oracle/labs/lab10
+
+# 현재 OGG Hub Microservices deployment 확인
+docker exec -it demo_ogg_23ai bash
+/u01/ogg/bin/adminclient -v
+ls -ld /u01/ogg /u02/Deployment
+exit
+
+docker exec -it -u ogg demo_ogg_23ai adminclient
+connect http://localhost as oggadmin !
+info all
+info distpath all
+view GLOBALS
+exit
+
+# 현재 OGGBD Microservices deployment 확인
+docker exec -it demo_oggbd_23ai bash
+/u01/ogg/bin/adminclient -v
+ls -ld /u01/ogg /u02/Deployment
+exit
+
+docker exec -it -u ogg demo_oggbd_23ai adminclient
+connect http://localhost as oggadmin !
+info all
+exit
+
+# Base Linux에서 container port와 공개 범위 확인
+docker port demo_ogg_23ai
+docker port demo_oggbd_23ai

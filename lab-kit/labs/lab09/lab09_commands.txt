@@ -1,0 +1,36 @@
+cd /home/oracle/labs/lab09
+
+# Lakehouse 기본 service 기동과 확인
+cd /home/oracle
+sh startLakehouse.sh
+docker ps --filter name=demo_minio --filter name=demo_iceberg_catalog --filter name=demo_trino --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+# Kafka-Iceberg Writer 설정 확인과 기동
+cd /home/oracle/oracle/script/lakehouse/kafka-iceberg-writer
+cat docker-compose.kafka-iceberg-writer.yml
+cat .env
+docker compose --env-file .env -f docker-compose.kafka-iceberg-writer.yml up -d --build
+docker logs --tail 80 demo_kafka_iceberg_writer
+
+# Trino에서 Iceberg table 확인
+docker exec -it demo_trino trino
+SHOW SCHEMAS FROM iceberg;
+SHOW TABLES FROM iceberg.insurance;
+exit
+
+# Source DB에서 신규 CDC event 생성
+docker exec -it demo_osrc_23ai bash
+sqlplus soe/soe@orclpdb1
+insert into soe.employee values (920,'ICEBERG','iceberg@gmail.com',33,'010-2222-3333','Iceberg Test',sysdate);
+commit;
+exit
+exit
+
+# Writer append 확인
+docker logs --tail 80 demo_kafka_iceberg_writer
+
+# Trino에서 Raw CDC event 조회
+docker exec -it demo_trino trino
+SELECT count(*) AS row_count FROM iceberg.insurance.soe_employee_cdc_raw;
+SELECT op_type,source_table,kafka_key,trail_pos,json_extract_scalar(payload_json,'$.ID') AS id,json_extract_scalar(payload_json,'$.NAME') AS name,json_extract_scalar(payload_json,'$.JOB') AS job,ingestion_time FROM iceberg.insurance.soe_employee_cdc_raw ORDER BY ingestion_time DESC LIMIT 10;
+exit

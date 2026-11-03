@@ -1,0 +1,21 @@
+cd /home/oracle/labs/lab07
+
+# 현재 GoldenGate for Distributed Applications and Analytics 확인
+docker exec -it demo_oggbd_23ai bash
+/u01/ogg/bin/adminclient -v
+ls -ld /u01/ogg /u02/Deployment
+ls -l /u02/Deployment/etc/conf/ogg
+exit
+
+# OGGBD deployment 상태 확인
+docker exec -it -u ogg demo_oggbd_23ai adminclient
+connect http://localhost as oggadmin !
+info all
+exit
+
+# OGG Hub에서 OGGBD로 전달할 obey 파일 확인
+docker exec -it -u ogg demo_ogg_23ai adminclient
+connect http://localhost as oggadmin !
+shell cat /u01/ogg/scripts/obey/add_dpkaf01.oby
+info distpath all
+exit
