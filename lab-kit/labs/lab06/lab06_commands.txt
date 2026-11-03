@@ -5,6 +5,7 @@ sqlplus "soe/soe@orclpdb1" @create_objects_v1_2.sql
 sh gen_0.sh 2
 sh gen_base.sh 100 1
 
+# DDL synchronization policy and verification
 stop d01
 edit params d01
 
@@ -52,6 +53,7 @@ from user_tab_columns
 where table_name = 'DAILY_FUND_PRICE'
 order by column_id;
 
+# Table initial load and D02 change catch-up
 stop d01
 edit params d01
 
