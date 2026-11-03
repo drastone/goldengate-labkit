@@ -41,18 +41,22 @@ alter table soe.daily_fund_price add description varchar2(50);
 
 stats d01
 
-desc soe.daily_fund_price;
+# Target DB terminal: verify the replicated table and column
+docker exec -it demo_otrg_23ai bash
+sqlplus soe/soe@orclpdb1
 col table_name for a30
 col status for a30
 select table_name, status
 from user_tables
 where table_name = 'DAILY_FUND_PRICE';
+col column_name for a20
+col data_type for a20
 select column_name, data_type
 from user_tab_columns
 where table_name = 'DAILY_FUND_PRICE'
 order by column_id;
 
-# Table initial load and D02 change catch-up
+# Admin Client terminal: table initial load and D02 change catch-up
 stop d01
 edit params d01
 
