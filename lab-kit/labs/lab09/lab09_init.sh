@@ -73,12 +73,17 @@ if ! docker exec demo_minio "${MINIO_MC}" alias set lab http://127.0.0.1:9000 \
   exit 1
 fi
 
-if ! docker exec demo_minio "${MINIO_MC}" stat "lab/${MINIO_BUCKET}" >/dev/null 2>&1; then
-  echo "INFO: Create missing MinIO bucket: ${MINIO_BUCKET}"
+if docker exec demo_minio "${MINIO_MC}" stat "lab/${MINIO_BUCKET}" >/dev/null 2>&1; then
+  echo "OK: Required MinIO bucket already exists: ${MINIO_BUCKET}"
+else
+  echo "INFO: Required MinIO bucket was not found: ${MINIO_BUCKET}"
+  echo "==> Create MinIO bucket: ${MINIO_BUCKET}"
   if ! docker exec demo_minio "${MINIO_MC}" mb "lab/${MINIO_BUCKET}" >/dev/null 2>&1; then
     echo "ERROR: MinIO bucket could not be created: ${MINIO_BUCKET}" >&2
+    echo "Check the MinIO log: docker logs --tail 80 demo_minio" >&2
     exit 1
   fi
+  echo "OK: MinIO bucket was created: ${MINIO_BUCKET}"
 fi
 
 if docker exec demo_minio "${MINIO_MC}" stat "lab/${MINIO_BUCKET}" >/dev/null 2>&1; then
@@ -97,8 +102,10 @@ docker ps \
 if docker ps --format '{{.Names}}' | grep -qx 'demo_kafka_iceberg_writer'; then
   echo "WARN: demo_kafka_iceberg_writer is already running."
   echo "WARN: It may consume Kafka records before the writer step."
+  echo "INFO: This initialization script leaves the running writer unchanged."
 else
   echo "OK: demo_kafka_iceberg_writer is not running yet."
+  echo "NEXT: Continue with the Kafka-Iceberg Writer setup in this chapter."
 fi
 
 echo "OK: Chapter 9 Lakehouse initialization completed."
