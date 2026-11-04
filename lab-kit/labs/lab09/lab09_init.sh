@@ -67,9 +67,21 @@ echo "==> Verify Lakehouse service readiness"
 wait_for_url "MinIO" "http://127.0.0.1:38900/minio/health/live"
 wait_for_url "Iceberg REST Catalog" "http://127.0.0.1:38181/v1/config"
 
-if docker exec demo_minio "${MINIO_MC}" alias set lab http://127.0.0.1:9000 \
-  "${MINIO_ROOT_USER}" "${MINIO_ROOT_PASSWORD}" >/dev/null 2>&1 &&
-  docker exec demo_minio "${MINIO_MC}" stat "lab/${MINIO_BUCKET}" >/dev/null 2>&1; then
+if ! docker exec demo_minio "${MINIO_MC}" alias set lab http://127.0.0.1:9000 \
+  "${MINIO_ROOT_USER}" "${MINIO_ROOT_PASSWORD}" >/dev/null 2>&1; then
+  echo "ERROR: MinIO client could not connect to the local server." >&2
+  exit 1
+fi
+
+if ! docker exec demo_minio "${MINIO_MC}" stat "lab/${MINIO_BUCKET}" >/dev/null 2>&1; then
+  echo "INFO: Create missing MinIO bucket: ${MINIO_BUCKET}"
+  if ! docker exec demo_minio "${MINIO_MC}" mb "lab/${MINIO_BUCKET}" >/dev/null 2>&1; then
+    echo "ERROR: MinIO bucket could not be created: ${MINIO_BUCKET}" >&2
+    exit 1
+  fi
+fi
+
+if docker exec demo_minio "${MINIO_MC}" stat "lab/${MINIO_BUCKET}" >/dev/null 2>&1; then
   echo "OK: MinIO bucket is ready: ${MINIO_BUCKET}"
 else
   echo "ERROR: MinIO bucket is not ready: ${MINIO_BUCKET}" >&2
