@@ -8,6 +8,10 @@ LAB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LAB_HOME="${LAB_HOME:-$(cd "${LAB_DIR}/../.." && pwd)}"
 START_LAKEHOUSE="${START_LAKEHOUSE:-${LAB_HOME}/startLakehouse.sh}"
 DOCKER_NETWORK="${DOCKER_NETWORK:-oracle_ogg_network}"
+MINIO_BUCKET="${MINIO_BUCKET:-warehouse}"
+MINIO_MC="/opt/bitnami/minio-client/bin/mc"
+MINIO_ROOT_USER="${MINIO_ROOT_USER:-admin}"
+MINIO_ROOT_PASSWORD="${MINIO_ROOT_PASSWORD:-WElcome1234##}"
 
 require_command() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -53,7 +57,8 @@ if [ ! -x "${START_LAKEHOUSE}" ]; then
 fi
 
 echo "==> Chapter 9 Lakehouse initialization"
-echo "INFO: Start only MinIO, Iceberg REST Catalog, and Trino."
+echo "INFO: Start only MinIO and Iceberg REST Catalog."
+echo "INFO: Trino remains optional to reduce memory usage."
 echo "INFO: Kafka-Iceberg writer remains stopped until the writer step."
 
 LAB_HOME="${LAB_HOME}" "${START_LAKEHOUSE}"
@@ -61,13 +66,20 @@ LAB_HOME="${LAB_HOME}" "${START_LAKEHOUSE}"
 echo "==> Verify Lakehouse service readiness"
 wait_for_url "MinIO" "http://127.0.0.1:38900/minio/health/live"
 wait_for_url "Iceberg REST Catalog" "http://127.0.0.1:38181/v1/config"
-wait_for_url "Trino" "http://127.0.0.1:38080/v1/info"
+
+if docker exec demo_minio "${MINIO_MC}" alias set lab http://127.0.0.1:9000 \
+  "${MINIO_ROOT_USER}" "${MINIO_ROOT_PASSWORD}" >/dev/null 2>&1 &&
+  docker exec demo_minio "${MINIO_MC}" stat "lab/${MINIO_BUCKET}" >/dev/null 2>&1; then
+  echo "OK: MinIO bucket is ready: ${MINIO_BUCKET}"
+else
+  echo "ERROR: MinIO bucket is not ready: ${MINIO_BUCKET}" >&2
+  exit 1
+fi
 
 echo "==> Lakehouse containers"
 docker ps \
   --filter name=demo_minio \
   --filter name=demo_iceberg_catalog \
-  --filter name=demo_trino \
   --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
 
 if docker ps --format '{{.Names}}' | grep -qx 'demo_kafka_iceberg_writer'; then

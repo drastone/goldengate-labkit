@@ -3,19 +3,17 @@ alter replicat kaf01, extseqno 4, extrba 3865
 cd /home/oracle/labs/lab09
 sh lab09_init.sh
 
-docker ps --filter name=demo_minio --filter name=demo_iceberg_catalog --filter name=demo_trino --format "table {{.Names}} | {{.Status}} | {{.Ports}}"
+docker ps --filter name=demo_minio --filter name=demo_iceberg_catalog --format "table {{.Names}} | {{.Status}} | {{.Ports}}"
 
 cd /home/oracle/oracle/script/lakehouse/kafka-iceberg-writer
 pwd
 ls -ltr
 cat docker-compose.kafka-iceberg-writer.yml
+\cp -f .env.example .env
+chmod 600 .env
 cat .env
 docker compose --env-file .env -f docker-compose.kafka-iceberg-writer.yml up -d --build
 docker logs --tail 80 demo_kafka_iceberg_writer
-
-docker exec -it demo_trino trino
-SHOW SCHEMAS FROM iceberg;
-SHOW TABLES FROM iceberg.insurance;
 
 docker exec -it demo_osrc_23ai bash
 sqlplus soe/soe@orclpdb1
@@ -33,20 +31,7 @@ commit;
 
 docker logs --tail 80 demo_kafka_iceberg_writer
 
-SELECT count(*) AS row_count
-FROM iceberg.insurance.soe_employee_cdc_raw;
-
-SELECT op_type,
-       source_table,
-       kafka_key,
-       trail_pos,
-       json_extract_scalar(payload_json, '$.ID') AS id,
-       json_extract_scalar(payload_json, '$.NAME') AS name,
-       json_extract_scalar(payload_json, '$.DESIGNATION') AS designation,
-       ingestion_time
-FROM iceberg.insurance.soe_employee_cdc_raw
-ORDER BY ingestion_time DESC
-LIMIT 10;
+docker exec demo_kafka_iceberg_writer python /app/query_iceberg.py
 
 cd /home/oracle
 sh stopLakehouse.sh
