@@ -1,5 +1,8 @@
 alter replicat kaf01, extseqno 4, extrba 3865
 
+cd /home/oracle/labs/lab09
+sh lab09_init.sh
+
 docker ps --filter name=demo_minio --filter name=demo_iceberg_catalog --filter name=demo_trino --format "table {{.Names}} | {{.Status}} | {{.Ports}}"
 
 cd /home/oracle/oracle/script/lakehouse/kafka-iceberg-writer
@@ -44,3 +47,7 @@ SELECT op_type,
 FROM iceberg.insurance.soe_employee_cdc_raw
 ORDER BY ingestion_time DESC
 LIMIT 10;
+
+cd /home/oracle
+sh stopLakehouse.sh
+docker ps --filter name=demo_minio --filter name=demo_iceberg_catalog --filter name=demo_trino --filter name=demo_kafka_iceberg_writer --format "table {{.Names}} | {{.Status}}"
