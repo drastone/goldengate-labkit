@@ -1,3 +1,29 @@
+docker exec -it -u ogg demo_ogg_23ai adminclient
+connect http://localhost as oggadmin !
+stop d01
+edit params d01
+
+MAPEXCLUDE SOE.WEBUI_SYNC_TEST;
+MAP SOE.*, TARGET SOE.*;
+
+view params d01
+start d01
+
+docker exec -it demo_osrc_23ai bash
+sqlplus soe/soe@orclpdb1
+create table soe.webui_sync_test (
+  id number primary key,
+  memo varchar2(100),
+  created_at date
+);
+insert into soe.webui_sync_test
+values (1, 'created by web ui flow', sysdate);
+commit;
+update soe.webui_sync_test
+set memo = 'updated by web ui flow'
+where id = 1;
+commit;
+
 docker exec -it demo_otrg_23ai bash
 sqlplus soe/soe@orclpdb1
 select id, memo, to_char(created_at, 'yyyy-mm-dd hh24:mi:ss') as created_at
@@ -9,6 +35,18 @@ cat 00_curl_extracts_basic.sh
 sh 00_curl_extracts_basic.sh
 cat 00_set_env.sh
 source 00_set_env.sh
+
+# 긴 REST API 명령은 먼저 직접 입력해 보고, 오타가 나거나 반복할 때 이 파일에서 복사한다.
+# REST API 기본 조회: Extract 목록
+curl -k -sS -u "${OGG_USER}:${OGG_PASS}" \
+  "https://localhost:8443/services/OGGHUB/adminsrvr/v2/extracts" \
+| python3 -m json.tool
+
+# REST API 기본 조회: Replicat 목록
+curl -k -sS -u "${OGG_USER}:${OGG_PASS}" \
+  "${OGG_BASE_URL}/replicats" \
+| python3 -m json.tool
+
 sh 01_check_extracts.sh
 sh 02_check_replicats.sh
 
@@ -19,20 +57,65 @@ sh lab11_init.sh
 
 cat 03_create_cr01_extract.json
 cat 04_create_cr01_extract.sh
+
+# CR01 생성: 아래 curl과 sh 04_create_cr01_extract.sh 중 하나만 실행한다.
+curl -k -sS -u "${OGG_USER}:${OGG_PASS}" \
+  -H "Content-Type: application/json" \
+  -X POST \
+  -d @03_create_cr01_extract.json \
+  "${OGG_BASE_URL}/extracts/CR01" \
+| python3 -m json.tool
+
 sh 04_create_cr01_extract.sh
 sh 01_check_extracts.sh
 
 cat 05_register_cr01_extract.sh
+
+# CR01 database registration: 아래 curl과 sh 05_register_cr01_extract.sh 중 하나만 실행한다.
+curl -k -sS -u "${OGG_USER}:${OGG_PASS}" \
+  -H "Content-Type: application/json" \
+  -X PATCH \
+  -d '{"registration":{"share":true}}' \
+  "${OGG_BASE_URL}/extracts/CR01" \
+| python3 -m json.tool
+
 sh 05_register_cr01_extract.sh
 
 cat 06_create_dr01_replicat.json
 cat 07_create_dr01_replicat.sh
+
+# DR01 생성: 아래 curl과 sh 07_create_dr01_replicat.sh 중 하나만 실행한다.
+curl -k -sS -u "${OGG_USER}:${OGG_PASS}" \
+  -H "Content-Type: application/json" \
+  -X POST \
+  -d @06_create_dr01_replicat.json \
+  "${OGG_BASE_URL}/replicats/DR01" \
+| python3 -m json.tool
+
 sh 07_create_dr01_replicat.sh
 sh 02_check_replicats.sh
 
 cat 08_start_cr01.sh
+
+# CR01 기동: 아래 curl과 sh 08_start_cr01.sh 중 하나만 실행한다.
+curl -k -sS -u "${OGG_USER}:${OGG_PASS}" \
+  -H "Content-Type: application/json" \
+  -X PATCH \
+  -d '{"status":"running"}' \
+  "${OGG_BASE_URL}/extracts/CR01" \
+| python3 -m json.tool
+
 sh 08_start_cr01.sh
 cat 09_start_dr01.sh
+
+# DR01 기동: 아래 curl과 sh 09_start_dr01.sh 중 하나만 실행한다.
+curl -k -sS -u "${OGG_USER}:${OGG_PASS}" \
+  -H "Content-Type: application/json" \
+  -X PATCH \
+  -d '{"status":"running"}' \
+  "${OGG_BASE_URL}/replicats/DR01" \
+| python3 -m json.tool
+
 sh 09_start_dr01.sh
 
 cat 00_info_all.sh
