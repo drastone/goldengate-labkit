@@ -1,0 +1,356 @@
+# Reader WSL profile: published ports bind to all host interfaces for easy access.
+# Use a separate secured override when deploying this Lab Kit on a server.
+networks:
+  ogg_network:
+    ipam:
+      driver: default
+      config:
+#        - subnet: 172.28.1.0/16
+        - subnet: 172.28.0.0/16
+
+volumes:
+  demo_mysql_data:
+  demo_myheat_data:
+
+services:
+  oracle_src_23ai:
+    container_name: demo_osrc_23ai
+    build:
+      context: ./oracle/
+      dockerfile: Dockerfile23ai
+    ulimits:
+      nofile:
+        soft: 1024
+        hard: 65536
+    privileged: true
+    # --- 리소스 제한 추가 ---
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'         # 최대 CPU 2코어 사용
+          memory: 4G          # 최대 메모리 4GB (ORDS 설치 안정권)
+        reservations:
+          memory: 2G          # 최소 보장 메모리 2GB
+    environment:
+      - ORACLE_ALLOW_REMOTE=true
+      - ORACLE_PASSWORD=WElcome1234##
+      #- ORACLE_SID=EAST
+      #- ORACLE_CHARACTERSET: AL32UTF8
+      #- ENABLE_ARCHIVELOG: true
+      #- ENABLE_FORCE_LOGGING: true
+    #restart: unless-stopped
+    ports:
+      - "8521:1521"
+      - "5500:5500"
+      - "2484:2484"
+      - "35081:9080"
+      - "35080:8080"
+      - "35155:5555"
+      - "5760:5560"
+      - "5765:5565"
+      - "5766:5566"
+      - "5768:5568"
+      - "5767:5567"
+      - "5761:5561" # reserve port
+      - "5762:5562" # reserve port
+      - "5763:5563" # reserve port
+      - "5764:5564" # reserve port
+    networks:
+         ogg_network:
+            ipv4_address: 172.28.0.3
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+  oracle_trg_23ai:
+    container_name: demo_otrg_23ai
+    build:
+      context: ./oracle/
+      dockerfile: Dockerfile23ai
+    ulimits:
+      nofile:
+        soft: 1024
+        hard: 65536
+    privileged: true
+    # --- 리소스 제한 추가 ---
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'         # 최대 CPU 2코어 사용
+          memory: 4G          # 최대 메모리 4GB (ORDS 설치 안정권)
+        reservations:
+          memory: 2G          # 최소 보장 메모리 2GB
+    environment:
+      - ORACLE_ALLOW_REMOTE=true
+      - ORACLE_PASSWORD=WElcome1234##
+      #- ORACLE_SID=EAST
+      #- ORACLE_CHARACTERSET: AL32UTF8
+      #- ENABLE_ARCHIVELOG: true
+      #- ENABLE_FORCE_LOGGING: true
+    #restart: unless-stopped
+    ports:
+      - "8522:1521"
+      - "6500:5500"
+      - "3484:2484"
+      - "36022:22"
+      - "36070:50070"
+      - "36088:8088"
+      - "36988:19888"
+      - "36050:5050"
+      - "36060:6066"
+      - "36077:7077"
+      - "36080:8080"
+      - "36180:18080"
+      - "36081:9080"
+      - "36155:5555"
+      - "5860:5560"
+      - "5865:5565"
+      - "5866:5566"
+      - "5868:5568"
+      - "5867:5567"
+      - "5861:5561" # reserve port
+      - "5862:5562" # reserve port
+      - "5863:5563" # reserve port
+      - "5864:5564" # reserve port
+    networks:
+         ogg_network:
+            ipv4_address: 172.28.0.4
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+  oracle_ogg_23ai:
+    container_name: demo_ogg_23ai
+    build:
+      context: ./oracle/
+      dockerfile: DockerfileOGG23ai
+    environment:
+      - OGG_ADMIN=oggadmin
+      - OGG_ADMIN_PWD=WElcome1234##
+      - OGG_DEPLOYMENT=OGGHUB
+    ports:
+      - "6780:80"
+      - "8443:443"
+      - "9111:9011"
+      - "9112:9012"
+      - "9113:9013"
+      - "9114:9014"
+      - "9115:9015"
+      - "9116:9016" # reserve port
+      - "9117:9017" # reserve port
+      - "9118:9018" # reserve port
+      - "9119:9019" # reserve port
+    volumes:
+      - ./oracle/ogg_api_server.py:/u01/ogg_api_server.py:ro
+      - ./oracle/fabric_apply_service.py:/u01/fabric_apply_service.py:ro
+      - ./oracle/98_start_fabric_apply_service.sh:/u01/ogg/scripts/startup/98_start_fabric_apply_service.sh:ro
+      - ./oracle/99_start_ogg_api_ogghub.sh:/u01/ogg/scripts/startup/99_start_ogg_api.sh:ro
+    networks:
+         ogg_network:
+            ipv4_address: 172.28.0.5
+  oracle_oggbd_23ai:
+    container_name: demo_oggbd_23ai
+    build:
+      context: ./oracle/
+      dockerfile: DockerfileOGGBD23ai
+    environment:
+      - OGG_ADMIN=oggadmin
+      - OGG_ADMIN_PWD=WElcome1234##
+      - OGG_DEPLOYMENT=OGGBD
+    ports:
+      - "6790:80"
+      - "8453:443"
+      - "9211:9011"
+      - "9212:9012"
+      - "9213:9013"
+      - "9214:9014"
+      - "9215:9015"
+      - "9216:9016" # reserve port
+      - "9217:9017" # reserve port
+      - "9218:9018" # reserve port
+      - "9219:9019" # reserve port
+    volumes:
+      - ./oracle/ogg_api_server.py:/u01/ogg_api_server.py:ro
+      - ./oracle/99_start_ogg_api_oggbd.sh:/u01/ogg/scripts/startup/99_start_ogg_api.sh:ro
+    networks:
+         ogg_network:
+            ipv4_address: 172.28.0.6
+  oracle_centos:
+    container_name: demo_centos
+    build:
+      context: ./centos/
+      dockerfile: Dockerfile
+    privileged: true
+    # --- 리소스 성능 강화 ---
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'         # Oracle Stream Analytics는 연산량이 많으므로 4코어 할당
+          memory: 8G          # JVM 기반 분석 엔진을 위해 8GB 권장
+        reservations:
+          memory: 4G
+    #command: sh -c "rm -rf /run/nologin"
+    #environment:
+      #- ORACLE_ALLOW_REMOTE=true
+      #- ORACLE_SID=EAST
+    ports:
+      - "0.0.0.0:32092:9092"
+      - "0.0.0.0:39443:9443"
+      - "0.0.0.0:9522:1521"
+      - "0.0.0.0:32022:22"
+      - "0.0.0.0:6890:80"
+      - "0.0.0.0:32070:50070"
+      - "0.0.0.0:32088:8088"
+      - "0.0.0.0:32988:19888"
+      - "0.0.0.0:32050:5050"
+      - "0.0.0.0:32060:6066"
+      - "0.0.0.0:32077:7077"
+      - "0.0.0.0:32080:8080"
+      - "0.0.0.0:32180:18080"
+      - "0.0.0.0:32081:9080"
+      - "0.0.0.0:32300:3000"
+      - "0.0.0.0:32090:9090"
+      - "0.0.0.0:32000:9000"
+      - "0.0.0.0:5960:5560"
+      - "0.0.0.0:5965:5565"
+      - "0.0.0.0:5966:5566"
+      - "0.0.0.0:5968:5568"
+      - "0.0.0.0:5967:5567"
+      - "0.0.0.0:6860:5660"
+      - "0.0.0.0:6865:5665"
+      - "0.0.0.0:6866:5666"
+      - "0.0.0.0:6868:5668"
+      - "0.0.0.0:6867:5667"
+      - "0.0.0.0:6861:5661" # reserve port
+      - "0.0.0.0:6862:5662" # reserve port
+      - "0.0.0.0:6863:5663" # reserve port
+      - "0.0.0.0:6864:5664" # reserve port
+    networks:
+         ogg_network:
+            ipv4_address: 172.28.0.11
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - ./centos/pkg:/home/oracle/pkg:ro
+
+  # ============================================================
+  # MySQL -> HeatWave migration sandbox
+  #
+  # HeatWave itself is a managed service, not a local Docker image.
+  # demo_myheat is a HeatWave-compatible MySQL target profile used
+  # for App 101 migration wizard development and offline lab demos.
+  # No MySQL port is published to the host by default.
+  # ============================================================
+  mysql:
+    profiles:
+      - mysql
+    image: mysql:8.4
+    container_name: demo_mysql
+    command:
+      - --server-id=101
+      - --log-bin=mysql-bin
+      - --binlog-format=ROW
+      - --binlog-row-image=FULL
+      - --gtid-mode=ON
+      - --enforce-gtid-consistency=ON
+      - --binlog-expire-logs-seconds=604800
+      - --local-infile=ON
+    environment:
+      MYSQL_ROOT_PASSWORD: "WElcome1234##"
+      MYSQL_DATABASE: "game"
+      MYSQL_USER: "game"
+      MYSQL_PASSWORD: "game"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    volumes:
+      - demo_mysql_data:/var/lib/mysql
+      - ./mysql/source/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      ogg_network:
+        ipv4_address: 172.28.0.31
+
+  myheat:
+    profiles:
+      - mysql
+    image: mysql:8.4
+    container_name: demo_myheat
+    command:
+      - --server-id=201
+      - --local-infile=ON
+      - --sql-mode=STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION
+    environment:
+      MYSQL_ROOT_PASSWORD: "WElcome1234##"
+      MYSQL_DATABASE: "game_hw"
+      MYSQL_USER: "heatwave"
+      MYSQL_PASSWORD: "heatwave"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    volumes:
+      - demo_myheat_data:/var/lib/mysql
+      - ./mysql/heatwave/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      ogg_network:
+        ipv4_address: 172.28.0.32
+
+  # ============================================================
+  # Optional Lakehouse: Apache Iceberg + MinIO + Trino
+  # ============================================================
+  demo_minio:
+    profiles:
+      - lakehouse
+    # MinIO Community images are no longer anonymously pullable from Quay.
+    # Pin the archived Bitnami image by digest for this localhost-only lab.
+    image: bitnamilegacy/minio:2025.7.23-debian-12-r5@sha256:6dabb4a2088c9a79908de3bc05f4586c23ad2182c8908e7e3acbf61c1467fb20
+    container_name: demo_minio
+    user: "0"
+    ports:
+      - "127.0.0.1:38900:9000"
+      - "127.0.0.1:38901:9001"
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=WElcome1234##
+      - MINIO_DEFAULT_BUCKETS=warehouse
+    volumes:
+      - ./iceberg/minio:/bitnami/minio/data
+    networks:
+      ogg_network:
+        ipv4_address: 172.28.0.38
+
+  demo_iceberg_catalog:
+    profiles:
+      - lakehouse
+    image: tabulario/iceberg-rest:0.6.0
+    container_name: demo_iceberg_catalog
+    ports:
+      - "127.0.0.1:38181:8181"
+    environment:
+      - CATALOG_WAREHOUSE=s3://warehouse/
+      - CATALOG_IO__IMPL=org.apache.iceberg.aws.s3.S3FileIO
+      - CATALOG_S3_ENDPOINT=http://172.28.0.38:9000
+      - CATALOG_S3_ACCESS__KEY__ID=admin
+      - CATALOG_S3_SECRET__ACCESS__KEY=WElcome1234##
+      - CATALOG_S3_PATH__STYLE__ACCESS=true
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=WElcome1234##
+      - AWS_REGION=us-east-1
+    depends_on:
+      - demo_minio
+    networks:
+      ogg_network:
+        ipv4_address: 172.28.0.36
+
+  demo_trino:
+    profiles:
+      - lakehouse
+    image: trinodb/trino:435
+    container_name: demo_trino
+    ports:
+      - "127.0.0.1:38080:8080"
+    volumes:
+      - ./iceberg/trino/catalog:/etc/trino/catalog
+    networks:
+      ogg_network:
+        ipv4_address: 172.28.0.37
