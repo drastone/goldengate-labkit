@@ -31,17 +31,19 @@ from soe.webui_sync_test
 order by id;
 
 cd /home/oracle/oracle/script/restapi-lab
+
+# 가장 기본적인 REST API 호출: curl이 oggadmin 비밀번호를 직접 입력받는다.
+curl -k -sS -u oggadmin \
+  "https://localhost:8443/services/OGGHUB/adminsrvr/v2/extracts" \
+| python3 -m json.tool
+
+# 같은 호출을 반복 실행할 수 있도록 shell script로 감싼 예제다.
 cat 00_curl_extracts_basic.sh
 sh 00_curl_extracts_basic.sh
 cat 00_set_env.sh
 source 00_set_env.sh
 
 # 긴 REST API 명령은 먼저 직접 입력해 보고, 오타가 나거나 반복할 때 이 파일에서 복사한다.
-# REST API 기본 조회: Extract 목록
-curl -k -sS -u "${OGG_USER}:${OGG_PASS}" \
-  "https://localhost:8443/services/OGGHUB/adminsrvr/v2/extracts" \
-| python3 -m json.tool
-
 # REST API 기본 조회: Replicat 목록
 curl -k -sS -u "${OGG_USER}:${OGG_PASS}" \
   "${OGG_BASE_URL}/replicats" \
