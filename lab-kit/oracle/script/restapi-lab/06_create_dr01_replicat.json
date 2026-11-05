@@ -1,0 +1,26 @@
+{
+  "$schema": "ogg:replicat",
+  "description": "delivery using rest api",
+  "credentials": {
+    "alias": "trg_ogg",
+    "domain": "OracleGoldenGate"
+  },
+  "begin": "now",
+  "source": {
+    "name": "cr"
+  },
+  "checkpoint": {
+    "table": "OGG.GGSCKPT"
+  },
+  "mode": {
+    "type": "nonintegrated",
+    "parallel": false
+  },
+  "managedProcessSettings": "ogg:managedProcessSettings:Default",
+  "config": [
+    "REPLICAT dr01",
+    "USERIDALIAS trg_ogg DOMAIN OracleGoldenGate",
+    "DDL INCLUDE MAPPED",
+    "MAP SOE.*, TARGET SOE.*;"
+  ]
+}

@@ -52,10 +52,9 @@ cat 02_check_replicats.sh
 sh 01_check_extracts.sh
 sh 02_check_replicats.sh
 
-cd /home/oracle/labs/lab11
 cat purge-ogghub-trails.json
-cat lab11_init.sh
-sh lab11_init.sh
+cat configure_trail_purge.sh
+sh configure_trail_purge.sh
 
 cat 03_create_cr01_extract.json
 cat 04_create_cr01_extract.sh

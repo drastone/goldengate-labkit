@@ -1,0 +1,25 @@
+{
+  "$schema": "ogg:extract",
+  "description": "capture using rest api",
+  "credentials": {
+    "alias": "src_ogg",
+    "domain": "OracleGoldenGate"
+  },
+  "begin": "now",
+  "source": "tranlogs",
+  "targets": [
+    {
+      "name": "cr",
+      "sizeMB": 50
+    }
+  ],
+  "managedProcessSettings": "ogg:managedProcessSettings:Default",
+  "config": [
+    "EXTRACT cr01",
+    "USERIDALIAS src_ogg DOMAIN OracleGoldenGate",
+    "TRANLOGOPTIONS INTEGRATEDPARAMS (MAX_SGA_SIZE 100)",
+    "DDL INCLUDE ALL",
+    "EXTTRAIL cr",
+    "TABLE SOE.*;"
+  ]
+}
