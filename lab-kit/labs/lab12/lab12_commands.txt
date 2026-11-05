@@ -24,3 +24,5 @@ cat remove_apex.sh
 cat lab12_reset.sh
 
 ls -lh /home/oracle/oracle/pkg/f101_ogg_console.sql
+cat copy_app101_to_windows.sh
+bash copy_app101_to_windows.sh
