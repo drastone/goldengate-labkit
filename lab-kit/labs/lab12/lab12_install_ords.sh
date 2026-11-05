@@ -124,7 +124,7 @@ lab12_log "==> Wait for ORDS endpoint"
 ready=0
 for ((waited = 0; waited < ORDS_READY_TIMEOUT_SECONDS; waited += 5)); do
   if docker exec "${TARGET_DB_CONTAINER}" bash -lc \
-    "if command -v curl >/dev/null 2>&1; then curl -fsS --max-time 5 http://127.0.0.1:8080/ords/ >/dev/null; else timeout 5 bash -lc '</dev/tcp/127.0.0.1/8080'; fi"; then
+    "if command -v curl >/dev/null 2>&1; then curl -fsS --max-time 5 http://127.0.0.1:8080/ords/ >/dev/null 2>&1; else timeout 5 bash -lc '</dev/tcp/127.0.0.1/8080' >/dev/null 2>&1; fi"; then
     ready=1
     break
   fi
