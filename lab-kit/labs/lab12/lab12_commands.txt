@@ -1,26 +1,26 @@
+cd /home/oracle/labs/lab12
+cat lab12_init.sh
+bash lab12_init.sh
+
+cat lab12_prepare_media.sh
+cat lab12_install_apex.sh
+cat lab12_install_ords.sh
+cat check_lab12.sh
+
+bash check_lab12.sh
+
+ls -ltr /home/oracle/logs/lab12
+
 ls -lh /home/oracle/oracle/pkg/apex_26.1.zip
 ls -lh /home/oracle/oracle/pkg/ords-26.2.3.237.1104.zip
-
-docker exec -it demo_otrg_23ai bash
-cd /home/oracle/pkg
-cd /home/oracle/apex
-sqlplus / as sysdba
-
-cd /home/oracle/pkg
-mkdir -p /home/oracle/ords
-mkdir -p /home/oracle/ords_config
-mkdir -p /home/oracle/ords_logs
-
-docker cp /home/oracle/oracle/pkg/start_ords.sh demo_otrg_23ai:/home/oracle/pkg/start_ords.sh
-docker exec -u root demo_otrg_23ai bash -lc "
-  mkdir -p /home/oracle/apex
-  cp -p /home/oracle/pkg/start_ords.sh /home/oracle/apex/start_ords.sh
-  chown oracle:oinstall /home/oracle/apex/start_ords.sh
-  chmod 755 /home/oracle/apex/start_ords.sh
-"
 
 curl -I http://localhost:8080/ords/
 curl -I http://localhost:36080/ords/
 ssh -i ./.ssh/id_ed25519 -p 7822 -L 36080:127.0.0.1:36080 root@219.240.178.144
 
-curl -fL -o f101_ogg_console.sql https://raw.githubusercontent.com/drastone/goldengate-worklog/main/docs/online-appendix/lab-kit/apex/f101_ogg_console.sql
+# Destructive recovery commands. Read the warnings before use.
+cat remove_ords.sh
+cat remove_apex.sh
+cat lab12_reset.sh
+
+ls -lh /home/oracle/oracle/pkg/f101_ogg_console.sql

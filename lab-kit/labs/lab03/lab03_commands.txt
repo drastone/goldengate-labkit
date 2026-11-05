@@ -89,7 +89,7 @@ sh wget_oracle_db_26ai.sh
 ls -lh V1054592-01.zip
 sha256sum V1054592-01.zip
 
-cd /mnt/c/Users/yongsch/Downloads/
+cd /mnt/c/Users/<WindowsUser>/Downloads/
 ls -ltr wget.sh
 mv wget.sh /home/oracle/oracle/pkg/wget_oracle_goldengate_26ai.sh
 cd /home/oracle/oracle/pkg
@@ -99,7 +99,7 @@ sh wget_oracle_goldengate_26ai.sh
 ls -lh V1054774-01.zip
 sha256sum V1054774-01.zip
 
-cd /mnt/c/Users/yongsch/Downloads/
+cd /mnt/c/Users/<WindowsUser>/Downloads/
 ls -ltr wget.sh
 mv wget.sh /home/oracle/oracle/pkg/wget_oracle_goldengate_for_DAA_26ai.sh
 cd /home/oracle/oracle/pkg/
@@ -128,16 +128,27 @@ pwd
 ls -lh jdk-21_linux-x64_bin.rpm
 sha256sum jdk-21_linux-x64_bin.rpm
 
+cd /mnt/c/Users/<WindowsUser>/Downloads
+ls -lh apex_26.1.zip ords-26.2.3.237.1104.zip
+mv apex_26.1.zip ords-26.2.3.237.1104.zip /home/oracle/oracle/pkg/
+cd /home/oracle/oracle/pkg
+chmod 644 apex_26.1.zip ords-26.2.3.237.1104.zip
+sha256sum apex_26.1.zip
+sha1sum ords-26.2.3.237.1104.zip
+
 cd /home/oracle
 pwd
 ls -lh oracle/pkg/V105*.zip
 ls -lh centos/pkg/V1054826-01.zip
 ls -lh centos/pkg/jdk-21_linux-x64_bin.rpm
+ls -lh oracle/pkg/apex_26.1.zip oracle/pkg/ords-26.2.3.237.1104.zip
 sha256sum oracle/pkg/V1054592-01.zip
 sha256sum oracle/pkg/V1054774-01.zip
 sha256sum oracle/pkg/V1054834-01.zip
 sha256sum centos/pkg/V1054826-01.zip
 sha256sum centos/pkg/jdk-21_linux-x64_bin.rpm
+sha256sum oracle/pkg/apex_26.1.zip
+sha1sum oracle/pkg/ords-26.2.3.237.1104.zip
 
 cat /home/oracle/build_base_images.sh
 sh /home/oracle/build_base_images.sh --check-only

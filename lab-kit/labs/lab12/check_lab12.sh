@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+LAB12_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${LAB12_DIR}/lab12_common.sh"
+
+lab12_begin_stage "check-lab12"
+
+APEX_EXPECTED_VERSION="${APEX_EXPECTED_VERSION:-26.1.0}"
+ORDS_EXPECTED_VERSION_PATTERN="${ORDS_EXPECTED_VERSION_PATTERN:-26.2.3}"
+ORDS_HOME="/home/oracle/ords"
+ORDS_CONFIG="/home/oracle/ords_config"
+
+lab12_require_command docker
+lab12_require_command curl
+lab12_require_running_container
+lab12_require_ords_java
+
+apex_state="$(lab12_apex_registry_state)"
+if [ "${apex_state}" != "${APEX_EXPECTED_VERSION}|VALID" ]; then
+  lab12_log "ERROR: expected APEX ${APEX_EXPECTED_VERSION}|VALID, found: ${apex_state:-not installed}"
+  exit 1
+fi
+lab12_log "OK: APEX ${apex_state} in ${TARGET_PDB}."
+
+invalid_apex_objects="$(docker exec -u oracle "${TARGET_DB_CONTAINER}" bash -lc "sqlplus -s / as sysdba <<'SQL'
+set pages 0 feedback off heading off verify off echo off trimspool on
+whenever sqlerror exit failure
+alter session set container=${TARGET_PDB};
+select 'INVALID_APEX_OBJECTS=' || count(*)
+from dba_objects
+where owner = 'APEX_260100'
+  and status = 'INVALID';
+exit
+SQL" | sed -n 's/^[[:space:]]*INVALID_APEX_OBJECTS=//p' | tail -1)"
+
+if [ "${invalid_apex_objects:-0}" -ne 0 ]; then
+  lab12_log "ERROR: invalid APEX_260100 objects: ${invalid_apex_objects}"
+  exit 1
+fi
+lab12_log "OK: invalid APEX_260100 objects: 0"
+
+ords_user_count="$(lab12_ords_user_count)"
+if [ "${ords_user_count:-0}" -ne 2 ]; then
+  lab12_log "ERROR: expected ORDS_METADATA and ORDS_PUBLIC_USER, found ${ords_user_count:-0} ORDS users."
+  exit 1
+fi
+lab12_log "OK: ORDS database users are present in ${TARGET_PDB}."
+
+ords_version="$(docker exec -u oracle "${TARGET_DB_CONTAINER}" bash -lc \
+  "export JAVA_HOME='${ORDS_JAVA_HOME}'; export PATH=\"\${JAVA_HOME}/bin:\${PATH}\"; '${ORDS_HOME}/bin/ords' --config '${ORDS_CONFIG}' --version 2>&1" \
+  | sed -n '/Oracle REST Data Services [0-9]/p' | tail -1)"
+case "${ords_version}" in
+  *"${ORDS_EXPECTED_VERSION_PATTERN}"*)
+    lab12_log "OK: ${ords_version}"
+    ;;
+  *)
+    lab12_log "ERROR: unexpected ORDS version: ${ords_version:-not found}"
+    exit 1
+    ;;
+esac
+
+if ! docker exec "${TARGET_DB_CONTAINER}" test -d "${ORDS_CONFIG}"; then
+  lab12_log "ERROR: ORDS config directory not found: ${ORDS_CONFIG}"
+  exit 1
+fi
+lab12_log "OK: ORDS config directory: ${ORDS_CONFIG}"
+
+gateway_mode="$(docker exec -u oracle "${TARGET_DB_CONTAINER}" bash -lc \
+  "export JAVA_HOME='${ORDS_JAVA_HOME}'; export PATH=\"\${JAVA_HOME}/bin:\${PATH}\"; '${ORDS_HOME}/bin/ords' --config '${ORDS_CONFIG}' config get plsql.gateway.mode 2>&1" | awk 'NF { last=$0 } END { print last }')"
+if [ "${gateway_mode}" != "proxied" ]; then
+  lab12_log "ERROR: expected plsql.gateway.mode=proxied, found: ${gateway_mode:-unset}"
+  exit 1
+fi
+lab12_log "OK: plsql.gateway.mode=proxied"
+
+if ! docker exec "${TARGET_DB_CONTAINER}" curl -fsS --max-time 10 http://127.0.0.1:8080/ords/ >/dev/null; then
+  lab12_log "ERROR: ORDS endpoint is not ready inside ${TARGET_DB_CONTAINER}:8080"
+  exit 1
+fi
+lab12_log "OK: ORDS endpoint inside container: http://127.0.0.1:8080/ords/"
+
+if ! curl -fsS --max-time 10 http://127.0.0.1:36080/ords/ >/dev/null; then
+  lab12_log "ERROR: host-published ORDS endpoint is not ready: http://127.0.0.1:36080/ords/"
+  exit 1
+fi
+lab12_log "OK: host-published ORDS endpoint: http://127.0.0.1:36080/ords/"
+
+lab12_finish_stage
