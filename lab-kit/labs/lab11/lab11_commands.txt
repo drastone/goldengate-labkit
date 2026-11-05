@@ -37,11 +37,13 @@ curl -k -sS -u oggadmin \
   "https://localhost:8443/services/OGGHUB/adminsrvr/v2/extracts" \
 | python3 -m json.tool
 
+# 이후 REST API script에서 재사용할 접속 환경을 현재 terminal에 설정한다.
+cat 00_set_env.sh
+source 00_set_env.sh
+
 # 같은 호출을 반복 실행할 수 있도록 shell script로 감싼 예제다.
 cat 00_curl_extracts_basic.sh
 sh 00_curl_extracts_basic.sh
-cat 00_set_env.sh
-source 00_set_env.sh
 
 # 긴 REST API 명령은 먼저 직접 입력해 보고, 오타가 나거나 반복할 때 이 파일에서 복사한다.
 # REST API 기본 조회: Replicat 목록
