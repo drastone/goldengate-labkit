@@ -4,6 +4,7 @@ stop d01
 edit params d01
 
 MAPEXCLUDE SOE.WEBUI_SYNC_TEST;
+MAPEXCLUDE SOE.RESTAPI_SYNC_TEST;
 MAP SOE.*, TARGET SOE.*;
 
 view params d01
@@ -68,7 +69,7 @@ curl -k -sS -u "${OGG_USER}:${OGG_PASS}" \
 cat 03_create_cr01_extract.json
 cat 04_create_cr01_extract.sh
 
-# CR01 생성: 아래 curl과 sh 04_create_cr01_extract.sh 중 하나만 실행한다.
+# CR01 생성과 database registration: 아래 curl과 sh 04_create_cr01_extract.sh 중 하나만 실행한다.
 curl -k -sS -u "${OGG_USER}:${OGG_PASS}" \
   -H "Content-Type: application/json" \
   -X POST \
@@ -78,21 +79,9 @@ curl -k -sS -u "${OGG_USER}:${OGG_PASS}" \
 
 sh 04_create_cr01_extract.sh
 
-# 다음 결과에 "EXTRACT CR01 stopped"가 있어야 등록 단계로 진행한다.
-# CR01이 없으면 04_create_cr01_extract.sh의 응답을 먼저 확인한다.
+# 다음 결과에 "EXTRACT CR01 stopped"가 있어야 DR01 생성 단계로 진행한다.
+# CR01이 없으면 생성과 registration 응답을 먼저 확인한다.
 sh 01_check_extracts.sh
-
-cat 05_register_cr01_extract.sh
-
-# CR01 database registration: 아래 curl과 sh 05_register_cr01_extract.sh 중 하나만 실행한다.
-curl -k -sS -u "${OGG_USER}:${OGG_PASS}" \
-  -H "Content-Type: application/json" \
-  -X PATCH \
-  -d '{"registration":{"share":true}}' \
-  "${OGG_BASE_URL}/extracts/CR01" \
-| python3 -m json.tool
-
-sh 05_register_cr01_extract.sh
 
 cat 06_create_dr01_replicat.json
 cat 07_create_dr01_replicat.sh
@@ -133,3 +122,30 @@ sh 09_start_dr01.sh
 
 cat 00_info_all.sh
 sh 00_info_all.sh
+
+# Source DB 전용 terminal에서 REST API 경로의 DDL/DML을 발생시킨다.
+docker exec -it demo_osrc_23ai bash
+sqlplus soe/soe@orclpdb1
+create table soe.restapi_sync_test (
+  id number primary key,
+  memo varchar2(100),
+  created_at date
+);
+insert into soe.restapi_sync_test
+values (1, 'created by rest api flow', sysdate);
+commit;
+update soe.restapi_sync_test
+set memo = 'updated by rest api flow'
+where id = 1;
+commit;
+
+# Target DB 전용 terminal에서 최종 동기화 결과를 확인한다.
+docker exec -it demo_otrg_23ai bash
+sqlplus soe/soe@orclpdb1
+select id, memo, to_char(created_at, 'yyyy-mm-dd hh24:mi:ss') as created_at
+from soe.restapi_sync_test
+order by id;
+
+# Host의 restapi-lab directory에서 11장 process 네 개를 일괄 종료한다.
+cd /home/oracle/oracle/script/restapi-lab
+sh 14_stop_lab11_processes.sh

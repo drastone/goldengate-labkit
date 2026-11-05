@@ -5,6 +5,9 @@
     "alias": "src_ogg",
     "domain": "OracleGoldenGate"
   },
+  "registration": {
+    "optimized": false
+  },
   "begin": "now",
   "source": "tranlogs",
   "targets": [
@@ -20,6 +23,6 @@
     "TRANLOGOPTIONS INTEGRATEDPARAMS (MAX_SGA_SIZE 100)",
     "DDL INCLUDE ALL",
     "EXTTRAIL cr",
-    "TABLE SOE.*;"
+    "TABLE SOE.RESTAPI_SYNC_TEST;"
   ]
 }
