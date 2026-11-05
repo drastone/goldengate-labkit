@@ -282,9 +282,13 @@ curl -I http://localhost:36080/ords/
 Windows host의 브라우저에서는 다음 URL을 사용한다.
 
 ```text
-http://localhost:36080/ords/apex
 http://localhost:36080/ords/apex_admin
+http://localhost:36080/ords/apex
 ```
+
+신규 설치 직후에는 `/ords/apex_admin`에 instance administrator `ADMIN`으로
+먼저 로그인해 `OGG` workspace와 workspace administrator를 만든다. 그 다음
+`/ords/apex`에서 `OGG` workspace의 개발자 계정으로 로그인한다.
 
 개인 PC에서 화면을 캡처하거나 다른 장비의 browser로 접속해야 한다면, Windows portproxy와 공유기 port forwarding을 이용해 다음처럼 공인 IP로 접근할 수도 있다.
 
@@ -310,8 +314,8 @@ ssh -i ./.ssh/id_ed25519 -p 7822 -L 36080:127.0.0.1:36080 root@219.240.178.144
 위 tunnel을 열어 둔 상태에서 browser는 다음 주소로 접속한다.
 
 ```text
-http://localhost:36080/ords/apex
 http://localhost:36080/ords/apex_admin
+http://localhost:36080/ords/apex
 ```
 
 여기까지 완료되면 APEX/ORDS runtime 준비가 끝난다. 다음 절에서는 `GGADMIN` schema와 workspace를 준비하고, GoldenGate 통합 Console App 101을 import한다.

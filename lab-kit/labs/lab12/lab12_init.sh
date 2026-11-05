@@ -16,5 +16,5 @@ bash "${LAB12_DIR}/lab12_install_ords.sh"
 bash "${LAB12_DIR}/check_lab12.sh"
 
 lab12_log "OK: Chapter 12 APEX/ORDS environment is ready."
-lab12_log "NEXT: open http://localhost:36080/ords/apex"
+lab12_log "NEXT: open http://localhost:36080/ords/apex_admin and create the OGG workspace."
 lab12_finish_stage
