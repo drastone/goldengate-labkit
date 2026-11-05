@@ -41,6 +41,12 @@ if [ "${invalid_apex_objects:-0}" -ne 0 ]; then
 fi
 lab12_log "OK: invalid APEX_260100 objects: 0"
 
+resolved_apex_static_path="$(lab12_find_apex_static_path)" || {
+  lab12_log "ERROR: APEX static resources were not found in a supported location."
+  exit 1
+}
+lab12_log "OK: APEX static resources: ${resolved_apex_static_path}"
+
 ords_user_count="$(lab12_ords_user_count)"
 if [ "${ords_user_count:-0}" -ne 2 ]; then
   lab12_log "ERROR: expected ORDS_METADATA and ORDS_PUBLIC_USER, found ${ords_user_count:-0} ORDS users."
@@ -74,6 +80,14 @@ if [ "${gateway_mode}" != "proxied" ]; then
   exit 1
 fi
 lab12_log "OK: plsql.gateway.mode=proxied"
+
+static_path="$(docker exec -u oracle "${TARGET_DB_CONTAINER}" bash -lc \
+  "export JAVA_HOME='${ORDS_JAVA_HOME}'; export PATH=\"\${JAVA_HOME}/bin:\${PATH}\"; '${ORDS_HOME}/bin/ords' --config '${ORDS_CONFIG}' config get standalone.static.path 2>&1" | awk 'NF { last=$0 } END { print last }')"
+if [ "${static_path}" != "${resolved_apex_static_path}" ]; then
+  lab12_log "ERROR: expected standalone.static.path=${resolved_apex_static_path}, found: ${static_path:-unset}"
+  exit 1
+fi
+lab12_log "OK: standalone.static.path=${resolved_apex_static_path}"
 
 if ! docker exec "${TARGET_DB_CONTAINER}" curl -fsS --max-time 10 http://127.0.0.1:8080/ords/ >/dev/null; then
   lab12_log "ERROR: ORDS endpoint is not ready inside ${TARGET_DB_CONTAINER}:8080"

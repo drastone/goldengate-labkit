@@ -14,10 +14,24 @@ ORDS_LOGS="/home/oracle/ords_logs"
 ORDS_EXPECTED_VERSION_PATTERN="${ORDS_EXPECTED_VERSION_PATTERN:-26.2.3}"
 ORDS_INSTALL_TIMEOUT_SECONDS="${ORDS_INSTALL_TIMEOUT_SECONDS:-1800}"
 ORDS_READY_TIMEOUT_SECONDS="${ORDS_READY_TIMEOUT_SECONDS:-180}"
+JDK_HOST_RPM="${JDK_HOST_RPM:-${LAB_HOME}/centos/pkg/jdk-21_linux-x64_bin.rpm}"
+JDK_CONTAINER_RPM="/home/oracle/pkg/jdk-21_linux-x64_bin.rpm"
 
 lab12_require_command docker
 lab12_require_command timeout
 lab12_require_running_container
+
+if ! lab12_find_ords_java_home >/dev/null 2>&1; then
+  if [ ! -f "${JDK_HOST_RPM}" ]; then
+    lab12_log "ERROR: Oracle JDK 21 RPM is not staged: ${JDK_HOST_RPM}"
+    lab12_log "ERROR: prepare the Chapter 3 download before running Chapter 12 setup."
+    exit 1
+  fi
+
+  lab12_log "==> Install Oracle JDK 21 in ${TARGET_DB_CONTAINER}"
+  docker cp "${JDK_HOST_RPM}" "${TARGET_DB_CONTAINER}:${JDK_CONTAINER_RPM}"
+  docker exec -u root "${TARGET_DB_CONTAINER}" rpm -Uvh --replacepkgs "${JDK_CONTAINER_RPM}"
+fi
 lab12_require_ords_java
 
 apex_state="$(lab12_apex_registry_state)"
@@ -85,8 +99,13 @@ PASSWORDS"
 fi
 
 lab12_log "==> Configure ORDS for APEX"
+resolved_apex_static_path="$(lab12_find_apex_static_path)" || {
+  lab12_log "ERROR: APEX static resources were not found in a supported location."
+  exit 1
+}
+lab12_log "INFO: APEX static resources: ${resolved_apex_static_path}"
 docker exec -u oracle "${TARGET_DB_CONTAINER}" bash -lc \
-  "export JAVA_HOME='${ORDS_JAVA_HOME}'; export PATH=\"\${JAVA_HOME}/bin:\${PATH}\"; '${ORDS_HOME}/bin/ords' --config '${ORDS_CONFIG}' config set standalone.static.path /home/oracle/apex/images >/dev/null"
+  "export JAVA_HOME='${ORDS_JAVA_HOME}'; export PATH=\"\${JAVA_HOME}/bin:\${PATH}\"; '${ORDS_HOME}/bin/ords' --config '${ORDS_CONFIG}' config set standalone.static.path '${resolved_apex_static_path}' >/dev/null"
 docker exec -u oracle "${TARGET_DB_CONTAINER}" bash -lc \
   "export JAVA_HOME='${ORDS_JAVA_HOME}'; export PATH=\"\${JAVA_HOME}/bin:\${PATH}\"; '${ORDS_HOME}/bin/ords' --config '${ORDS_CONFIG}' config set plsql.gateway.mode proxied >/dev/null"
 

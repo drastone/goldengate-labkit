@@ -9,7 +9,6 @@ lab12_begin_stage "lab12-install-apex"
 
 APEX_EXPECTED_VERSION="${APEX_EXPECTED_VERSION:-26.1.0}"
 APEX_ARCHIVE="/home/oracle/pkg/apex_26.1.zip"
-APEX_HOME="/home/oracle/apex"
 APEX_INSTALL_TIMEOUT_SECONDS="${APEX_INSTALL_TIMEOUT_SECONDS:-3600}"
 
 lab12_require_command docker
@@ -43,9 +42,13 @@ if ! docker exec "${TARGET_DB_CONTAINER}" test -f "${APEX_ARCHIVE}"; then
   exit 1
 fi
 
-lab12_log "==> Extract Oracle APEX 26.1 in ${TARGET_DB_CONTAINER}"
+lab12_log "==> Prepare dedicated APEX extraction directory: ${APEX_INSTALL_ROOT}"
+docker exec -u root "${TARGET_DB_CONTAINER}" bash -lc \
+  "mkdir -p '${APEX_INSTALL_ROOT}' && chown -R oracle:oinstall '${APEX_INSTALL_ROOT}' && chmod 755 '${APEX_INSTALL_ROOT}'"
+
+lab12_log "==> Extract Oracle APEX 26.1 in ${TARGET_DB_CONTAINER}:${APEX_INSTALL_ROOT}"
 docker exec -u oracle "${TARGET_DB_CONTAINER}" bash -lc \
-  "cd /home/oracle && unzip -q -o '${APEX_ARCHIVE}'"
+  "unzip -q -o '${APEX_ARCHIVE}' -d '${APEX_INSTALL_ROOT}'"
 
 if ! docker exec "${TARGET_DB_CONTAINER}" test -f "${APEX_HOME}/apxsilentins.sql"; then
   lab12_log "ERROR: apxsilentins.sql was not extracted: ${APEX_HOME}/apxsilentins.sql"

@@ -9,7 +9,6 @@ lab12_begin_stage "remove-apex"
 
 CONFIRM_TEXT="REMOVE-APEX-${TARGET_PDB}"
 APEX_ARCHIVE="/home/oracle/pkg/apex_26.1.zip"
-APEX_HOME="/home/oracle/apex"
 APEX_REMOVE_TIMEOUT_SECONDS="${APEX_REMOVE_TIMEOUT_SECONDS:-3600}"
 
 lab12_require_command docker
@@ -43,8 +42,10 @@ if ! docker exec "${TARGET_DB_CONTAINER}" test -f "${APEX_HOME}/apxremov.sql"; t
     exit 1
   fi
   lab12_log "==> Extract APEX removal scripts"
+  docker exec -u root "${TARGET_DB_CONTAINER}" bash -lc \
+    "mkdir -p '${APEX_INSTALL_ROOT}' && chown -R oracle:oinstall '${APEX_INSTALL_ROOT}' && chmod 755 '${APEX_INSTALL_ROOT}'"
   docker exec -u oracle "${TARGET_DB_CONTAINER}" bash -lc \
-    "cd /home/oracle && unzip -q -o '${APEX_ARCHIVE}'"
+    "unzip -q -o '${APEX_ARCHIVE}' -d '${APEX_INSTALL_ROOT}'"
 fi
 
 lab12_log "==> Run Oracle apxremov.sql in ${TARGET_PDB}"

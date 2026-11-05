@@ -42,7 +42,7 @@ find_java17_home() {
     return 0
   fi
 
-  for candidate in /usr/java/jdk-17 /usr/java/jdk-17* /usr/lib/jvm/java-17*; do
+  for candidate in /usr/java/default /usr/java/latest /usr/java/jdk-* /usr/lib/jvm/jdk-* /usr/lib/jvm/java-*; do
     if is_java17_home "${candidate}"; then
       printf '%s\n' "${candidate}"
       return 0

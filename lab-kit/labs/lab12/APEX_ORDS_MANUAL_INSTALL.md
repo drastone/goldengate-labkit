@@ -35,9 +35,11 @@ OK: sha1sum /home/oracle/oracle/pkg/ords-26.2.3.237.1104.zip
 ```bash
 docker exec -it demo_otrg_23ai bash
 
-cd /home/oracle/pkg
-unzip -q apex_26.1.zip -d /home/oracle
-cd /home/oracle/apex
+mkdir -p /home/oracle/apex_install
+chown oracle:oinstall /home/oracle/apex_install
+su - oracle
+unzip -q /home/oracle/pkg/apex_26.1.zip -d /home/oracle/apex_install
+cd /home/oracle/apex_install/apex
 
 sqlplus / as sysdba
 ```
@@ -143,7 +145,7 @@ unzip -q ords-26.2.3.237.1104.zip -d /home/oracle/ords
 `--config` 옵션을 명시해 ORDS가 사용할 configuration directory를 고정한다.
 
 ```bash
-export JAVA_HOME=/usr/java/jdk-17
+export JAVA_HOME=/usr/java/default
 export PATH="$JAVA_HOME/bin:$PATH"
 /home/oracle/ords/bin/ords --config /home/oracle/ords_config --version
 ```
@@ -194,18 +196,18 @@ ORDS 설치 요약 화면이 나오면 `APEX static resources location`을 확�
 ```text
 [9]   APEX static resources location: null
 Choose [A]: 9
-Enter the APEX static resources location: /home/oracle/apex/images
+Enter the APEX static resources location: /home/oracle/apex_install/apex/images
 ```
 
 다시 표시되는 요약 화면에서 값이 다음처럼 들어갔는지 확인한 뒤 `A`를 선택한다.
 
 ```text
-[9]   APEX static resources location: /home/oracle/apex/images
+[9]   APEX static resources location: /home/oracle/apex_install/apex/images
 [A] Accept and Continue - Create configuration and Install ORDS in the database
 Choose [A]: A
 ```
 
-이 값이 비어 있으면 브라우저에서 APEX 로그인 화면이 CSS 없이 깨지고, "Oracle APEX files have not been loaded" 메시지가 보일 수 있다. APEX 설치 때 지정한 image prefix는 `/i/`이고, ORDS는 이 `/i/` 요청을 `/home/oracle/apex/images`의 static file로 서비스해야 한다. 따라서 이 책의 Lab Kit에서는 `reset_image_prefix.sql`로 CDN 경로를 지정하지 않고, ORDS가 local images directory를 서비스하도록 구성한다.
+이 값이 비어 있으면 브라우저에서 APEX 로그인 화면이 CSS 없이 깨지고, "Oracle APEX files have not been loaded" 메시지가 보일 수 있다. APEX 설치 때 지정한 image prefix는 `/i/`이고, ORDS는 이 `/i/` 요청을 `/home/oracle/apex_install/apex/images`의 static file로 서비스해야 한다. 따라서 이 책의 Lab Kit에서는 `reset_image_prefix.sql`로 CDN 경로를 지정하지 않고, ORDS가 local images directory를 서비스하도록 구성한다.
 
 설치가 완료되면 다음 메시지를 확인한다.
 
