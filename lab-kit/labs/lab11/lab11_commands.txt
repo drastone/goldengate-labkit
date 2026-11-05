@@ -47,6 +47,8 @@ curl -k -sS -u "${OGG_USER}:${OGG_PASS}" \
   "${OGG_BASE_URL}/replicats" \
 | python3 -m json.tool
 
+cat 01_check_extracts.sh
+cat 02_check_replicats.sh
 sh 01_check_extracts.sh
 sh 02_check_replicats.sh
 
