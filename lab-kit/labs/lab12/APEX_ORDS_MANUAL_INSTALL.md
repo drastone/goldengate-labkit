@@ -318,7 +318,15 @@ http://localhost:36080/ords/apex_admin
 http://localhost:36080/ords/apex
 ```
 
-여기까지 완료되면 APEX/ORDS runtime 준비가 끝난다. 다음 절에서는 `GGADMIN` schema와 workspace를 준비하고, GoldenGate 통합 Console App 101을 import한다.
+여기까지 완료되면 APEX/ORDS runtime 준비가 끝난다. 다음 명령으로 `GGADMIN` schema, `OGG` workspace, 관리자·개발자 권한을 가진 APEX 사용자 `GGADMIN`을 준비한 뒤 전체 상태를 검증한다. 이미 존재하는 계정과 workspace는 유지하면서 필요한 역할만 보정하므로 같은 명령을 다시 실행할 수 있다.
+
+```bash
+cd /home/oracle/labs/lab12
+bash lab12_configure_workspace.sh
+bash check_lab12.sh
+```
+
+검증이 끝나면 GoldenGate 통합 Console App 101을 import한다.
 
 APEX Console이 GoldenGate REST API 같은 내부 endpoint를 호출하려면 DB network ACL이 필요할 수 있다. 개인 PC의 격리된 Lab 환경에서는 다음처럼 넓게 허용할 수 있지만, 운영 환경에서는 `PUBLIC`과 `*`를 사용하지 말고 `GGADMIN`과 필요한 host만 대상으로 제한한다.
 

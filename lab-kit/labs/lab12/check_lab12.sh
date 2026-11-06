@@ -105,8 +105,9 @@ lab12_log "OK: host-published ORDS endpoint: http://127.0.0.1:36080/ords/"
 
 workspace_count="$(lab12_apex_workspace_count "${APEX_WORKSPACE_NAME}")"
 if [ "${workspace_count:-0}" -eq 0 ]; then
-  lab12_log "INFO: APEX workspace ${APEX_WORKSPACE_NAME} is not created yet; skip workspace user role check."
-  lab12_log "INFO: create the workspace, then run this check again before importing App 101."
+  lab12_log "ERROR: APEX workspace ${APEX_WORKSPACE_NAME} was not found."
+  lab12_log "ERROR: run lab12_configure_workspace.sh or rerun lab12_init.sh."
+  exit 1
 else
   workspace_user_state="$(lab12_apex_workspace_user_state "${APEX_WORKSPACE_NAME}" "${APEX_WORKSPACE_ADMIN}")"
   if [ -z "${workspace_user_state}" ]; then

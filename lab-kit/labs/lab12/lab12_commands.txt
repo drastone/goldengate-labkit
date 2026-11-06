@@ -5,6 +5,7 @@ bash lab12_init.sh
 cat lab12_prepare_media.sh
 cat lab12_install_apex.sh
 cat lab12_install_ords.sh
+cat lab12_configure_workspace.sh
 cat check_lab12.sh
 
 bash check_lab12.sh
