@@ -11,6 +11,8 @@ APEX_EXPECTED_VERSION="${APEX_EXPECTED_VERSION:-26.1.0}"
 ORDS_EXPECTED_VERSION_PATTERN="${ORDS_EXPECTED_VERSION_PATTERN:-26.2.3}"
 ORDS_HOME="/home/oracle/ords"
 ORDS_CONFIG="/home/oracle/ords_config"
+APEX_WORKSPACE_NAME="${APEX_WORKSPACE_NAME:-OGG}"
+APEX_WORKSPACE_ADMIN="${APEX_WORKSPACE_ADMIN:-GGADMIN}"
 
 lab12_require_command docker
 lab12_require_command curl
@@ -100,5 +102,28 @@ if ! curl -fsS --max-time 10 http://127.0.0.1:36080/ords/ >/dev/null; then
   exit 1
 fi
 lab12_log "OK: host-published ORDS endpoint: http://127.0.0.1:36080/ords/"
+
+workspace_count="$(lab12_apex_workspace_count "${APEX_WORKSPACE_NAME}")"
+if [ "${workspace_count:-0}" -eq 0 ]; then
+  lab12_log "INFO: APEX workspace ${APEX_WORKSPACE_NAME} is not created yet; skip workspace user role check."
+  lab12_log "INFO: create the workspace, then run this check again before importing App 101."
+else
+  workspace_user_state="$(lab12_apex_workspace_user_state "${APEX_WORKSPACE_NAME}" "${APEX_WORKSPACE_ADMIN}")"
+  if [ -z "${workspace_user_state}" ]; then
+    lab12_log "ERROR: APEX user ${APEX_WORKSPACE_ADMIN} was not found in workspace ${APEX_WORKSPACE_NAME}."
+    exit 1
+  fi
+
+  IFS='|' read -r actual_workspace actual_user is_admin is_developer is_locked <<<"${workspace_user_state}"
+  if [ "${is_admin}" != "Yes" ] || [ "${is_developer}" != "Yes" ] || [ "${is_locked}" != "No" ]; then
+    lab12_log "ERROR: ${actual_workspace}.${actual_user} is not ready for App Builder."
+    lab12_log "ERROR: is_admin=${is_admin}, is_application_developer=${is_developer}, account_locked=${is_locked}"
+    lab12_log "ERROR: open /ords/apex_admin as ADMIN, then Manage Workspaces > Manage Developers and Users."
+    lab12_log "ERROR: set User is an administrator=Yes and User is a developer=Yes for ${APEX_WORKSPACE_ADMIN}."
+    exit 1
+  fi
+
+  lab12_log "OK: ${actual_workspace}.${actual_user} is an unlocked workspace administrator and developer."
+fi
 
 lab12_finish_stage

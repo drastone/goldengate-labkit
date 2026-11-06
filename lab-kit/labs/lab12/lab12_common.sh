@@ -79,6 +79,7 @@ lab12_require_running_container() {
 }
 
 lab12_require_ords_java() {
+  local java_output
   local java_version
 
   if [ -z "${ORDS_JAVA_HOME}" ]; then
@@ -90,7 +91,8 @@ lab12_require_ords_java() {
     return 1
   fi
 
-  java_version="$(docker exec "${TARGET_DB_CONTAINER}" "${ORDS_JAVA_HOME}/bin/java" -version 2>&1 | head -1)"
+  java_output="$(docker exec "${TARGET_DB_CONTAINER}" "${ORDS_JAVA_HOME}/bin/java" -version 2>&1)"
+  java_version="${java_output%%$'\n'*}"
   export ORDS_JAVA_HOME
   lab12_log "OK: ORDS JAVA_HOME: ${ORDS_JAVA_HOME}"
   lab12_log "OK: ORDS Java runtime: ${java_version}"
@@ -161,4 +163,35 @@ from dba_users
 where username in ('ORDS_METADATA', 'ORDS_PUBLIC_USER');
 exit
 SQL" | sed -n 's/^[[:space:]]*ORDS_USERS=//p' | tail -1
+}
+
+lab12_apex_workspace_count() {
+  local workspace_name="${1:-OGG}"
+
+  docker exec -u oracle "${TARGET_DB_CONTAINER}" bash -lc "sqlplus -s / as sysdba <<'SQL'
+set pages 0 feedback off heading off verify off echo off trimspool on
+whenever sqlerror exit failure
+alter session set container=${TARGET_PDB};
+select 'APEX_WORKSPACES=' || count(*)
+from apex_workspaces
+where upper(workspace) = upper('${workspace_name}');
+exit
+SQL" | sed -n 's/^[[:space:]]*APEX_WORKSPACES=//p' | tail -1
+}
+
+lab12_apex_workspace_user_state() {
+  local workspace_name="${1:-OGG}"
+  local user_name="${2:-GGADMIN}"
+
+  docker exec -u oracle "${TARGET_DB_CONTAINER}" bash -lc "sqlplus -s / as sysdba <<'SQL'
+set pages 0 feedback off heading off verify off echo off trimspool on
+whenever sqlerror exit failure
+alter session set container=${TARGET_PDB};
+select 'APEX_WORKSPACE_USER=' || workspace_name || '|' || user_name || '|' ||
+       is_admin || '|' || is_application_developer || '|' || account_locked
+from apex_workspace_apex_users
+where upper(workspace_name) = upper('${workspace_name}')
+  and upper(user_name) = upper('${user_name}');
+exit
+SQL" | sed -n 's/^[[:space:]]*APEX_WORKSPACE_USER=//p' | tail -1
 }
