@@ -74,6 +74,26 @@ add exttrail ca, extract c01, megabytes 100
 register extract c01 database
 info all
 dblogin useridalias trg_ogg domain OracleGoldenGate
+edit params d01
+# Replace the D01 parameter editor content with the following baseline
+REPLICAT D01
+USERIDALIAS trg_ogg DOMAIN OracleGoldenGate
+ASSUMETARGETDEFS
+APPLYNOOPUPDATES
+DISCARDFILE D01_PERF.dsc, PURGE, MEGABYTES 100
+REPORTCOUNT EVERY 1 MINUTES RATE
+
+DDL &
+INCLUDE MAPPED OBJTYPE TABLE INSTR 'CREATE' &
+INCLUDE MAPPED OBJTYPE TABLE INSTR 'TRUNCATE' &
+INCLUDE MAPPED OBJTYPE TABLE INSTR 'DROP' &
+INCLUDE MAPPED OBJTYPE TABLE INSTR 'ALTER' &
+EXCLUDE MAPPED OBJTYPE SEQUENCE INSTR 'CREATE' &
+EXCLUDE MAPPED OBJTYPE SEQUENCE INSTR 'DROP'
+
+MAP SOE.*, TARGET SOE.*;
+# Save and return to the Admin Client prompt
+view params d01
 add replicat d01, exttrail ca, checkpointtable OGG.GGSCKPT
 info all
 info distpath all
