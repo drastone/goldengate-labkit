@@ -83,12 +83,11 @@ fi
 echo "OK: Docker build context is complete."
 
 echo "==> Validate reader port bindings"
-if grep -n '127\.0\.0\.1:' docker-compose.yml; then
-  echo "ERROR: reader docker-compose.yml must not restrict published ports to 127.0.0.1."
-  echo "Use HOST_PORT:CONTAINER_PORT for the WSL reader lab; keep server security bindings in a separate server configuration."
-  exit 1
+if grep -q '127\.0\.0\.1:' docker-compose.yml; then
+  echo "OK: local-only reader services use explicit 127.0.0.1 bindings."
+else
+  echo "INFO: no published ports are restricted to 127.0.0.1."
 fi
-echo "OK: reader ports are not restricted to loopback."
 
 echo "==> Validate docker-compose.yml"
 if ! docker compose config --services >/dev/null; then

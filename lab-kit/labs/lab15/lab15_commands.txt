@@ -1,5 +1,9 @@
 stop c01
+stop cr01
+stop cw01
 stop d01
+stop dr01
+stop dw01
 info all
 info distpath all
 stop distpath dpkaf01
@@ -7,11 +11,17 @@ info distpath all
 stop kaf01
 info all
 dblogin useridalias src_ogg domain OracleGoldenGate
-delete extract c01
 unregister extract c01 database
+delete extract c01
+unregister extract cr01 database
+delete extract cr01
+unregister extract cw01 database
+delete extract cw01
 info all
 dblogin useridalias trg_ogg domain OracleGoldenGate
 delete replicat d01
+delete replicat dr01
+delete replicat dw01
 info all
 info distpath all
 delete distpath dpkaf01
@@ -28,6 +38,7 @@ cp -p data/ca* backup/osa_manual_reset/
 ls -ltr backup/osa_manual_reset/
 rm -f data/ca*
 ls -ltr data/ca*
+exit
 
 docker exec -it demo_oggbd_23ai bash
 cd /u02/Deployment/var/lib
@@ -37,21 +48,24 @@ cp -p data/da* backup/osa_manual_reset/
 ls -ltr backup/osa_manual_reset/
 rm -f data/da*
 ls -ltr data/da*
+exit
 
 docker exec -it demo_osrc_23ai bash
 cd /home/oracle/script/osa/23ai
 pwd
 sh reset_osa_objects.sh
+exit
 
 docker exec -it demo_otrg_23ai bash
 cd /home/oracle/script/osa/23ai
 pwd
 sh reset_osa_objects.sh
+exit
 
 docker exec -it demo_centos bash
-cd /home/oracle/script/osa/23ai
-pwd
-sh reset_osa_kafka_topics.sh
+cat /u01/reset_osa_kafka_topics.sh
+sh /u01/reset_osa_kafka_topics.sh
+exit
 
 info all
 dblogin useridalias src_ogg domain OracleGoldenGate
@@ -87,6 +101,7 @@ cd /home/oracle/script/osa/23ai
 pwd
 sh create_objects_v1_2.sh
 sh prepare_osa_base_data.sh
+exit
 stats extract c01 totalsonly soe.*
 stats replicat d01 totalsonly soe.*
 stats replicat kaf01 totalsonly soe.*
