@@ -77,10 +77,10 @@ dblogin useridalias trg_ogg domain OracleGoldenGate
 add replicat d01, exttrail ca, checkpointtable OGG.GGSCKPT
 info all
 info distpath all
-cd /home/oracle/script/osa/23ai
+cd /u01/ogg/scripts/obey
 shell pwd
-shell cat dpkaf01.oby
-obey dpkaf01.oby
+shell cat add_dpkaf01.oby
+obey add_dpkaf01.oby
 info distpath all
 
 docker exec -it -u ogg demo_oggbd_23ai adminclient
