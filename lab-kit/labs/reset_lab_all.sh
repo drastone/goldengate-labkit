@@ -89,25 +89,36 @@ run_admin() {
   container="$1"
   shift
 
-  for cmd in "$@"; do
-    docker exec -i -u ogg "${container}" python3 - "${cmd}" <<'PY' || return $?
-import sys
+  docker exec -i -u ogg "${container}" python3 - "$@" <<'PY' || return $?
+import os
 import re
-import urllib.parse
-import urllib.request
+import subprocess
+import sys
 
-cmd = sys.argv[1]
-url = "http://localhost:8765/api/adminclient?cmd=" + urllib.parse.quote(cmd)
-print("OGG> " + cmd)
-text = urllib.request.urlopen(url, timeout=60).read().decode(errors="replace")
+sys.path.insert(0, "/u01")
+from ogg_api_server import CONNECT_CMD, OGG_BIN, OGG_HOME
+
+commands = sys.argv[1:]
+script = CONNECT_CMD + "\n" + "\n".join(commands) + "\nexit\n"
+proc = subprocess.run(
+    [OGG_BIN],
+    input=script,
+    capture_output=True,
+    text=True,
+    timeout=120,
+    env={**os.environ, "OGG_HOME": OGG_HOME},
+)
+text = proc.stdout
+if proc.stderr:
+    text += "\n" + proc.stderr
 print(text)
-if (re.search(r"(?i)\bError:\s", text)
+if (proc.returncode != 0
+        or re.search(r"(?i)\bError:\s", text)
         or re.search(r"\bERROR\s+OGG-\d+", text)
-        or re.search(r'"severity"\s*:\s*"ERROR"', text, re.IGNORECASE)):
-    print("ERROR: Admin Client command failed: " + cmd, file=sys.stderr)
+        or re.search(r"(?i)\bInvalid command\b", text)):
+    print("ERROR: Admin Client command sequence failed", file=sys.stderr)
     sys.exit(1)
 PY
-  done
 }
 
 run_admin_ignore() {
@@ -429,6 +440,12 @@ check_container() {
 
   if ! docker inspect "${container}" >/dev/null 2>&1; then
     echo "ERROR: container not found: ${container}" >&2
+    exit 1
+  fi
+
+  if [ "$(docker inspect -f '{{.State.Running}}' "${container}")" != "true" ]; then
+    echo "ERROR: required container is not running: ${container}" >&2
+    echo "ERROR: run /home/oracle/startDocker.sh, confirm the containers are healthy, then retry." >&2
     exit 1
   fi
 }
