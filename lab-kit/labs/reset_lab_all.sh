@@ -90,15 +90,22 @@ run_admin() {
   shift
 
   for cmd in "$@"; do
-    docker exec -i -u ogg "${container}" python3 - "${cmd}" <<'PY'
+    docker exec -i -u ogg "${container}" python3 - "${cmd}" <<'PY' || return $?
 import sys
+import re
 import urllib.parse
 import urllib.request
 
 cmd = sys.argv[1]
 url = "http://localhost:8765/api/adminclient?cmd=" + urllib.parse.quote(cmd)
 print("OGG> " + cmd)
-print(urllib.request.urlopen(url, timeout=60).read().decode())
+text = urllib.request.urlopen(url, timeout=60).read().decode(errors="replace")
+print(text)
+if (re.search(r"(?i)\bError:\s", text)
+        or re.search(r"\bERROR\s+OGG-\d+", text)
+        or re.search(r'"severity"\s*:\s*"ERROR"', text, re.IGNORECASE)):
+    print("ERROR: Admin Client command failed: " + cmd, file=sys.stderr)
+    sys.exit(1)
 PY
   done
 }
@@ -109,6 +116,32 @@ run_admin_ignore() {
 
   if ! run_admin "${container}" "$@"; then
     echo "WARN: ignored Admin Client failure in ${container}: $*" >&2
+  fi
+}
+
+verify_ogg_group_running() {
+  container="$1"
+  group_name="$2"
+
+  output="$(run_admin "${container}" "info all")"
+  printf '%s\n' "${output}"
+  if ! printf '%s\n' "${output}" \
+      | grep -Eq "(EXTRACT|REPLICAT)[[:space:]]+RUNNING[[:space:]]+${group_name}([[:space:]]|$)"; then
+    echo "ERROR: ${group_name} is not RUNNING in ${container}." >&2
+    return 1
+  fi
+}
+
+verify_distpath_running() {
+  container="$1"
+  path_name="$2"
+
+  output="$(run_admin "${container}" "info distpath all")"
+  printf '%s\n' "${output}"
+  if ! printf '%s\n' "${output}" \
+      | grep -Eq "${path_name}[[:space:]]+running([[:space:]]|$)"; then
+    echo "ERROR: Distribution Path ${path_name} is not running in ${container}." >&2
+    return 1
   fi
 }
 
@@ -569,7 +602,7 @@ run_admin "${OGGHUB_CONTAINER}" \
   "dblogin useridalias ${SOURCE_DB_ALIAS} domain ${DOMAIN}" \
   "add extract ${EXTRACT_NAME}, integrated tranlog, begin now" \
   "add exttrail ${SOURCE_TRAIL}, extract ${EXTRACT_NAME}, megabytes 100" \
-  "register extract ${EXTRACT_NAME} database" \
+  "register extract ${EXTRACT_NAME} database!" \
   "info all"
 
 echo
@@ -631,7 +664,7 @@ echo
 echo "==> Recreate OGGHUB Replicat ${ORACLE_REPLICAT_NAME}"
 PHASE="recreate OGGHUB Replicat ${ORACLE_REPLICAT_NAME}"
 run_admin "${OGGHUB_CONTAINER}" \
-  "add replicat ${ORACLE_REPLICAT_NAME}, exttrail ${SOURCE_TRAIL}, begin now" \
+  "add replicat ${ORACLE_REPLICAT_NAME}, exttrail ${SOURCE_TRAIL}, checkpointtable OGG.GGSCKPT, begin now" \
   "info all"
 
 echo
@@ -670,6 +703,15 @@ PHASE="start OGGBD Replicat ${KAFKA_REPLICAT_NAME}"
 run_admin "${OGGBD_CONTAINER}" \
   "start ${KAFKA_REPLICAT_NAME}" \
   "info all"
+
+echo
+echo "==> Verify recreated GoldenGate path"
+PHASE="verify recreated GoldenGate path"
+sleep 3
+verify_ogg_group_running "${OGGHUB_CONTAINER}" "${EXTRACT_NAME}"
+verify_ogg_group_running "${OGGHUB_CONTAINER}" "${ORACLE_REPLICAT_NAME}"
+verify_distpath_running "${OGGHUB_CONTAINER}" "${DISTPATH_NAME}"
+verify_ogg_group_running "${OGGBD_CONTAINER}" "${KAFKA_REPLICAT_NAME}"
 
 if is_yes "${CREATE_OBJECTS}"; then
   echo
