@@ -15,6 +15,9 @@ wallet 및 실습 데이터는 포함하지 않습니다. Oracle 제품은 반�
 짧은 이름의 `setup.ps1`이며, 실제 설치 명령을 보여 준 다음 확인을 받아
 실행합니다.
 
+Lab 실행 중 Windows drive 공간이 부족하거나 WSL의 `ext4.vhdx`를 정리해야
+하는 경우에는 [WSL 저장 공간 점검과 VHDX 회수](WSL-STORAGE.md)를 확인합니다.
+
 ## 다운로드
 
 Oracle Linux 8.10 on WSL2에서 다음 명령을 실행합니다.

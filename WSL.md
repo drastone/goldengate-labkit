@@ -2,6 +2,9 @@
 
 이 페이지는 책에 인쇄되는 고정 안내 주소다. Microsoft WSL online catalog가 바뀌면 이 페이지와 `wsl-compatibility.json`에 현재 Lab Kit으로 검증된 배포판을 공지한다.
 
+Windows drive 공간 부족과 WSL `ext4.vhdx` 회수 절차는
+[WSL 저장 공간 점검과 VHDX 회수](WSL-STORAGE.md)에서 별도로 안내한다.
+
 ## 현재 검증 기준
 
 | 항목 | 검증 값 |
