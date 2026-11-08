@@ -4,8 +4,8 @@ set -eu
 # Reset the lab GoldenGate path from the Host Linux layer.
 #
 # This script automates the manual reset flow documented in the OSA reset
-# chapter. It intentionally stops and deletes OGG processes, backs up and
-# removes local trail files, resets OSA sample objects and Kafka topics, then
+# chapter. It intentionally stops and deletes OGG processes, removes local
+# trail files, resets OSA sample objects and Kafka topics, then
 # recreates and starts the OGG path.
 
 LAB_HOME="${LAB_HOME:-$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)}"
@@ -19,6 +19,7 @@ BIGDATA_CONTAINER="${BIGDATA_CONTAINER:-demo_centos}"
 OGG_USER="${OGG_USER:-oggadmin}"
 OGG_PASS="${OGG_PASS:-}"
 SOURCE_DB_ALIAS="${SOURCE_DB_ALIAS:-src_ogg}"
+TARGET_DB_ALIAS="${TARGET_DB_ALIAS:-trg_ogg}"
 DOMAIN="${DOMAIN:-OracleGoldenGate}"
 
 EXTRACT_NAME="${EXTRACT_NAME:-C01}"
@@ -30,7 +31,6 @@ SOURCE_TRAIL="${SOURCE_TRAIL:-ca}"
 TARGET_TRAIL="${TARGET_TRAIL:-da}"
 OSA_SCRIPT_DIR="${OSA_SCRIPT_DIR:-/home/oracle/script/osa/23ai}"
 D01_BASELINE_PARAM="${D01_BASELINE_PARAM:-${LAB_HOME}/../oracle/script/ogg/params/d01.prm}"
-BACKUP_NAME="${BACKUP_NAME:-osa_manual_reset_$(date '+%Y%m%d_%H%M%S')}"
 CREATE_OBJECTS="${CREATE_OBJECTS:-N}"
 YES="${YES:-N}"
 RESET_SETTLE_SECONDS="${RESET_SETTLE_SECONDS:-10}"
@@ -417,7 +417,7 @@ Target DB container: ${TARGET_DB_CONTAINER}
 Kafka container    : ${BIGDATA_CONTAINER}
 
 This will stop/delete ${EXTRACT_NAME}, ${ORACLE_REPLICAT_NAME}, ${DISTPATH_NAME}, ${KAFKA_REPLICAT_NAME},
-backup and remove ${SOURCE_TRAIL}*/${TARGET_TRAIL}* trail files, reset OSA sample
+remove ${SOURCE_TRAIL}*/${TARGET_TRAIL}* trail files, reset OSA sample
 objects in Source/Target, reset OSA Kafka topics, then recreate and start the
 OGG path. It does not create OSA sample objects unless --create-objects is used.
 
@@ -480,12 +480,19 @@ wait_for_no_ogg_group_process "${OGGBD_CONTAINER}" "${KAFKA_REPLICAT_NAME}" "${P
 wait_for_distpath_not_running "${OGGHUB_CONTAINER}" "${DISTPATH_NAME}" "${PROCESS_WAIT_SECONDS}"
 
 echo
-echo "==> Delete OGGHUB Extract and Oracle Replicat"
-PHASE="delete OGGHUB Extract and Oracle Replicat"
+echo "==> Delete OGGHUB Extract"
+PHASE="delete OGGHUB Extract"
 run_admin_ignore "${OGGHUB_CONTAINER}" \
   "dblogin useridalias ${SOURCE_DB_ALIAS} domain ${DOMAIN}" \
   "delete extract ${EXTRACT_NAME}!" \
-  "delete replicat ${ORACLE_REPLICAT_NAME}!" \
+  "info all"
+
+echo
+echo "==> Delete OGGHUB Oracle Replicat"
+PHASE="delete OGGHUB Oracle Replicat"
+run_admin_ignore "${OGGHUB_CONTAINER}" \
+  "dblogin useridalias ${TARGET_DB_ALIAS} domain ${DOMAIN}" \
+  "delete replicat ${ORACLE_REPLICAT_NAME}" \
   "info all"
 
 echo
@@ -511,17 +518,14 @@ echo "Sleeping ${RESET_SETTLE_SECONDS} seconds before removing trail files..."
 sleep "${RESET_SETTLE_SECONDS}"
 
 echo
-echo "==> Backup and remove OGGHUB trail ${SOURCE_TRAIL}*"
-PHASE="backup and remove OGGHUB trail"
+echo "==> Remove OGGHUB trail ${SOURCE_TRAIL}*"
+PHASE="remove OGGHUB trail"
 run_in_container "${OGGHUB_CONTAINER}" bash -lc "
   set -euo pipefail
   cd /u02/Deployment/var/lib
-  mkdir -p backup/${BACKUP_NAME}
   shopt -s nullglob
   files=(data/${SOURCE_TRAIL}*)
   if [ \${#files[@]} -gt 0 ]; then
-    cp -p \"\${files[@]}\" backup/${BACKUP_NAME}/
-    ls -ltr backup/${BACKUP_NAME}/
     rm -f \"\${files[@]}\"
   else
     echo 'No ${SOURCE_TRAIL} trail files found.'
@@ -529,17 +533,14 @@ run_in_container "${OGGHUB_CONTAINER}" bash -lc "
 "
 
 echo
-echo "==> Backup and remove OGGBD trail ${TARGET_TRAIL}*"
-PHASE="backup and remove OGGBD trail"
+echo "==> Remove OGGBD trail ${TARGET_TRAIL}*"
+PHASE="remove OGGBD trail"
 run_in_container "${OGGBD_CONTAINER}" bash -lc "
   set -euo pipefail
   cd /u02/Deployment/var/lib
-  mkdir -p backup/${BACKUP_NAME}
   shopt -s nullglob
   files=(data/${TARGET_TRAIL}*)
   if [ \${#files[@]} -gt 0 ]; then
-    cp -p \"\${files[@]}\" backup/${BACKUP_NAME}/
-    ls -ltr backup/${BACKUP_NAME}/
     rm -f \"\${files[@]}\"
   else
     echo 'No ${TARGET_TRAIL} trail files found.'

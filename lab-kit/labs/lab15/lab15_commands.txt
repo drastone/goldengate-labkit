@@ -33,9 +33,6 @@ info all
 docker exec -it demo_ogg_23ai bash
 cd /u02/Deployment/var/lib
 pwd
-mkdir -p backup/osa_manual_reset
-cp -p data/ca* backup/osa_manual_reset/
-ls -ltr backup/osa_manual_reset/
 rm -f data/ca*
 ls -ltr data/ca*
 exit
@@ -43,9 +40,6 @@ exit
 docker exec -it demo_oggbd_23ai bash
 cd /u02/Deployment/var/lib
 pwd
-mkdir -p backup/osa_manual_reset
-cp -p data/da* backup/osa_manual_reset/
-ls -ltr backup/osa_manual_reset/
 rm -f data/da*
 ls -ltr data/da*
 exit
