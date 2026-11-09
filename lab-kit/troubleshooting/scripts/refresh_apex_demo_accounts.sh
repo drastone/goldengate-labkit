@@ -65,16 +65,9 @@ begin
     if l_user_id is null then
       dbms_output.put_line('skip missing user ' || r.user_name);
     else
-      apex_util.edit_user(
-        p_user_id                      => l_user_id,
-        p_user_name                    => r.user_name,
-        p_account_expiry               => l_demo_expiry,
-        p_account_locked               => 'N',
-        p_failed_access_attempts       => 0,
-        p_change_password_on_first_use => 'N',
-        p_first_password_use_occurred  => 'Y'
-      );
-
+      -- Do not call APEX_UTIL.EDIT_USER with a partial attribute list here.
+      -- Omitted developer-role attributes are treated as empty and can demote
+      -- a workspace administrator or developer to an end user.
       apex_util.unexpire_workspace_account(p_user_name => r.user_name);
       apex_util.unexpire_end_user_account(p_user_name => r.user_name);
       apex_util.unlock_account(p_user_name => r.user_name);
