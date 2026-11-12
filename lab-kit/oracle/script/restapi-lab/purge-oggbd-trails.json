@@ -1,0 +1,23 @@
+{
+  "$schema": "ogg:task",
+  "description": "Purge OGGBD receiver trail files by checkpoint and keep at least 10 files.",
+  "enabled": true,
+  "schedule": {
+    "every": {
+      "units": "minutes",
+      "value": 10
+    }
+  },
+  "command": {
+    "$schema": "ogg:command",
+    "name": "purge",
+    "purgeType": "trails",
+    "trails": [
+      { "name": "da", "path": "dirdat" }
+    ],
+    "useCheckpoints": true,
+    "keep": [
+      { "type": "min", "units": "files", "value": 10 }
+    ]
+  }
+}

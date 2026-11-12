@@ -29,8 +29,11 @@ KAFKA_REPLICAT_NAME="${KAFKA_REPLICAT_NAME:-KAF01}"
 
 SOURCE_TRAIL="${SOURCE_TRAIL:-ca}"
 TARGET_TRAIL="${TARGET_TRAIL:-da}"
+TARGET_TRAIL_SIZE_MB="${TARGET_TRAIL_SIZE_MB:-100}"
 OSA_SCRIPT_DIR="${OSA_SCRIPT_DIR:-/home/oracle/script/osa/23ai}"
 D01_BASELINE_PARAM="${D01_BASELINE_PARAM:-${LAB_HOME}/../oracle/script/ogg/params/d01.prm}"
+KAF01_BASELINE_PROPS="${KAF01_BASELINE_PROPS:-${LAB_HOME}/../oracle/script/oggbd/kafka/kaf01.props}"
+KAF01_RUNTIME_PROPS="${KAF01_RUNTIME_PROPS:-/u02/Deployment/etc/conf/ogg/kaf01.props}"
 CREATE_OBJECTS="${CREATE_OBJECTS:-N}"
 YES="${YES:-N}"
 RESET_SETTLE_SECONDS="${RESET_SETTLE_SECONDS:-10}"
@@ -613,6 +616,27 @@ PHASE="reset OSA Kafka topics"
 BIGDATA_CONTAINER="${BIGDATA_CONTAINER}" sh "${LAB_HOME}/reset_osa_kafka_topics.sh"
 
 echo
+echo "==> Restore OGGBD Replicat ${KAFKA_REPLICAT_NAME} baseline properties"
+PHASE="restore OGGBD Replicat ${KAFKA_REPLICAT_NAME} baseline properties"
+if [ ! -f "${KAF01_BASELINE_PROPS}" ]; then
+  echo "ERROR: KAF01 baseline properties not found: ${KAF01_BASELINE_PROPS}" >&2
+  exit 1
+fi
+if ! grep -F '${objectname[TABLE_NAME]}' "${KAF01_BASELINE_PROPS}" >/dev/null 2>&1; then
+  echo "ERROR: KAF01 baseline does not define the TABLE_NAME metadata alias." >&2
+  exit 1
+fi
+docker cp "${KAF01_BASELINE_PROPS}" "${OGGBD_CONTAINER}:/tmp/kaf01.props.baseline"
+run_in_container "${OGGBD_CONTAINER}" sh -c "
+  set -eu
+  cp /tmp/kaf01.props.baseline '${KAF01_RUNTIME_PROPS}'
+  chown ogg:ogg '${KAF01_RUNTIME_PROPS}'
+  chmod 640 '${KAF01_RUNTIME_PROPS}'
+  rm -f /tmp/kaf01.props.baseline
+  grep -F '\${objectname[TABLE_NAME]}' '${KAF01_RUNTIME_PROPS}'
+"
+
+echo
 echo "==> Recreate OGGHUB Extract ${EXTRACT_NAME}"
 PHASE="recreate OGGHUB Extract ${EXTRACT_NAME}"
 run_admin "${OGGHUB_CONTAINER}" \
@@ -696,6 +720,7 @@ echo "==> Recreate OGGHUB Distribution Path ${DISTPATH_NAME}"
 PHASE="recreate OGGHUB Distribution Path ${DISTPATH_NAME}"
 run_admin "${OGGHUB_CONTAINER}" \
   "add distpath ${DISTPATH_NAME} source trail://localhost:9013/services/v2/source?trail=${SOURCE_TRAIL} target ogg://${OGGBD_CONTAINER}:9014/services/v2/targets?trail=${TARGET_TRAIL} targettype recvsrvr authentication useridalias oggbd_admin domain ${DOMAIN}" \
+  "alter distpath ${DISTPATH_NAME} target sizemb ${TARGET_TRAIL_SIZE_MB}" \
   "info distpath all"
 
 echo
