@@ -10,23 +10,23 @@ fi
 
 echo "==> Validate shell script syntax"
 shell_syntax_failures=0
-for script in $(find . -type f -name '*.sh' -print); do
+for script in $(find . -type f \( -name '*.sh' -o -name '*.bash' \) -print); do
   if ! bash -n "$script"; then
     echo "ERROR: invalid bash syntax: $script"
     shell_syntax_failures=$((shell_syntax_failures + 1))
   fi
 done
-if ! sh -n labs/lab12/lab12_init.sh; then
-  echo "ERROR: lab12_init.sh cannot be entered with the documented sh command."
-  shell_syntax_failures=$((shell_syntax_failures + 1))
-fi
-shell_dispatch_dir="$(mktemp -d)"
-ln -s "$(command -v true)" "${shell_dispatch_dir}/bash"
-if ! PATH="${shell_dispatch_dir}:${PATH}" sh labs/lab12/lab12_init.sh; then
-  echo "ERROR: lab12_init.sh did not hand off from sh to bash."
-  shell_syntax_failures=$((shell_syntax_failures + 1))
-fi
-rm -rf "${shell_dispatch_dir}"
+for script in $(find labs -type f -name 'lab*_init.sh' -print); do
+  if ! sh -n "$script"; then
+    echo "ERROR: $script cannot be entered with the documented sh command."
+    shell_syntax_failures=$((shell_syntax_failures + 1))
+    continue
+  fi
+  if ! head -n 24 "$script" | grep -q 'exec bash'; then
+    echo "ERROR: init script lacks the documented sh-to-bash handoff: $script"
+    shell_syntax_failures=$((shell_syntax_failures + 1))
+  fi
+done
 if [ "$shell_syntax_failures" -ne 0 ]; then
   echo "ERROR: shell syntax validation failed with $shell_syntax_failures issue(s)."
   exit 1
@@ -69,6 +69,7 @@ echo "==> Validate Docker build context"
 check_build_context_path "build_base_images.sh"
 check_build_context_path "labs/lab05/lab05_commands.txt"
 check_build_context_executable "startDocker.sh"
+check_build_context_executable "labs/lab09/lab09_init.sh"
 check_build_context_executable "troubleshooting/scripts/ensure_apex_static_path.sh"
 check_build_context_executable "troubleshooting/scripts/refresh_apex_demo_accounts.sh"
 check_build_context_path "labs/lab12/lab12_commands.txt"
@@ -84,6 +85,9 @@ check_build_context_executable "labs/lab12/remove_apex.sh"
 check_build_context_executable "labs/lab12/remove_ords.sh"
 check_build_context_executable "labs/lab12/lab12_reset.sh"
 check_build_context_executable "labs/lab13/lab13_init.sh"
+check_build_context_executable "labs/lab18/lab18_init.sh"
+check_build_context_executable "labs/lab18/lab18_init.bash"
+check_build_context_executable "labs/lab20/lab20_init.sh"
 check_build_context_path "labs/lab12/apps/f100.sql"
 check_build_context_path "labs/lab12/apps/f102.sql"
 check_build_context_path "labs/lab12/apps/f110.sql"

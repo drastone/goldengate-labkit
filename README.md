@@ -32,13 +32,14 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
-현재 검증본 v0.86은 12장의 `lab12_init.sh`가 Source와 Target 양쪽에
+현재 검증본 v0.87은 12장의 `lab12_init.sh`가 Source와 Target 양쪽에
 APEX/ORDS를 구성하도록 확장한다. Source에는 업무 application 100, 102, 110,
 120, 130, 140을 자동으로 import하며, 반복 실행에서는 이미 설치된 항목을
 안전하게 건너뛴다. 12장 이전의 `startDocker.sh` 실행에서는 아직 설치되지
 않은 APEX/ORDS를 오류로 취급하지 않고 안내 후 건너뛰며, 12장 이후에는
-35080과 36080 endpoint를 모두 기동·검증한다. v0.86부터 독자 명령
-`sh lab12_init.sh`도 Bash 실행으로 안전하게 전환한다.
+35080과 36080 endpoint를 모두 기동·검증한다. v0.87은 모든 장의
+`labXX_init.sh`가 독자 명령 `sh labXX_init.sh`에서 Bash 실행으로 안전하게
+전환되는지 릴리스 검사에서 자동 확인한다.
 
 18장의 `lab18_init.sh`는 Target의 APEX/ORDS와 `OGG` workspace를 확인한 뒤
 업무 application 300부터 400까지 11개를 자동으로 import한다. App 101은

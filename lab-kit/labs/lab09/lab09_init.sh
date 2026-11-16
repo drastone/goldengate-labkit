@@ -1,4 +1,13 @@
 #!/usr/bin/env bash
+
+if [ -z "${BASH_VERSION:-}" ] || shopt -qo posix 2>/dev/null; then
+  if command -v bash >/dev/null 2>&1; then
+    exec bash "$0" "$@"
+  fi
+  echo "ERROR: lab09_init.sh requires bash." >&2
+  exit 1
+fi
+
 set -eu
 
 # Prepare only the optional Lakehouse services needed by the Chapter 9 lab.
