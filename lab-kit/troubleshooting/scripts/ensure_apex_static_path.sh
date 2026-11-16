@@ -23,6 +23,15 @@ log() {
   printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"
 }
 
+if [ -x "${ORDS_HOME}/bin/ords" ]; then
+  ORDS_CMD="${ORDS_HOME}/bin/ords"
+elif [ -f "${ORDS_HOME}/ords.war" ]; then
+  ORDS_CMD="java -jar ${ORDS_HOME}/ords.war"
+else
+  log "SKIP: ORDS is not installed; run lab12_init.sh first"
+  exit 0
+fi
+
 if [ ! -d "${APEX_STATIC_PATH}" ]; then
   log "WARN: APEX static path does not exist: ${APEX_STATIC_PATH}"
   exit 2
@@ -31,15 +40,6 @@ fi
 if [ ! -f "${APEX_STATIC_PATH}/apex_version.txt" ]; then
   log "WARN: apex_version.txt not found under ${APEX_STATIC_PATH}"
   exit 3
-fi
-
-if [ -x "${ORDS_HOME}/bin/ords" ]; then
-  ORDS_CMD="${ORDS_HOME}/bin/ords"
-elif [ -f "${ORDS_HOME}/ords.war" ]; then
-  ORDS_CMD="java -jar ${ORDS_HOME}/ords.war"
-else
-  log "ERROR: ORDS command not found under ${ORDS_HOME}"
-  exit 4
 fi
 
 current="$(${ORDS_CMD} --config "${ORDS_CONFIG}" config get standalone.static.path 2>&1 \

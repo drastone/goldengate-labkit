@@ -13,6 +13,7 @@ ORDS_HOME="/home/oracle/ords"
 ORDS_CONFIG="/home/oracle/ords_config"
 APEX_WORKSPACE_NAME="${APEX_WORKSPACE_NAME:-OGG}"
 APEX_WORKSPACE_ADMIN="${APEX_WORKSPACE_ADMIN:-GGADMIN}"
+APEX_EXPECTED_APP_IDS="${APEX_EXPECTED_APP_IDS:-${APEX_EXPECTED_APP_ID:-}}"
 
 lab12_require_command docker
 lab12_require_command curl
@@ -97,11 +98,11 @@ if ! docker exec "${TARGET_DB_CONTAINER}" curl -fsS --max-time 10 http://127.0.0
 fi
 lab12_log "OK: ORDS endpoint inside container: http://127.0.0.1:8080/ords/"
 
-if ! curl -fsS --max-time 10 http://127.0.0.1:36080/ords/ >/dev/null; then
-  lab12_log "ERROR: host-published ORDS endpoint is not ready: http://127.0.0.1:36080/ords/"
+if ! curl -fsS --max-time 10 "http://127.0.0.1:${HOST_ORDS_PORT}/ords/" >/dev/null; then
+  lab12_log "ERROR: host-published ORDS endpoint is not ready: http://127.0.0.1:${HOST_ORDS_PORT}/ords/"
   exit 1
 fi
-lab12_log "OK: host-published ORDS endpoint: http://127.0.0.1:36080/ords/"
+lab12_log "OK: host-published ORDS endpoint: http://127.0.0.1:${HOST_ORDS_PORT}/ords/"
 
 workspace_count="$(lab12_apex_workspace_count "${APEX_WORKSPACE_NAME}")"
 if [ "${workspace_count:-0}" -eq 0 ]; then
@@ -125,6 +126,29 @@ else
   fi
 
   lab12_log "OK: ${actual_workspace}.${actual_user} is an unlocked workspace administrator and developer."
+fi
+
+if [ -n "${APEX_EXPECTED_APP_IDS}" ]; then
+  if [[ ! "${APEX_EXPECTED_APP_IDS}" =~ ^[0-9]+(,[0-9]+)*$ ]]; then
+    lab12_log "ERROR: invalid APEX_EXPECTED_APP_IDS: ${APEX_EXPECTED_APP_IDS}"
+    exit 1
+  fi
+  expected_app_count="$(awk -F, '{print NF}' <<<"${APEX_EXPECTED_APP_IDS}")"
+  app_count="$(docker exec -u oracle "${TARGET_DB_CONTAINER}" bash -lc "sqlplus -s / as sysdba <<'SQL'
+set pages 0 feedback off heading off verify off echo off trimspool on
+whenever sqlerror exit failure
+alter session set container=${TARGET_PDB};
+select 'APEX_APP_COUNT=' || count(*)
+from apex_applications
+where workspace = upper('${APEX_WORKSPACE_NAME}')
+  and application_id in (${APEX_EXPECTED_APP_IDS});
+exit
+SQL" | sed -n 's/^[[:space:]]*APEX_APP_COUNT=//p' | tail -1)"
+  if [ "${app_count:-0}" -ne "${expected_app_count}" ]; then
+    lab12_log "ERROR: expected APEX applications ${APEX_EXPECTED_APP_IDS} in workspace ${APEX_WORKSPACE_NAME}; found ${app_count:-0}."
+    exit 1
+  fi
+  lab12_log "OK: APEX applications ${APEX_EXPECTED_APP_IDS} are installed in workspace ${APEX_WORKSPACE_NAME}."
 fi
 
 lab12_finish_stage

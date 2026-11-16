@@ -7,6 +7,8 @@ LAB_HOME="${LAB_HOME:-$(cd "${LAB12_DIR}/../.." && pwd)}"
 LAB12_LOG_DIR="${LAB12_LOG_DIR:-${LAB_HOME}/logs/lab12}"
 TARGET_DB_CONTAINER="${TARGET_DB_CONTAINER:-demo_otrg_23ai}"
 TARGET_PDB="${TARGET_PDB:-ORCLPDB1}"
+LAB12_ROLE="${LAB12_ROLE:-target}"
+HOST_ORDS_PORT="${HOST_ORDS_PORT:-36080}"
 LAB_PASSWORD="${LAB_PASSWORD:-WElcome1234##}"
 ORDS_JAVA_HOME="${ORDS_JAVA_HOME:-}"
 APEX_INSTALL_ROOT="${APEX_INSTALL_ROOT:-/home/oracle/apex_install}"
@@ -72,7 +74,7 @@ lab12_require_command() {
 
 lab12_require_running_container() {
   if ! docker ps --format '{{.Names}}' | grep -qx "${TARGET_DB_CONTAINER}"; then
-    lab12_log "ERROR: target DB container is not running: ${TARGET_DB_CONTAINER}"
+    lab12_log "ERROR: ${LAB12_ROLE} DB container is not running: ${TARGET_DB_CONTAINER}"
     lab12_log "ERROR: run /home/oracle/startDocker.sh before Chapter 12 setup."
     return 1
   fi

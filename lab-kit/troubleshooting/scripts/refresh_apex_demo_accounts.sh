@@ -23,6 +23,28 @@ if [ -z "${ORACLE_HOME}" ] || [ ! -x "${ORACLE_HOME}/bin/sqlplus" ]; then
   exit 0
 fi
 
+APEX_PROBE_OUTPUT="$("${ORACLE_HOME}/bin/sqlplus" -s '/ as sysdba' <<SQL
+whenever sqlerror exit sql.sqlcode rollback
+set heading off feedback off pages 0 lines 220 trimspool on verify off
+alter session set container = ${PDB_NAME};
+select 'APEX_SCHEMA=' || schema
+  from dba_registry
+ where comp_id = 'APEX'
+   and status = 'VALID';
+exit
+SQL
+)" || {
+  echo "WARN: cannot inspect APEX in ${PDB_NAME}, skip APEX demo account refresh"
+  exit 0
+}
+
+APEX_SCHEMA="$(printf '%s\n' "${APEX_PROBE_OUTPUT}" | sed -n 's/^APEX_SCHEMA=//p' | tail -1)"
+
+if ! printf '%s\n' "${APEX_SCHEMA}" | grep -Eq '^[A-Z][A-Z0-9_$#]*$'; then
+  echo "SKIP: VALID APEX is not installed in ${PDB_NAME}; run lab12_init.sh first"
+  exit 0
+fi
+
 echo "Refreshing APEX demo accounts for workspace ${WORKSPACE_NAME} in ${PDB_NAME}"
 
 "${ORACLE_HOME}/bin/sqlplus" -s '/ as sysdba' <<SQL
@@ -35,6 +57,7 @@ set verify off
 define pdb_name = "${PDB_NAME}"
 define workspace_name = "${WORKSPACE_NAME}"
 define demo_users = "${APEX_DEMO_USERS}"
+define apex_schema = "${APEX_SCHEMA}"
 
 alter session set container = &&pdb_name;
 
@@ -49,18 +72,23 @@ begin
     from dba_registry
    where comp_id = 'APEX';
 
-  l_workspace_id := apex_util.find_security_group_id(
+  l_workspace_id := &&apex_schema..apex_util.find_security_group_id(
     p_workspace => upper('&&workspace_name')
   );
 
-  apex_util.set_security_group_id(l_workspace_id);
+  if l_workspace_id is null then
+    dbms_output.put_line('SKIP: workspace &&workspace_name does not exist');
+    return;
+  end if;
+
+  &&apex_schema..apex_util.set_security_group_id(l_workspace_id);
 
   for r in (
     select upper(trim(regexp_substr('&&demo_users', '[^,]+', 1, level))) user_name
       from dual
    connect by regexp_substr('&&demo_users', '[^,]+', 1, level) is not null
   ) loop
-    l_user_id := apex_util.get_user_id(p_username => r.user_name);
+    l_user_id := &&apex_schema..apex_util.get_user_id(p_username => r.user_name);
 
     if l_user_id is null then
       dbms_output.put_line('skip missing user ' || r.user_name);
@@ -68,9 +96,9 @@ begin
       -- Do not call APEX_UTIL.EDIT_USER with a partial attribute list here.
       -- Omitted developer-role attributes are treated as empty and can demote
       -- a workspace administrator or developer to an end user.
-      apex_util.unexpire_workspace_account(p_user_name => r.user_name);
-      apex_util.unexpire_end_user_account(p_user_name => r.user_name);
-      apex_util.unlock_account(p_user_name => r.user_name);
+      &&apex_schema..apex_util.unexpire_workspace_account(p_user_name => r.user_name);
+      &&apex_schema..apex_util.unexpire_end_user_account(p_user_name => r.user_name);
+      &&apex_schema..apex_util.unlock_account(p_user_name => r.user_name);
 
       execute immediate
         'update ' || dbms_assert.schema_name(l_apex_schema) || '.wwv_flow_fnd_user

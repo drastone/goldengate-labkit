@@ -32,12 +32,16 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
-현재 검증본 v0.84는 OSA/GGSA Geo Spatial 지도의 초기 화면을 서울권 전체로
-맞추고, 해약 고객 marker가 유입될 때 특정 주소로 자동 확대되지 않도록 한다.
-또한 OSA 실습 script는 `/home/oracle/script/osa/23ai`에만 제공해 과거 19c용
-동명 script를 상위 디렉터리에서 잘못 실행하는 일을 방지한다. 기존 설치에
-남아 있는 상위 디렉터리의 script는 `check_labkit.sh` 또는 `startDocker.sh`가
-백업한 뒤 자동으로 정리한다.
+현재 검증본 v0.85는 12장의 `lab12_init.sh`가 Source와 Target 양쪽에
+APEX/ORDS를 구성하도록 확장한다. Source에는 업무 application 100, 102, 110,
+120, 130, 140을 자동으로 import하며, 반복 실행에서는 이미 설치된 항목을
+안전하게 건너뛴다. 12장 이전의 `startDocker.sh` 실행에서는 아직 설치되지
+않은 APEX/ORDS를 오류로 취급하지 않고 안내 후 건너뛰며, 12장 이후에는
+35080과 36080 endpoint를 모두 기동·검증한다.
+
+v0.84에서 반영한 OSA/GGSA Geo Spatial 서울권 초기 화면, 자동 확대 방지,
+Pie visualization의 선택형 `Use 3D rendering`, OSA script 경로 정리는 그대로
+유지한다.
 
 `startOSA.sh`는 현재 OSA UI에서 누락된 Pie visualization의
 `Use 3D rendering` 선택 항목도 복원한다. 모든 Pie graph를 강제로 변경하지

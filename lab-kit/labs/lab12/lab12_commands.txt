@@ -16,6 +16,7 @@ ls -lh /home/oracle/oracle/pkg/apex_26.1.zip
 ls -lh /home/oracle/oracle/pkg/ords-26.2.3.237.1104.zip
 
 curl -I http://localhost:8080/ords/
+curl -I http://localhost:35080/ords/
 curl -I http://localhost:36080/ords/
 ssh -i ./.ssh/id_ed25519 -p 7822 -L 36080:127.0.0.1:36080 root@219.240.178.144
 

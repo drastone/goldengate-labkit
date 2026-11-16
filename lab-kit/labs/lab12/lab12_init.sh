@@ -7,15 +7,13 @@ source "${LAB12_DIR}/lab12_common.sh"
 
 lab12_begin_stage "lab12-init"
 
-lab12_log "INFO: Chapter 12 setup runs five idempotent stages."
-lab12_log "INFO: prepare media -> install APEX -> install ORDS -> configure workspace -> verify"
+lab12_log "INFO: Chapter 12 prepares APEX/ORDS on both reader-lab databases."
+lab12_log "INFO: Source business apps -> http://localhost:35080/ords/"
+lab12_log "INFO: Target information apps and OGG Console -> http://localhost:36080/ords/"
 
-bash "${LAB12_DIR}/lab12_prepare_media.sh"
-bash "${LAB12_DIR}/lab12_install_apex.sh"
-bash "${LAB12_DIR}/lab12_install_ords.sh"
-bash "${LAB12_DIR}/lab12_configure_workspace.sh"
-bash "${LAB12_DIR}/check_lab12.sh"
+bash "${LAB12_DIR}/lab12_setup_db.sh" source demo_osrc_23ai 35080
+bash "${LAB12_DIR}/lab12_setup_db.sh" target demo_otrg_23ai 36080
 
-lab12_log "OK: Chapter 12 APEX/ORDS environment and OGG workspace are ready."
-lab12_log "NEXT: open http://localhost:36080/ords/apex and sign in to workspace OGG as ggadmin."
+lab12_log "OK: Source and Target APEX/ORDS environments are ready."
+lab12_log "NEXT: open Source http://localhost:35080/ords/ or Target http://localhost:36080/ords/apex."
 lab12_finish_stage
