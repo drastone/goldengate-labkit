@@ -176,7 +176,9 @@ from dba_sys_privs
 where grantee = 'OGG'
 order by privilege;
 
-cd /home/oracle
-sh stopDocker.sh --rm
-sh create_docker.sh
-sh status_labkit.sh
+# Optional rollback only: do not run these commands after a successful setup.
+# They remove the containers and erase the Lab 05 database configuration.
+# cd /home/oracle
+# sh stopDocker.sh --rm
+# sh create_docker.sh
+# sh status_labkit.sh
