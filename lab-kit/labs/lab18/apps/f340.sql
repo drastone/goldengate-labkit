@@ -731,7 +731,7 @@ wwv_flow_imp_page.create_report_region(
 ,p_region_template_options=>'#DEFAULT#:t-Region--scrollBody'
 ,p_source_type=>'NATIVE_SQL_REPORT'
 ,p_query_type=>'SQL'
-,p_source=>unistr('select to_char(claim_time,''YYYY-MM-DD'') "\B0A0\C9DC",claim_no "\ACE0\AC1D\BA85",claim_type||'' / ''||claim_status "\AC70\B798\C720\D615",to_char(claimed_amount,''FM999,999,999'') "\AC70\B798\AE08\C561(\C6D0)",hospital_name "\D380\B4DC\BA85",to_char(claim_time,''HH24:MI:SS'') "\CC98\B9AC\C2DC\AC01" from ggadmin.ins2_claim order by claim_ti')
+,p_source=>unistr('select to_char(claim_time,''YYYY-MM-DD'') "\B0A0\C9DC",claim_no "\ACE0\AC1D\BA85",claim_type||'' / ''||claim_status "\AC70\B798\C720\D615",to_char(claimed_amount,''FM999,999,999'') "\AC70\B798\AE08\C561(\C6D0)",hospital_name "\D380\B4DC\BA85",to_char(claim_time,''HH24:MI:SS'') "\CC98\B9AC\C2DC\AC01" from soe.ins2_claim order by claim_ti')
 ||'me desc fetch first 20 rows only'
 ,p_query_num_rows=>20
 ,p_query_options=>'DERIVED_REPORT_COLUMNS'
@@ -805,10 +805,10 @@ wwv_flow_imp_page.create_report_region(
 ,p_region_template_options=>'#DEFAULT#:t-Region--removeHeader:t-Region--scrollBody'
 ,p_source_type=>'NATIVE_SQL_REPORT'
 ,p_query_type=>'SQL'
-,p_source=>unistr('select ''\BCF4\C720 \ACC4\C57D'' label,to_char(count(*)) value,''fa-file-text-o'' icon,''u-color-24'' color from ggadmin.ins2_policy where policy_status<>''\D574\C9C0'' union all select ''\ACE0\AC1D \C218'',to_char(count(*)),''fa-users'',''u-color-3'' from ggadmin.ins2_customer union all select ''\C6D4 \BCF4')
-||unistr('\D5D8\B8CC'',to_char(sum(monthly_premium),''FM999,999,999'')||''\C6D0'',''fa-won'',''u-color-14'' from ggadmin.ins2_policy where policy_status in (''\C815\C0C1'',''\B0A9\C785\C720\C608'',''\C2E4\D6A8\C704\D5D8'') union all select ''\C2EC\C0AC\C911 \CCAD\AD6C'',to_char(sum(case when claim_status in (''\C2EC\C0AC\C911'',''\C870\C0AC\C911'',''\C11C\B958\BCF4\C644'') then 1 else 0 end))')
-||unistr(',''fa-medkit'',''u-color-1'' from ggadmin.ins2_claim union all select ''\C2B9\C778 \BCF4\D5D8\AE08'',to_char(sum(approved_amount),''FM999,999,999'')||''\C6D0'',''fa-check-circle'',''u-color-21'' from ggadmin.ins2_claim union all select ''HIGH \B9AC\C2A4\D06C'',to_char(sum(case when risk_level=''HIGH'' a')
-||unistr('nd action_status<>''\C644\B8CC'' then 1 else 0 end)),''fa-warning'',''u-color-2'' from ggadmin.ins2_risk_signal')
+,p_source=>unistr('select ''\BCF4\C720 \ACC4\C57D'' label,to_char(count(*)) value,''fa-file-text-o'' icon,''u-color-24'' color from soe.ins2_policy where policy_status<>''\D574\C9C0'' union all select ''\ACE0\AC1D \C218'',to_char(count(*)),''fa-users'',''u-color-3'' from soe.ins2_customer union all select ''\C6D4 \BCF4')
+||unistr('\D5D8\B8CC'',to_char(sum(monthly_premium),''FM999,999,999'')||''\C6D0'',''fa-won'',''u-color-14'' from soe.ins2_policy where policy_status in (''\C815\C0C1'',''\B0A9\C785\C720\C608'',''\C2E4\D6A8\C704\D5D8'') union all select ''\C2EC\C0AC\C911 \CCAD\AD6C'',to_char(sum(case when claim_status in (''\C2EC\C0AC\C911'',''\C870\C0AC\C911'',''\C11C\B958\BCF4\C644'') then 1 else 0 end))')
+||unistr(',''fa-medkit'',''u-color-1'' from soe.ins2_claim union all select ''\C2B9\C778 \BCF4\D5D8\AE08'',to_char(sum(approved_amount),''FM999,999,999'')||''\C6D0'',''fa-check-circle'',''u-color-21'' from soe.ins2_claim union all select ''HIGH \B9AC\C2A4\D06C'',to_char(sum(case when risk_level=''HIGH'' a')
+||unistr('nd action_status<>''\C644\B8CC'' then 1 else 0 end)),''fa-warning'',''u-color-2'' from soe.ins2_risk_signal')
 ,p_query_num_rows=>6
 ,p_query_options=>'DERIVED_REPORT_COLUMNS'
 ,p_query_no_data_found=>unistr('\B370\C774\D130 \C5C6\C74C')
@@ -892,7 +892,7 @@ wwv_flow_imp_page.create_page_plug(
 ,p_plug_display_sequence=>20
 ,p_query_type=>'SQL'
 ,p_plug_source=>unistr('select p.policy_no "\ACC4\C57D\BC88\D638",c.customer_id "\ACE0\AC1DID",c.customer_name "\ACE0\AC1D\BA85",c.gender "\C131\BCC4",trunc(months_between(sysdate,c.birth_date)/12) "\B098\C774",c.region "\C9C0\C5ED",c.customer_grade "\ACE0\AC1D\B4F1\AE09",pr.product_name "\C0C1\D488\BA85",p.policy_status "\ACC4\C57D\C0C1\D0DC",p.monthly_premium "\C6D4\BCF4\D5D8\B8CC",p.cover')
-||unistr('age_amount "\BCF4\C7A5\AE08\C561",p.persistency_month "\C720\C9C0\AC1C\C6D4",p.contract_date "\ACC4\C57D\C77C" from ggadmin.ins2_policy p join ggadmin.ins2_customer c on c.customer_id=p.customer_id join ggadmin.ins2_product pr on pr.product_code=p.product_code order by p.contract_date desc')
+||unistr('age_amount "\BCF4\C7A5\AE08\C561",p.persistency_month "\C720\C9C0\AC1C\C6D4",p.contract_date "\ACC4\C57D\C77C" from soe.ins2_policy p join soe.ins2_customer c on c.customer_id=p.customer_id join soe.ins2_product pr on pr.product_code=p.product_code order by p.contract_date desc')
 ,p_plug_source_type=>'NATIVE_IR'
 ,p_plug_query_options=>'DERIVED_REPORT_COLUMNS'
 );
@@ -963,7 +963,7 @@ wwv_flow_imp_page.create_jet_chart_series(
 ,p_seq=>20
 ,p_name=>unistr('\C5EC\C131')
 ,p_data_source_type=>'SQL'
-,p_data_source=>unistr('select case when age<30 then ''20\B300'' when age<40 then ''30\B300'' when age<50 then ''40\B300'' when age<60 then ''50\B300'' else ''60\B300\C774\C0C1'' end age_group,count(*) cnt from (select gender,trunc(months_between(sysdate,birth_date)/12) age from ggadmin.ins2_customer) where gen')
+,p_data_source=>unistr('select case when age<30 then ''20\B300'' when age<40 then ''30\B300'' when age<50 then ''40\B300'' when age<60 then ''50\B300'' else ''60\B300\C774\C0C1'' end age_group,count(*) cnt from (select gender,trunc(months_between(sysdate,birth_date)/12) age from soe.ins2_customer) where gen')
 ||unistr('der=''\C5EC'' group by case when age<30 then ''20\B300'' when age<40 then ''30\B300'' when age<50 then ''40\B300'' when age<60 then ''50\B300'' else ''60\B300\C774\C0C1'' end')
 ,p_series_type=>'bar'
 ,p_items_value_column_name=>'CNT'
@@ -982,7 +982,7 @@ wwv_flow_imp_page.create_jet_chart_series(
 ,p_seq=>10
 ,p_name=>unistr('\B0A8\C131')
 ,p_data_source_type=>'SQL'
-,p_data_source=>unistr('select case when age<30 then ''20\B300'' when age<40 then ''30\B300'' when age<50 then ''40\B300'' when age<60 then ''50\B300'' else ''60\B300\C774\C0C1'' end age_group,count(*) cnt from (select gender,trunc(months_between(sysdate,birth_date)/12) age from ggadmin.ins2_customer) where gen')
+,p_data_source=>unistr('select case when age<30 then ''20\B300'' when age<40 then ''30\B300'' when age<50 then ''40\B300'' when age<60 then ''50\B300'' else ''60\B300\C774\C0C1'' end age_group,count(*) cnt from (select gender,trunc(months_between(sysdate,birth_date)/12) age from soe.ins2_customer) where gen')
 ||unistr('der=''\B0A8'' group by case when age<30 then ''20\B300'' when age<40 then ''30\B300'' when age<50 then ''40\B300'' when age<60 then ''50\B300'' else ''60\B300\C774\C0C1'' end')
 ,p_series_type=>'bar'
 ,p_items_value_column_name=>'CNT'
@@ -1061,7 +1061,7 @@ wwv_flow_imp_page.create_page_plug(
 ,p_plug_template=>wwv_flow_imp.id(141231885514208641577)
 ,p_plug_display_sequence=>20
 ,p_query_type=>'SQL'
-,p_plug_source=>unistr('select payment_time "\CC98\B9AC\C2DC\AC01",payment_id "\B0A9\C785ID",policy_no "\ACC4\C57D\BC88\D638",customer_id "\ACE0\AC1DID",payment_month "\B0A9\C785\C6D4",premium_amount "\BCF4\D5D8\B8CC(\C6D0)",payment_status "\B0A9\C785\C0C1\D0DC",payment_method "\B0A9\C785\BC29\BC95",delay_days "\C5F0\CCB4\C77C\C218" from ggadmin.ins2_payment order by payment_time desc')
+,p_plug_source=>unistr('select payment_time "\CC98\B9AC\C2DC\AC01",payment_id "\B0A9\C785ID",policy_no "\ACC4\C57D\BC88\D638",customer_id "\ACE0\AC1DID",payment_month "\B0A9\C785\C6D4",premium_amount "\BCF4\D5D8\B8CC(\C6D0)",payment_status "\B0A9\C785\C0C1\D0DC",payment_method "\B0A9\C785\BC29\BC95",delay_days "\C5F0\CCB4\C77C\C218" from soe.ins2_payment order by payment_time desc')
 ,p_plug_source_type=>'NATIVE_IR'
 ,p_plug_query_options=>'DERIVED_REPORT_COLUMNS'
 );
@@ -1133,7 +1133,7 @@ wwv_flow_imp_page.create_jet_chart_series(
 ,p_seq=>10
 ,p_name=>unistr('\B0A9\C785 \AC74\C218')
 ,p_data_source_type=>'SQL'
-,p_data_source=>'select payment_status op_name,count(*) cnt from ggadmin.ins2_payment group by payment_status order by cnt desc'
+,p_data_source=>'select payment_status op_name,count(*) cnt from soe.ins2_payment group by payment_status order by cnt desc'
 ,p_series_type=>'pie'
 ,p_items_value_column_name=>'CNT'
 ,p_items_label_column_name=>'OP_NAME'
@@ -1181,7 +1181,7 @@ wwv_flow_imp_page.create_page_plug(
 ,p_plug_template=>wwv_flow_imp.id(141231885514208641577)
 ,p_plug_display_sequence=>20
 ,p_query_type=>'SQL'
-,p_plug_source=>unistr('select claim_time "\C811\C218\C2DC\AC01",claim_no "\CCAD\AD6C\BC88\D638",policy_no "\ACC4\C57D\BC88\D638",customer_id "\ACE0\AC1DID",claim_type "\CCAD\AD6C\C720\D615",claimed_amount "\CCAD\AD6C\AE08\C561(\C6D0)",approved_amount "\C2B9\C778\AE08\C561(\C6D0)",claim_status "\CC98\B9AC\C0C1\D0DC",fraud_score "\C774\C0C1\C810\C218",hospital_name "\BCD1\C6D0",adjuster_name "\B2F4\B2F9\C2EC\C0AC\C790" from ggadmin.ins2_claim ')
+,p_plug_source=>unistr('select claim_time "\C811\C218\C2DC\AC01",claim_no "\CCAD\AD6C\BC88\D638",policy_no "\ACC4\C57D\BC88\D638",customer_id "\ACE0\AC1DID",claim_type "\CCAD\AD6C\C720\D615",claimed_amount "\CCAD\AD6C\AE08\C561(\C6D0)",approved_amount "\C2B9\C778\AE08\C561(\C6D0)",claim_status "\CC98\B9AC\C0C1\D0DC",fraud_score "\C774\C0C1\C810\C218",hospital_name "\BCD1\C6D0",adjuster_name "\B2F4\B2F9\C2EC\C0AC\C790" from soe.ins2_claim ')
 ||'order by claim_time desc'
 ,p_plug_source_type=>'NATIVE_IR'
 ,p_plug_query_options=>'DERIVED_REPORT_COLUMNS'
@@ -1254,7 +1254,7 @@ wwv_flow_imp_page.create_jet_chart_series(
 ,p_seq=>10
 ,p_name=>unistr('\CCAD\AD6C\AE08\C561')
 ,p_data_source_type=>'SQL'
-,p_data_source=>'select claim_type fund_name,sum(claimed_amount) tot_amt from ggadmin.ins2_claim group by claim_type order by tot_amt desc'
+,p_data_source=>'select claim_type fund_name,sum(claimed_amount) tot_amt from soe.ins2_claim group by claim_type order by tot_amt desc'
 ,p_series_type=>'bar'
 ,p_items_value_column_name=>'TOT_AMT'
 ,p_items_label_column_name=>'FUND_NAME'
@@ -1368,7 +1368,7 @@ wwv_flow_imp_page.create_jet_chart_series(
 ,p_seq=>10
 ,p_name=>unistr('\C704\D5D8 \C2E0\D638')
 ,p_data_source_type=>'SQL'
-,p_data_source=>'select to_char(detected_at,''MM-DD HH24'') ym,count(*) cnt from ggadmin.ins2_risk_signal group by to_char(detected_at,''MM-DD HH24'') order by ym'
+,p_data_source=>'select to_char(detected_at,''MM-DD HH24'') ym,count(*) cnt from soe.ins2_risk_signal group by to_char(detected_at,''MM-DD HH24'') order by ym'
 ,p_series_type=>'line'
 ,p_items_value_column_name=>'CNT'
 ,p_items_label_column_name=>'YM'
@@ -1421,7 +1421,7 @@ wwv_flow_imp_page.create_page_plug(
 ,p_plug_template=>wwv_flow_imp.id(141231885514208641577)
 ,p_plug_display_sequence=>30
 ,p_query_type=>'SQL'
-,p_plug_source=>unistr('select detected_at "\D0D0\C9C0\C2DC\AC01",signal_id "\C2E0\D638ID",customer_id "\ACE0\AC1DID",policy_no "\ACC4\C57D\BC88\D638",signal_type "\C2E0\D638\C720\D615",risk_level "\C704\D5D8\B4F1\AE09",risk_score "\C704\D5D8\C810\C218",expected_loss "\C608\C0C1\C190\C2E4(\C6D0)",action_status "\C870\CE58\C0C1\D0DC",description "\B0B4\C6A9" from ggadmin.ins2_risk_signal order by detected_at des')
+,p_plug_source=>unistr('select detected_at "\D0D0\C9C0\C2DC\AC01",signal_id "\C2E0\D638ID",customer_id "\ACE0\AC1DID",policy_no "\ACC4\C57D\BC88\D638",signal_type "\C2E0\D638\C720\D615",risk_level "\C704\D5D8\B4F1\AE09",risk_score "\C704\D5D8\C810\C218",expected_loss "\C608\C0C1\C190\C2E4(\C6D0)",action_status "\C870\CE58\C0C1\D0DC",description "\B0B4\C6A9" from soe.ins2_risk_signal order by detected_at des')
 ||'c'
 ,p_plug_source_type=>'NATIVE_IR'
 ,p_plug_query_options=>'DERIVED_REPORT_COLUMNS'
@@ -1458,9 +1458,9 @@ wwv_flow_imp_page.create_report_region(
 ,p_region_template_options=>'#DEFAULT#:t-Region--removeHeader:t-Region--scrollBody'
 ,p_source_type=>'NATIVE_SQL_REPORT'
 ,p_query_type=>'SQL'
-,p_source=>unistr('select ''\C2E4\D6A8\00B7\D574\C9C0\C704\D5D8 \ACC4\C57D'' label,to_char(sum(case when policy_status in (''\C2E4\D6A8\C704\D5D8'',''\D574\C9C0\AC80\D1A0'') then 1 else 0 end)) value,''fa-warning'' icon,''u-color-1'' color from ggadmin.ins2_policy union all select ''\BBF8\C870\CE58 \B9AC\C2A4\D06C'',to_char(sum(case when action_status not in (''\C644\B8CC'',''\C548\B0B4\C644\B8CC''')
-||unistr(') then 1 else 0 end)),''fa-exclamation-triangle'',''u-color-2'' from ggadmin.ins2_risk_signal union all select ''\C608\C0C1 \C190\C2E4\C561'',to_char(sum(expected_loss),''FM999,999,999'')||''\C6D0'',''fa-won'',''u-color-3'' from ggadmin.ins2_risk_signal union all select ''\D3C9\ADE0 \C704\D5D8\C810\C218'',to_char')
-||'(round(avg(risk_score),1),''FM990.0''),''fa-line-chart'',''u-color-4'' from ggadmin.ins2_risk_signal'
+,p_source=>unistr('select ''\C2E4\D6A8\00B7\D574\C9C0\C704\D5D8 \ACC4\C57D'' label,to_char(sum(case when policy_status in (''\C2E4\D6A8\C704\D5D8'',''\D574\C9C0\AC80\D1A0'') then 1 else 0 end)) value,''fa-warning'' icon,''u-color-1'' color from soe.ins2_policy union all select ''\BBF8\C870\CE58 \B9AC\C2A4\D06C'',to_char(sum(case when action_status not in (''\C644\B8CC'',''\C548\B0B4\C644\B8CC''')
+||unistr(') then 1 else 0 end)),''fa-exclamation-triangle'',''u-color-2'' from soe.ins2_risk_signal union all select ''\C608\C0C1 \C190\C2E4\C561'',to_char(sum(expected_loss),''FM999,999,999'')||''\C6D0'',''fa-won'',''u-color-3'' from soe.ins2_risk_signal union all select ''\D3C9\ADE0 \C704\D5D8\C810\C218'',to_char')
+||'(round(avg(risk_score),1),''FM990.0''),''fa-line-chart'',''u-color-4'' from soe.ins2_risk_signal'
 ,p_query_num_rows=>4
 ,p_query_options=>'DERIVED_REPORT_COLUMNS'
 ,p_query_no_data_found=>unistr('\D574\C57D \B370\C774\D130 \C5C6\C74C')
@@ -1543,7 +1543,7 @@ wwv_flow_imp_page.create_page_plug(
 ,p_plug_template=>wwv_flow_imp.id(141231885514208641577)
 ,p_plug_display_sequence=>20
 ,p_query_type=>'SQL'
-,p_plug_source=>unistr('select category "\CE74\D14C\ACE0\B9AC",product_code "\C0C1\D488\CF54\B4DC",product_name "\C0C1\D488\BA85",channel "\C8FC\B825\CC44\B110",monthly_premium "\AE30\C900\BCF4\D5D8\B8CC(\C6D0)",coverage_amount "\AE30\C900\BCF4\C7A5\AE08\C561(\C6D0)",status "\C0C1\D0DC",launch_date "\CD9C\C2DC\C77C" from ggadmin.ins2_product order by category,product_code')
+,p_plug_source=>unistr('select category "\CE74\D14C\ACE0\B9AC",product_code "\C0C1\D488\CF54\B4DC",product_name "\C0C1\D488\BA85",channel "\C8FC\B825\CC44\B110",monthly_premium "\AE30\C900\BCF4\D5D8\B8CC(\C6D0)",coverage_amount "\AE30\C900\BCF4\C7A5\AE08\C561(\C6D0)",status "\C0C1\D0DC",launch_date "\CD9C\C2DC\C77C" from soe.ins2_product order by category,product_code')
 ,p_plug_source_type=>'NATIVE_IR'
 ,p_plug_query_options=>'DERIVED_REPORT_COLUMNS'
 );
@@ -1615,7 +1615,7 @@ wwv_flow_imp_page.create_jet_chart_series(
 ,p_seq=>10
 ,p_name=>unistr('\C0C1\D488 \C218')
 ,p_data_source_type=>'SQL'
-,p_data_source=>'select category,count(*) cnt from ggadmin.ins2_product group by category order by cnt desc'
+,p_data_source=>'select category,count(*) cnt from soe.ins2_product group by category order by cnt desc'
 ,p_series_type=>'pie'
 ,p_items_value_column_name=>'CNT'
 ,p_items_label_column_name=>'CATEGORY'

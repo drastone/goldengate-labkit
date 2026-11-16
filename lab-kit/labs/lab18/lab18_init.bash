@@ -12,17 +12,25 @@ set -Eeuo pipefail
 
 LAB18_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="${APP_DIR:-${LAB18_DIR}/apps}"
+APP340_DIR="${APP340_DIR:-${LAB18_DIR}/app340}"
 TARGET_DB_CONTAINER="${TARGET_DB_CONTAINER:-demo_otrg_23ai}"
 TARGET_PDB="${TARGET_PDB:-ORCLPDB1}"
 APEX_WORKSPACE_NAME="${APEX_WORKSPACE_NAME:-OGG}"
 APEX_SCHEMA="${APEX_SCHEMA:-GGADMIN}"
 HOST_ORDS_PORT="${HOST_ORDS_PORT:-36080}"
 CONTAINER_APP_DIR="/home/oracle/labs/lab18/apps"
+CONTAINER_APP340_DIR="/home/oracle/labs/lab18/app340"
 LOG_DIR="${LOG_DIR:-$(cd "${LAB18_DIR}/../.." && pwd)/logs/lab18}"
 LOG_FILE="${LOG_FILE:-${LOG_DIR}/$(date '+%Y%m%d-%H%M%S')-lab18-init.log}"
 THEME_SOURCE_APP_ID="${THEME_SOURCE_APP_ID:-102}"
 THEME_SOURCE_EXPORT="${APP_DIR}/f${THEME_SOURCE_APP_ID}.sql"
 APP_IDS=(300 310 320 330 340 350 360 370 380 390 400)
+TARGET_RAW_TABLES=(ADDRESS CUST_PR CANCELAMT CALL_CENTER_LOG CUST_INFO)
+TARGET_SQL_FILES=(
+  build_insurance_info_app_340_id7.sql
+  build_ins2_churn_vector_page_70_id7.sql
+  enhance_churn_fp_coach_page_70_id7.sql
+)
 
 STARTED_AT="$(date +%s)"
 mkdir -p "${LOG_DIR}"
@@ -70,6 +78,38 @@ application_count() {
     sed -n 's/^[[:space:]]*APP_COUNT=//p' | tail -1
 }
 
+require_target_raw_objects() {
+  local expected_count="${#TARGET_RAW_TABLES[@]}"
+  local table_list="'ADDRESS','CUST_PR','CANCELAMT','CALL_CENTER_LOG','CUST_INFO'"
+  local table_count event_count soe_count
+
+  soe_count="$(sql_sys "select 'SOE_COUNT=' || count(*) from dba_users where username = 'SOE' and account_status like 'OPEN%';" |
+    sed -n 's/^[[:space:]]*SOE_COUNT=//p' | tail -1)"
+  [ "${soe_count:-0}" -eq 1 ] ||
+    fail "Target business schema SOE is missing or locked in ${TARGET_DB_CONTAINER}/${TARGET_PDB}. Recreate the Target lab database before Lab 18."
+
+  table_count="$(sql_sys "select 'RAW_TABLE_COUNT=' || count(*) from dba_tables where owner = 'SOE' and table_name in (${table_list});" |
+    sed -n 's/^[[:space:]]*RAW_TABLE_COUNT=//p' | tail -1)"
+  if [ "${table_count:-0}" -ne "${expected_count}" ]; then
+    log "ERROR: Target SOE replication prerequisites are incomplete: found ${table_count:-0}/${expected_count} tables."
+    log "ERROR: Lab 18 expects Source SOE DDL/DML to reach Target SOE through GoldenGate D01 first."
+    log "RECOVERY: cd /home/oracle/labs"
+    log "RECOVERY: RESET_ORACLE_TARGET=Y sh reset_lab_all.sh --create-objects"
+    fail "After the reset completes, rerun: cd /home/oracle/labs/lab18 && sh lab18_init.sh"
+  fi
+
+  event_count="$(sql_sys "select 'EVENT_COUNT=' || count(*) from soe.call_center_log;" |
+    sed -n 's/^[[:space:]]*EVENT_COUNT=//p' | tail -1)"
+  if [ "${event_count:-0}" -lt 1 ]; then
+    log "ERROR: Target SOE.CALL_CENTER_LOG exists but contains no replicated business events."
+    log "RECOVERY: cd /home/oracle/labs"
+    log "RECOVERY: RESET_ORACLE_TARGET=Y sh reset_lab_all.sh --create-objects"
+    fail "Wait for GoldenGate D01 to finish, then rerun Lab 18 initialization."
+  fi
+
+  log "OK: Target SOE has all ${expected_count} replicated raw tables and ${event_count} call-center events."
+}
+
 require_prerequisites() {
   local apex_state workspace_count theme_source_count app_id export_file
 
@@ -79,6 +119,8 @@ require_prerequisites() {
 
   docker ps --format '{{.Names}}' | grep -qx "${TARGET_DB_CONTAINER}" ||
     fail "Target DB container is not running: ${TARGET_DB_CONTAINER}. Run startDocker.sh first."
+
+  require_target_raw_objects
 
   apex_state="$(sql_sys "select 'APEX_STATE=' || version || '|' || status from dba_registry where comp_id = 'APEX';" |
     sed -n 's/^[[:space:]]*APEX_STATE=//p' | tail -1)"
@@ -114,6 +156,10 @@ require_prerequisites() {
     export_file="${APP_DIR}/f${app_id}.sql"
     [ -s "${export_file}" ] || fail "APEX export not found: ${export_file}"
   done
+
+  for export_file in "${TARGET_SQL_FILES[@]}"; do
+    [ -s "${APP340_DIR}/${export_file}" ] || fail "Target SOE setup SQL not found: ${APP340_DIR}/${export_file}"
+  done
 }
 
 stage_file() {
@@ -131,11 +177,23 @@ stage_file() {
     return
   fi
 
-  docker exec -u root "${TARGET_DB_CONTAINER}" mkdir -p "${CONTAINER_APP_DIR}"
+  docker exec -u root "${TARGET_DB_CONTAINER}" mkdir -p "${container_file%/*}"
   docker cp "${host_file}" "${TARGET_DB_CONTAINER}:${container_file}"
   docker exec -u root "${TARGET_DB_CONTAINER}" chown oracle:oinstall "${container_file}"
   docker exec -u root "${TARGET_DB_CONTAINER}" chmod 644 "${container_file}"
   log "OK: staged ${label}."
+}
+
+run_target_sql() {
+  local sql_file="$1"
+  local label="$2"
+  local host_file="${APP340_DIR}/${sql_file}"
+  local container_file="${CONTAINER_APP340_DIR}/${sql_file}"
+
+  stage_file "${host_file}" "${container_file}" "${label}"
+  log "==> ${label}"
+  docker exec -i -u oracle "${TARGET_DB_CONTAINER}" bash -lc "sqlplus -s / as sysdba @${container_file}"
+  log "OK: ${label}"
 }
 
 import_app() {
@@ -206,6 +264,43 @@ select application_id, application_name, alias
   log "OK: verified ${installed_count} Lab 18 business applications."
 }
 
+verify_target_objects() {
+  local object_count page_count grant_count source_owner_count
+
+  object_count="$(sql_sys "
+select 'TARGET_OBJECT_COUNT=' || count(*)
+  from dba_objects
+ where owner = 'SOE'
+   and status = 'VALID'
+   and (object_name, object_type) in (
+     ('INS2_CHURN_FP_CARE', 'TABLE'),
+     ('INS2_CHURN_ACTION_QUEUE_V', 'VIEW'),
+     ('INS2_CHURN_VECTOR_PKG', 'PACKAGE')
+   );" | sed -n 's/^[[:space:]]*TARGET_OBJECT_COUNT=//p' | tail -1)"
+  [ "${object_count:-0}" -eq 3 ] || fail "Target SOE analytics objects are missing or invalid: ${object_count:-0}/3."
+
+  page_count="$(sql_sys "select 'PAGE_COUNT=' || count(*) from apex_application_pages where application_id = 340 and page_id = 70;" |
+    sed -n 's/^[[:space:]]*PAGE_COUNT=//p' | tail -1)"
+  [ "${page_count:-0}" -eq 1 ] || fail "App 340 Page 70 was not installed."
+
+  grant_count="$(sql_sys "
+select 'GRANT_COUNT=' || count(*)
+  from dba_tab_privs
+ where owner = 'SOE'
+   and grantee = 'GGADMIN'
+   and table_name in ('INS2_CHURN_FP_CARE','INS2_CHURN_ACTION_QUEUE_V','INS2_CHURN_VECTOR_PKG');" |
+    sed -n 's/^[[:space:]]*GRANT_COUNT=//p' | tail -1)"
+  [ "${grant_count:-0}" -eq 3 ] || fail "GGADMIN has incomplete APEX privileges on Target SOE analytics objects: ${grant_count:-0}/3."
+
+  source_owner_count="$(sql_sys "select 'WRONG_OWNER_COUNT=' || count(*) from dba_objects where owner = 'GGADMIN' and object_name like 'INS2_CHURN%';" |
+    sed -n 's/^[[:space:]]*WRONG_OWNER_COUNT=//p' | tail -1)"
+  if [ "${source_owner_count:-0}" -gt 0 ]; then
+    log "WARN: found ${source_owner_count} legacy GGADMIN.INS2_CHURN objects; new Lab 18 objects use SOE and do not depend on them."
+  fi
+
+  log "OK: Target SOE owns the Lab 18 analytics objects; GGADMIN has only APEX access grants."
+}
+
 main() {
   local app_id
 
@@ -224,7 +319,16 @@ main() {
     import_app "${app_id}"
   done
 
+
+  sql_sys "alter user soe identified by soe account unlock;"
+  log "OK: Target SOE lab account is unlocked for the reader SQL examples."
+
+  run_target_sql "build_insurance_info_app_340_id7.sql" "Target SOE App 340 business objects"
+  run_target_sql "build_ins2_churn_vector_page_70_id7.sql" "Target SOE churn vector objects and App 340 Page 70"
+  run_target_sql "enhance_churn_fp_coach_page_70_id7.sql" "Target SOE FP care coaching objects"
+
   verify_apps
+  verify_target_objects
   trap - ERR
   log "OK: Lab 18 APEX business applications are ready."
   log "OK: elapsed time: $(elapsed)"

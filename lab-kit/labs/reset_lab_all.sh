@@ -9,6 +9,13 @@ set -eu
 # recreates and starts the OGG path.
 
 LAB_HOME="${LAB_HOME:-$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)}"
+BASE_LAB_HOME="${BASE_LAB_HOME:-$(CDPATH= cd -- "${LAB_HOME}/.." && pwd)}"
+AUTO_START_REQUIRED_CONTAINERS="${AUTO_START_REQUIRED_CONTAINERS:-Y}"
+CONTAINER_PREPARE_ONLY="${CONTAINER_PREPARE_ONLY:-N}"
+REQUIRED_CONTAINER_WAIT_SECONDS="${REQUIRED_CONTAINER_WAIT_SECONDS:-180}"
+RESET_ORACLE_TARGET="${RESET_ORACLE_TARGET:-N}"
+BIGDATA_INIT_SCRIPT="${BIGDATA_INIT_SCRIPT:-${BASE_LAB_HOME}/centos/init.sh}"
+KAFKA_READY_WAIT_SECONDS="${KAFKA_READY_WAIT_SECONDS:-240}"
 
 OGGHUB_CONTAINER="${OGGHUB_CONTAINER:-demo_ogg_23ai}"
 OGGBD_CONTAINER="${OGGBD_CONTAINER:-demo_oggbd_23ai}"
@@ -42,6 +49,7 @@ PROCESS_WAIT_SECONDS="${PROCESS_WAIT_SECONDS:-60}"
 PROCESS_WAIT_INTERVAL="${PROCESS_WAIT_INTERVAL:-3}"
 TARGET_OBJECT_WAIT_SECONDS="${TARGET_OBJECT_WAIT_SECONDS:-120}"
 PHASE="initializing"
+RESET_WORK_STARTED="N"
 
 finish_report() {
   status="$?"
@@ -49,7 +57,11 @@ finish_report() {
     echo
     echo "ERROR: reset_lab_all.sh failed during phase: ${PHASE}" >&2
     echo "ERROR: exit status: ${status}" >&2
-    echo "ERROR: C01/D01/KAF01/dpkaf01 may have been deleted but not recreated." >&2
+    if [ "${RESET_WORK_STARTED}" != "Y" ]; then
+      echo "INFO: reset work did not start; no OGG process, trail, object, or topic was changed." >&2
+    else
+      echo "ERROR: C01/KAF01/dpkaf01 may have been deleted but not recreated." >&2
+    fi
     echo "ERROR: Review the output above, fix the failed phase, then rerun this script." >&2
   fi
 }
@@ -70,7 +82,8 @@ Usage: $0 [--yes] [--create-objects]
 
 Environment overrides:
   OGG_PASS, OGGHUB_CONTAINER, OGGBD_CONTAINER, SOURCE_DB_CONTAINER,
-  TARGET_DB_CONTAINER, BIGDATA_CONTAINER, CREATE_OBJECTS
+  TARGET_DB_CONTAINER, BIGDATA_CONTAINER, CREATE_OBJECTS,
+  AUTO_START_REQUIRED_CONTAINERS, RESET_ORACLE_TARGET
 USAGE
       exit 0
       ;;
@@ -92,7 +105,10 @@ run_admin() {
   container="$1"
   shift
 
-  docker exec -i -u ogg "${container}" python3 - "$@" <<'PY' || return $?
+  docker exec -i -u ogg \
+    -e OGG_USER="${OGG_USER}" \
+    -e OGG_PASS="${OGG_PASS}" \
+    "${container}" python3 - "$@" <<'PY' || return $?
 import os
 import re
 import subprocess
@@ -114,6 +130,7 @@ proc = subprocess.run(
 text = proc.stdout
 if proc.stderr:
     text += "\n" + proc.stderr
+text = re.sub(r"(?im)(\bpassword\s+)\S+", r"\1********", text)
 print(text)
 if (proc.returncode != 0
         or re.search(r"(?i)\bError:\s", text)
@@ -377,8 +394,8 @@ SQL
   done
 }
 
-repair_target_ai_app_privileges() {
-  echo "==> Repair target AI/APEX privileges and compile GGADMIN objects"
+grant_target_apex_source_privileges() {
+  echo "==> Grant APEX parsing access to replicated Target SOE objects"
   docker exec -u oracle "${TARGET_DB_CONTAINER}" bash -lc "
     sqlplus -s / as sysdba <<'SQL'
 set serveroutput on
@@ -391,24 +408,46 @@ grant select on soe.cancelamt to ggadmin;
 grant select on soe.call_center_log to ggadmin;
 grant select on soe.cust_info to ggadmin;
 
-begin
-  dbms_utility.compile_schema(schema => 'GGADMIN', compile_all => false);
-end;
-/
+exit
+SQL
+  "
+}
 
-declare
-  l_invalid_count number;
-begin
-  select count(*)
-    into l_invalid_count
-    from dba_objects
-   where owner = 'GGADMIN'
-     and object_name like 'INS2_CHURN%'
-     and status <> 'VALID';
+ensure_target_ogg_identity_ddl_privilege() {
+  echo "==> Ensure Target OGG can apply identity-column table DDL"
+  docker exec -u oracle "${TARGET_DB_CONTAINER}" bash -lc "
+    sqlplus -s / as sysdba <<'SQL'
+whenever sqlerror exit failure rollback
+alter session set container=ORCLPDB1;
+grant create any sequence to ogg;
+exit
+SQL
+  "
+}
 
-  if l_invalid_count > 0 then
-    raise_application_error(-20001, 'GGADMIN INS2_CHURN invalid objects remain: ' || l_invalid_count);
-  end if;
+remove_source_legacy_ai_objects() {
+  echo "==> Remove retired Source SOE analytics objects"
+  docker exec -u oracle "${SOURCE_DB_CONTAINER}" bash -lc "
+    sqlplus -s / as sysdba <<'SQL'
+whenever sqlerror exit failure rollback
+alter session set container=ORCLPDB1;
+begin
+  for r in (
+    select 'drop view soe.ins2_churn_action_queue_26ai_v' ddl from dual
+    union all
+    select 'drop package soe.ins2_churn_fp_ai_pkg' from dual
+    union all
+    select 'drop table soe.ins2_churn_fp_care_26ai cascade constraints purge' from dual
+  ) loop
+    begin
+      execute immediate r.ddl;
+    exception
+      when others then
+        if sqlcode not in (-942, -4043) then
+          raise;
+        end if;
+    end;
+  end loop;
 end;
 /
 exit
@@ -438,25 +477,163 @@ wait_for_trail_definition() {
   done
 }
 
-check_container() {
+container_is_running() {
+  container="$1"
+  [ "$(docker inspect -f '{{.State.Running}}' "${container}" 2>/dev/null || true)" = "true" ]
+}
+
+check_container_exists() {
   container="$1"
 
   if ! docker inspect "${container}" >/dev/null 2>&1; then
     echo "ERROR: container not found: ${container}" >&2
     exit 1
   fi
+}
 
-  if [ "$(docker inspect -f '{{.State.Running}}' "${container}")" != "true" ]; then
-    echo "ERROR: required container is not running: ${container}" >&2
-    echo "ERROR: run /home/oracle/startDocker.sh, confirm the containers are healthy, then retry." >&2
+ensure_required_containers_running() {
+  missing=""
+
+  for container in \
+      "${OGGHUB_CONTAINER}" \
+      "${OGGBD_CONTAINER}" \
+      "${SOURCE_DB_CONTAINER}" \
+      "${BIGDATA_CONTAINER}"; do
+    if ! container_is_running "${container}"; then
+      missing="${missing} ${container}"
+    fi
+  done
+
+  if [ -z "${missing}" ]; then
+    echo "OK: all required reset containers are running."
+    return 0
+  fi
+
+  echo "INFO: stopped required container(s):${missing}"
+  if ! is_yes "${AUTO_START_REQUIRED_CONTAINERS}"; then
+    echo "ERROR: automatic container startup is disabled." >&2
+    echo "ERROR: set AUTO_START_REQUIRED_CONTAINERS=Y or start the containers, then retry." >&2
     exit 1
   fi
+
+  PHASE="starting required reset containers"
+
+  echo "==> Start only the stopped containers required by this reset"
+  for container in ${missing}; do
+    docker start "${container}" >/dev/null
+    echo "OK: start requested for ${container}."
+  done
+
+  for container in \
+      "${OGGHUB_CONTAINER}" \
+      "${OGGBD_CONTAINER}" \
+      "${SOURCE_DB_CONTAINER}" \
+      "${BIGDATA_CONTAINER}"; do
+    deadline="$(( $(date '+%s') + REQUIRED_CONTAINER_WAIT_SECONDS ))"
+    while :; do
+      running="$(docker inspect -f '{{.State.Running}}' "${container}" 2>/dev/null || true)"
+      health="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "${container}" 2>/dev/null || true)"
+      if [ "${running}" = "true" ] && { [ "${health}" = "none" ] || [ "${health}" = "healthy" ]; }; then
+        echo "OK: ${container} is running (health: ${health})."
+        break
+      fi
+      if [ "$(date '+%s')" -ge "${deadline}" ]; then
+        echo "ERROR: required container is not ready: ${container} (running=${running:-unknown}, health=${health:-unknown})" >&2
+        exit 1
+      fi
+      sleep 3
+    done
+  done
+
+  echo "OK: all required reset containers are running."
+}
+
+kafka_request_succeeds() {
+  docker exec -u root "${BIGDATA_CONTAINER}" bash -lc '
+    timeout 15 /usr/local/kafka/bin/kafka-topics.sh \
+      --bootstrap-server localhost:9092 \
+      --list >/dev/null 2>&1
+  '
+}
+
+ensure_bigdata_services_ready() {
+  if kafka_request_succeeds; then
+    echo "OK: ${BIGDATA_CONTAINER} Kafka broker is ready."
+    return 0
+  fi
+
+  PHASE="starting Kafka in ${BIGDATA_CONTAINER}"
+  echo "INFO: ${BIGDATA_CONTAINER} is running, but Kafka is not ready."
+
+  if [ -f "${BIGDATA_INIT_SCRIPT}" ]; then
+    echo "==> Initialize ZooKeeper and Kafka in ${BIGDATA_CONTAINER}"
+    if ! BIGDATA_CONTAINER="${BIGDATA_CONTAINER}" bash "${BIGDATA_INIT_SCRIPT}"; then
+      echo "WARN: Big Data initialization helper returned an error; continue with readiness recovery." >&2
+    fi
+  else
+    echo "WARN: Big Data initialization helper not found: ${BIGDATA_INIT_SCRIPT}" >&2
+  fi
+
+  # The container may use systemd or a direct Java process depending on how it
+  # was originally built. These commands are harmless when the services are
+  # already running and provide a fallback if the helper stopped early.
+  docker exec -u root "${BIGDATA_CONTAINER}" bash -lc '
+    systemctl reset-failed zookeeper kafka >/dev/null 2>&1 || true
+    systemctl start zookeeper >/dev/null 2>&1 || true
+    systemctl start kafka >/dev/null 2>&1 || true
+  ' || true
+
+  deadline="$(( $(date '+%s') + KAFKA_READY_WAIT_SECONDS ))"
+  while :; do
+    if kafka_request_succeeds; then
+      echo "OK: ${BIGDATA_CONTAINER} Kafka broker accepts topic requests."
+      return 0
+    fi
+
+    if [ "$(date '+%s')" -ge "${deadline}" ]; then
+      echo "ERROR: Kafka did not become ready within ${KAFKA_READY_WAIT_SECONDS} seconds." >&2
+      echo "ERROR: recent Kafka log follows." >&2
+      docker exec -u root "${BIGDATA_CONTAINER}" bash -lc '
+        tail -80 /usr/local/kafka/logs/server.log 2>/dev/null ||
+        tail -80 /usr/local/kafka/logs/kafka-startup.out 2>/dev/null || true
+      ' >&2 || true
+      exit 1
+    fi
+
+    sleep 3
+  done
 }
 
 START_EPOCH="$(date +%s)"
 START_TIME="$(date '+%Y-%m-%d %H:%M:%S')"
 HOST_NAME="$(uname -n 2>/dev/null || hostname 2>/dev/null || cat /etc/hostname 2>/dev/null || echo unknown)"
 CURRENT_DIR="$(pwd)"
+
+case "${RESET_ORACLE_TARGET}" in
+  AUTO|auto)
+    if container_is_running "${TARGET_DB_CONTAINER}"; then
+      ORACLE_TARGET_ACTIVE="Y"
+    else
+      ORACLE_TARGET_ACTIVE="N"
+    fi
+    ;;
+  1|Y|y|YES|yes|TRUE|true|ON|on)
+    ORACLE_TARGET_ACTIVE="Y"
+    ;;
+  *)
+    ORACLE_TARGET_ACTIVE="N"
+    ;;
+esac
+
+if is_yes "${ORACLE_TARGET_ACTIVE}"; then
+  TARGET_RESET_SUMMARY="enabled; ${TARGET_DB_CONTAINER} is already running"
+  RESET_PROCESS_SUMMARY="${EXTRACT_NAME}, ${ORACLE_REPLICAT_NAME}, ${DISTPATH_NAME}, ${KAFKA_REPLICAT_NAME}"
+  RESET_OBJECT_SUMMARY="Source and Target"
+else
+  TARGET_RESET_SUMMARY="skipped; the Target DB is not required for the OSA/Kafka path"
+  RESET_PROCESS_SUMMARY="${EXTRACT_NAME}, ${DISTPATH_NAME}, ${KAFKA_REPLICAT_NAME}"
+  RESET_OBJECT_SUMMARY="Source"
+fi
 
 cat <<SUMMARY
 Reset GoldenGate lab environment
@@ -466,21 +643,32 @@ Working directory  : ${CURRENT_DIR}
 OGGHUB container   : ${OGGHUB_CONTAINER}
 OGGBD container    : ${OGGBD_CONTAINER}
 Source DB container: ${SOURCE_DB_CONTAINER}
-Target DB container: ${TARGET_DB_CONTAINER}
+Oracle Target reset: ${TARGET_RESET_SUMMARY}
 Kafka container    : ${BIGDATA_CONTAINER}
 
-This will stop/delete ${EXTRACT_NAME}, ${ORACLE_REPLICAT_NAME}, ${DISTPATH_NAME}, ${KAFKA_REPLICAT_NAME},
+This will stop/delete ${RESET_PROCESS_SUMMARY},
 remove ${SOURCE_TRAIL}*/${TARGET_TRAIL}* trail files, reset OSA sample
-objects in Source/Target, reset OSA Kafka topics, then recreate and start the
+objects in ${RESET_OBJECT_SUMMARY}, reset OSA Kafka topics, then recreate and start the
 OGG path. It does not create OSA sample objects unless --create-objects is used.
 
 INFO: This reset usually takes a few minutes.
 INFO: Some steps can look idle while Docker, Admin Client, database, or Kafka
 INFO: commands are running. Please wait and do not type additional input unless
 INFO: this script prompts you.
+INFO: Stopped required containers are started automatically after confirmation.
 SUMMARY
 
-if ! is_yes "${YES}"; then
+# Missing containers indicate an incomplete installation. Stopped containers are
+# a normal reader state and are recovered after reset confirmation.
+check_container_exists "${OGGHUB_CONTAINER}"
+check_container_exists "${OGGBD_CONTAINER}"
+check_container_exists "${SOURCE_DB_CONTAINER}"
+check_container_exists "${BIGDATA_CONTAINER}"
+if is_yes "${ORACLE_TARGET_ACTIVE}"; then
+  check_container_exists "${TARGET_DB_CONTAINER}"
+fi
+
+if ! is_yes "${YES}" && ! is_yes "${CONTAINER_PREPARE_ONLY}"; then
   echo 'This reset deletes and recreates OGG processes, paths, trails, sample objects, and Kafka topics.'
   printf 'Press Enter for RESET, or type NO to cancel [RESET]: '
   read -r answer
@@ -491,7 +679,7 @@ if ! is_yes "${YES}"; then
   fi
 fi
 
-if [ -z "${OGG_PASS}" ]; then
+if ! is_yes "${CONTAINER_PREPARE_ONLY}" && [ -z "${OGG_PASS}" ]; then
   printf 'OGG Password: '
   stty_state="$(stty -g 2>/dev/null || true)"
   stty -echo 2>/dev/null || true
@@ -504,21 +692,29 @@ if [ -z "${OGG_PASS}" ]; then
   echo
 fi
 
-check_container "${OGGHUB_CONTAINER}"
-check_container "${OGGBD_CONTAINER}"
-check_container "${SOURCE_DB_CONTAINER}"
-check_container "${TARGET_DB_CONTAINER}"
-check_container "${BIGDATA_CONTAINER}"
+ensure_required_containers_running
+ensure_bigdata_services_ready
+
+if is_yes "${CONTAINER_PREPARE_ONLY}"; then
+  echo "OK: container preparation check completed; reset work was not started."
+  exit 0
+fi
 
 echo
 echo "==> Stop OGGHUB processes"
 PHASE="stop OGGHUB processes"
+RESET_WORK_STARTED="Y"
 run_admin_ignore "${OGGHUB_CONTAINER}" \
   "stop ${EXTRACT_NAME}!" \
-  "stop ${ORACLE_REPLICAT_NAME}!" \
   "stop distpath ${DISTPATH_NAME}!" \
   "info all" \
   "info distpath all"
+
+if is_yes "${ORACLE_TARGET_ACTIVE}"; then
+  run_admin_ignore "${OGGHUB_CONTAINER}" \
+    "stop ${ORACLE_REPLICAT_NAME}!" \
+    "info all"
+fi
 
 echo
 echo "==> Stop OGGBD Replicat"
@@ -528,7 +724,9 @@ run_admin_ignore "${OGGBD_CONTAINER}" \
   "info all"
 
 wait_for_no_ogg_group_process "${OGGHUB_CONTAINER}" "${EXTRACT_NAME}" "${PROCESS_WAIT_SECONDS}"
-wait_for_no_ogg_group_process "${OGGHUB_CONTAINER}" "${ORACLE_REPLICAT_NAME}" "${PROCESS_WAIT_SECONDS}"
+if is_yes "${ORACLE_TARGET_ACTIVE}"; then
+  wait_for_no_ogg_group_process "${OGGHUB_CONTAINER}" "${ORACLE_REPLICAT_NAME}" "${PROCESS_WAIT_SECONDS}"
+fi
 wait_for_no_ogg_group_process "${OGGBD_CONTAINER}" "${KAFKA_REPLICAT_NAME}" "${PROCESS_WAIT_SECONDS}"
 wait_for_distpath_not_running "${OGGHUB_CONTAINER}" "${DISTPATH_NAME}" "${PROCESS_WAIT_SECONDS}"
 
@@ -540,13 +738,17 @@ run_admin_ignore "${OGGHUB_CONTAINER}" \
   "delete extract ${EXTRACT_NAME}!" \
   "info all"
 
-echo
-echo "==> Delete OGGHUB Oracle Replicat"
-PHASE="delete OGGHUB Oracle Replicat"
-run_admin_ignore "${OGGHUB_CONTAINER}" \
-  "dblogin useridalias ${TARGET_DB_ALIAS} domain ${DOMAIN}" \
-  "delete replicat ${ORACLE_REPLICAT_NAME}" \
-  "info all"
+if is_yes "${ORACLE_TARGET_ACTIVE}"; then
+  echo
+  echo "==> Delete OGGHUB Oracle Replicat"
+  PHASE="delete OGGHUB Oracle Replicat"
+  run_admin_ignore "${OGGHUB_CONTAINER}" \
+    "dblogin useridalias ${TARGET_DB_ALIAS} domain ${DOMAIN}" \
+    "delete replicat ${ORACLE_REPLICAT_NAME}" \
+    "info all"
+else
+  echo "INFO: Skip ${ORACLE_REPLICAT_NAME}; ${TARGET_DB_CONTAINER} is not used by this OSA/Kafka reset."
+fi
 
 echo
 echo "==> Delete OGGHUB Distribution Path"
@@ -601,14 +803,18 @@ run_in_container "${OGGBD_CONTAINER}" bash -lc "
 "
 
 echo
-echo "==> Reset OSA sample objects in Source and Target"
+echo "==> Reset OSA sample objects in ${RESET_OBJECT_SUMMARY}"
 PHASE="reset OSA sample objects"
 stop_osa_generators "${SOURCE_DB_CONTAINER}"
-stop_osa_generators "${TARGET_DB_CONTAINER}"
 kill_osa_sqlplus_sessions "${SOURCE_DB_CONTAINER}"
-kill_osa_sqlplus_sessions "${TARGET_DB_CONTAINER}"
 run_script_as_oracle "${SOURCE_DB_CONTAINER}" reset_osa_objects.sh
-run_script_as_oracle "${TARGET_DB_CONTAINER}" reset_osa_objects.sh
+remove_source_legacy_ai_objects
+if is_yes "${ORACLE_TARGET_ACTIVE}"; then
+  stop_osa_generators "${TARGET_DB_CONTAINER}"
+  kill_osa_sqlplus_sessions "${TARGET_DB_CONTAINER}"
+  run_script_as_oracle "${TARGET_DB_CONTAINER}" reset_osa_objects.sh
+  ensure_target_ogg_identity_ddl_privilege
+fi
 
 echo
 echo "==> Reset OSA Kafka topics"
@@ -655,27 +861,28 @@ run_admin "${OGGHUB_CONTAINER}" \
 
 wait_for_trail_definition "${OGGHUB_CONTAINER}" "${SOURCE_TRAIL}" "${TRAIL_WAIT_SECONDS}"
 
-echo
-echo "==> Restore OGGHUB Replicat ${ORACLE_REPLICAT_NAME} baseline parameters"
-PHASE="restore OGGHUB Replicat ${ORACLE_REPLICAT_NAME} baseline parameters"
-if [ ! -f "${D01_BASELINE_PARAM}" ]; then
-  echo "ERROR: D01 baseline parameter file not found: ${D01_BASELINE_PARAM}" >&2
-  exit 1
-fi
-docker cp "${D01_BASELINE_PARAM}" "${OGGHUB_CONTAINER}:/tmp/d01-baseline.prm"
-run_in_container "${OGGHUB_CONTAINER}" bash -lc "
+if is_yes "${ORACLE_TARGET_ACTIVE}"; then
+  echo
+  echo "==> Restore OGGHUB Replicat ${ORACLE_REPLICAT_NAME} baseline parameters"
+  PHASE="restore OGGHUB Replicat ${ORACLE_REPLICAT_NAME} baseline parameters"
+  if [ ! -f "${D01_BASELINE_PARAM}" ]; then
+    echo "ERROR: D01 baseline parameter file not found: ${D01_BASELINE_PARAM}" >&2
+    exit 1
+  fi
+  docker cp "${D01_BASELINE_PARAM}" "${OGGHUB_CONTAINER}:/tmp/d01-baseline.prm"
+  run_in_container "${OGGHUB_CONTAINER}" bash -lc "
   set -euo pipefail
   prm=/u02/Deployment/etc/conf/ogg/$(printf '%s' "${ORACLE_REPLICAT_NAME}" | tr '[:upper:]' '[:lower:]').prm
   install -m 640 -o ogg -g ogg /tmp/d01-baseline.prm \"\${prm}\"
   rm -f /tmp/d01-baseline.prm
 "
 
-echo "==> Harden OGGHUB Replicat ${ORACLE_REPLICAT_NAME} parameters"
-PHASE="harden OGGHUB Replicat ${ORACLE_REPLICAT_NAME} parameters"
-# These DDLERROR guards are reset-only hardening for repeated labs after the
-# manual GoldenGate flow has already been learned. They intentionally are not
-# part of the early chapter hand-entered D01 parameter baseline.
-run_in_container "${OGGHUB_CONTAINER}" bash -lc "
+  echo "==> Harden OGGHUB Replicat ${ORACLE_REPLICAT_NAME} parameters"
+  PHASE="harden OGGHUB Replicat ${ORACLE_REPLICAT_NAME} parameters"
+  # These DDLERROR guards are reset-only hardening for repeated labs after the
+  # manual GoldenGate flow has already been learned. They intentionally are not
+  # part of the early chapter hand-entered D01 parameter baseline.
+  run_in_container "${OGGHUB_CONTAINER}" bash -lc "
   set -euo pipefail
   prm=/u02/Deployment/etc/conf/ogg/$(printf '%s' "${ORACLE_REPLICAT_NAME}" | tr '[:upper:]' '[:lower:]').prm
   if [ -f \"\${prm}\" ] && {
@@ -701,19 +908,20 @@ run_in_container "${OGGHUB_CONTAINER}" bash -lc "
   [ -f \"\${prm}\" ] && sed -n '1,80p' \"\${prm}\" || true
 "
 
-echo
-echo "==> Recreate OGGHUB Replicat ${ORACLE_REPLICAT_NAME}"
-PHASE="recreate OGGHUB Replicat ${ORACLE_REPLICAT_NAME}"
-run_admin "${OGGHUB_CONTAINER}" \
-  "add replicat ${ORACLE_REPLICAT_NAME}, exttrail ${SOURCE_TRAIL}, checkpointtable OGG.GGSCKPT, begin now" \
-  "info all"
+  echo
+  echo "==> Recreate OGGHUB Replicat ${ORACLE_REPLICAT_NAME}"
+  PHASE="recreate OGGHUB Replicat ${ORACLE_REPLICAT_NAME}"
+  run_admin "${OGGHUB_CONTAINER}" \
+    "add replicat ${ORACLE_REPLICAT_NAME}, exttrail ${SOURCE_TRAIL}, checkpointtable OGG.GGSCKPT, begin now" \
+    "info all"
 
-echo
-echo "==> Start OGGHUB Replicat ${ORACLE_REPLICAT_NAME}"
-PHASE="start OGGHUB Replicat ${ORACLE_REPLICAT_NAME}"
-run_admin "${OGGHUB_CONTAINER}" \
-  "start ${ORACLE_REPLICAT_NAME}" \
-  "info all"
+  echo
+  echo "==> Start OGGHUB Replicat ${ORACLE_REPLICAT_NAME}"
+  PHASE="start OGGHUB Replicat ${ORACLE_REPLICAT_NAME}"
+  run_admin "${OGGHUB_CONTAINER}" \
+    "start ${ORACLE_REPLICAT_NAME}" \
+    "info all"
+fi
 
 echo
 echo "==> Recreate OGGHUB Distribution Path ${DISTPATH_NAME}"
@@ -751,7 +959,9 @@ echo "==> Verify recreated GoldenGate path"
 PHASE="verify recreated GoldenGate path"
 sleep 3
 verify_ogg_group_running "${OGGHUB_CONTAINER}" "${EXTRACT_NAME}"
-verify_ogg_group_running "${OGGHUB_CONTAINER}" "${ORACLE_REPLICAT_NAME}"
+if is_yes "${ORACLE_TARGET_ACTIVE}"; then
+  verify_ogg_group_running "${OGGHUB_CONTAINER}" "${ORACLE_REPLICAT_NAME}"
+fi
 verify_distpath_running "${OGGHUB_CONTAINER}" "${DISTPATH_NAME}"
 verify_ogg_group_running "${OGGBD_CONTAINER}" "${KAFKA_REPLICAT_NAME}"
 
@@ -762,20 +972,26 @@ if is_yes "${CREATE_OBJECTS}"; then
   run_script_as_oracle "${SOURCE_DB_CONTAINER}" create_objects_v1_2.sh
 
   echo
-  echo "==> Prepare 26ai AI demo candidates from Source DB"
-  PHASE="prepare 26ai AI demo candidates from Source DB"
+    echo "==> Seed 26ai churn business events in Source SOE"
+    PHASE="seed 26ai churn business events in Source SOE"
   run_script_as_oracle "${SOURCE_DB_CONTAINER}" prepare_ai_26ai_demo.sh
 
-  echo
-  PHASE="repair target AI/APEX privileges"
-  wait_for_target_osa_objects "${TARGET_OBJECT_WAIT_SECONDS}"
-  repair_target_ai_app_privileges
+  if is_yes "${ORACLE_TARGET_ACTIVE}"; then
+    echo
+    PHASE="grant APEX access to replicated target objects"
+    wait_for_target_osa_objects "${TARGET_OBJECT_WAIT_SECONDS}"
+    grant_target_apex_source_privileges
+  fi
 
   echo
-  echo "==> Verify OGGHUB Extract and Replicat statistics"
+  echo "==> Verify OGGHUB Extract statistics"
   run_admin "${OGGHUB_CONTAINER}" \
-    "stats extract ${EXTRACT_NAME} totalsonly soe.*" \
-    "stats replicat ${ORACLE_REPLICAT_NAME} totalsonly soe.*"
+    "stats extract ${EXTRACT_NAME} totalsonly soe.*"
+  if is_yes "${ORACLE_TARGET_ACTIVE}"; then
+    echo "==> Verify OGGHUB Oracle Replicat statistics"
+    run_admin "${OGGHUB_CONTAINER}" \
+      "stats replicat ${ORACLE_REPLICAT_NAME} totalsonly soe.*"
+  fi
 
   echo
   echo "==> Verify OGGBD Replicat statistics"
