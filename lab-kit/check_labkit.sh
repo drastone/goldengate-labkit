@@ -10,7 +10,12 @@ fi
 
 echo "==> Validate shell script syntax"
 shell_syntax_failures=0
-for script in $(find . -type f \( -name '*.sh' -o -name '*.bash' \) -print); do
+for script in $(
+  find . \
+    \( -path './docker-data' -o -path './docker-images' -o -path './backup' \
+       -o -path './backups' -o -path './logs' -o -path './.writer' \) -prune \
+    -o -type f \( -name '*.sh' -o -name '*.bash' \) -print
+); do
   if ! bash -n "$script"; then
     echo "ERROR: invalid bash syntax: $script"
     shell_syntax_failures=$((shell_syntax_failures + 1))
