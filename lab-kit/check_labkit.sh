@@ -3,6 +3,36 @@ set -eu
 
 cd "$(dirname "$0")"
 
+if ! command -v bash >/dev/null 2>&1; then
+  echo "ERROR: required command not found: bash"
+  exit 1
+fi
+
+echo "==> Validate shell script syntax"
+shell_syntax_failures=0
+for script in $(find . -type f -name '*.sh' -print); do
+  if ! bash -n "$script"; then
+    echo "ERROR: invalid bash syntax: $script"
+    shell_syntax_failures=$((shell_syntax_failures + 1))
+  fi
+done
+if ! sh -n labs/lab12/lab12_init.sh; then
+  echo "ERROR: lab12_init.sh cannot be entered with the documented sh command."
+  shell_syntax_failures=$((shell_syntax_failures + 1))
+fi
+shell_dispatch_dir="$(mktemp -d)"
+ln -s "$(command -v true)" "${shell_dispatch_dir}/bash"
+if ! PATH="${shell_dispatch_dir}:${PATH}" sh labs/lab12/lab12_init.sh; then
+  echo "ERROR: lab12_init.sh did not hand off from sh to bash."
+  shell_syntax_failures=$((shell_syntax_failures + 1))
+fi
+rm -rf "${shell_dispatch_dir}"
+if [ "$shell_syntax_failures" -ne 0 ]; then
+  echo "ERROR: shell syntax validation failed with $shell_syntax_failures issue(s)."
+  exit 1
+fi
+echo "OK: reader-facing shell scripts passed syntax validation."
+
 if ! command -v docker >/dev/null 2>&1; then
   echo "ERROR: required command not found: docker"
   echo "Install Docker Engine and Docker Compose plugin before running the Lab Kit."
