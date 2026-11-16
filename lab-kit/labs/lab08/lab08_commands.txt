@@ -1,69 +1,11 @@
-docker exec demo_centos sh -lc "ss -ltn | grep ':9092 '"
-docker exec demo_centos /usr/local/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list
+# Base Linux terminal: confirm the DAA runtime containers
+docker ps --format 'table {{.Names}}\t{{.Status}}' --filter name=demo_centos --filter name=demo_ogg_23ai --filter name=demo_oggbd_23ai
 
-docker exec -it -u ogg demo_ogg_23ai adminclient
-connect http://localhost as oggadmin !
-info distpath all
-alter credentialstore add user oggadmin password WElcome1234## alias oggbd_admin domain OracleGoldenGate
-shell cat /u01/ogg/scripts/obey/add_dpkaf01.oby
-obey /u01/ogg/scripts/obey/add_dpkaf01.oby
-start distpath dpkaf01
-info distpath all
-info distpath dpkaf01
+# Confirm the DAA runtime and deployment configuration directories
+docker exec demo_oggbd_23ai sh -lc 'printf "OGG_HOME=%s\n" "$OGG_HOME"; ls -ld /u01/ogg /u02/Deployment/etc/conf/ogg'
 
-docker exec -it -u ogg demo_oggbd_23ai adminclient
-connect http://localhost as oggadmin !
-shell ls -l /u02/Deployment/etc/conf/ogg/kaf01*
-shell cat /u02/Deployment/etc/conf/ogg/kaf01.prm
-shell cat /u02/Deployment/etc/conf/ogg/kaf01.props
-shell cat /u02/Deployment/etc/conf/ogg/kaf01-producer.properties
-view params kaf01
-add replicat KAF01 exttrail da
-start kaf01
-info all
-stats kaf01
+# Confirm the Kafka Replicat files that Chapter 8 will inspect and use
+docker exec demo_oggbd_23ai sh -lc 'ls -1 /u02/Deployment/etc/conf/ogg/'
 
-docker exec -it demo_centos bash
-kafka-topics.sh --bootstrap-server localhost:9092 --list
-kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic SOE.EMPLOYEE --from-beginning --property print.key=true --timeout-ms 30000
-/root/consume_soe_employee.sh
-KAFKA_FROM_BEGINNING=N /root/consume_soe_employee.sh
-/root/consume_soe_employee.sh SOE.OTHER_TABLE
-
-edit params c01
-view params c01
-stop c01
-start c01
-info all
-alter replicat kaf01, extseqno 4, extrba 3865
-
-shell vi /u02/Deployment/etc/conf/ogg/kaf01.props
-shell cat /u02/Deployment/etc/conf/ogg/kaf01.props
-stop kaf01
-info kaf01 detail
-start kaf01
-info kaf01
-
-docker exec -it demo_osrc_23ai bash
-cd /home/oracle/script/sql
-cat pk_update_employee_prepare.sql
-sqlplus "soe/soe@orclpdb1" @pk_update_employee_prepare.sql
-
-docker exec -it demo_centos bash
-/usr/local/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic SOE.EMPLOYEE --property print.key=true --timeout-ms 600000
-
-cat pk_update_employee_run.sql
-sqlplus "soe/soe@orclpdb1" @pk_update_employee_run.sql
-
-shell vi /u02/Deployment/etc/conf/ogg/kaf01.props
-shell cat /u02/Deployment/etc/conf/ogg/kaf01.props
-shell cat /u02/Deployment/etc/conf/ogg/kaf01-pk-abend.props
-stop kaf01
-alter replicat kaf01, extseqno 4, extrba 3865
-start kaf01
-info all
-view report kaf01
-shell vi /u02/Deployment/etc/conf/ogg/kaf01.props
-shell cat /u02/Deployment/etc/conf/ogg/kaf01.props
-start kaf01
-info all
+# Preview the Chapter 8 Distribution Path command; do not execute it yet
+docker exec demo_ogg_23ai cat /u01/ogg/scripts/obey/add_dpkaf01.oby

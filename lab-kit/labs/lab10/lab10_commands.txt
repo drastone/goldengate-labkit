@@ -1,24 +1,38 @@
-mkdir tmp2
-cd tmp2
-unzip ../pkg/213000_fbo_ggs_Linux_x64_Oracle_services_shiphome.zip
+alter replicat kaf01, extseqno 4, extrba 3865
 
-mkdir /home/oracle/msaInventory
-cat /home/oracle/msaInventory/oraInst.loc
+cd /home/oracle/labs/lab10
+sh lab10_init.sh
 
-cd /home/oracle/tmp2/fbo_ggs_Linux_x64_Oracle_services_shiphome/Disk1/
-sed -i 's|INSTALL_OPTION=|INSTALL_OPTION=ora21c|g' ./response/oggcore.rsp
-sed -i 's|SOFTWARE_LOCATION=|SOFTWARE_LOCATION=/home/oracle/oggmsa/ogg213|g' ./response/oggcore.rsp
-RSP_FILE=/home/oracle/tmp2/fbo_ggs_Linux_x64_Oracle_services_shiphome/Disk1/response/oggcore.rsp
-./runInstaller -invPtrLoc /home/oracle/msaInventory/oraInst.loc -responseFile "$RSP_FILE" -silent
+docker ps --filter name=demo_minio --filter name=demo_iceberg_catalog --format "table {{.Names}} | {{.Status}} | {{.Ports}}"
 
-cd /home/oracle/oggmsa/ogg213/bin
-./oggca.sh -responseFile /home/oracle/msa/source/oggca.rsp -silent
-./oggca.sh -responseFile /home/oracle/msa/target/oggca.rsp -silent
+cd /home/oracle/oracle/script/lakehouse/kafka-iceberg-writer
+pwd
+ls -ltr
+cat docker-compose.kafka-iceberg-writer.yml
+\cp -f .env.example .env
+chmod 600 .env
+cat .env
+docker compose --env-file .env -f docker-compose.kafka-iceberg-writer.yml up -d --build
+docker logs --tail 80 demo_kafka_iceberg_writer
 
-cd /home/oracle/oggmsa/oggSM/bin
-export OGG_HOME=/home/oracle/oggmsa/ogg213
-export DEPLOYMENT_HOME=/home/oracle/oggmsa/oggSM
-export OGG_ETC_HOME=/home/oracle/oggmsa/oggSM/etc
-export OGG_VAR_HOME=/home/oracle/oggmsa/oggSM/var
-./startSM.sh
-netstat -antup | grep LISTEN | grep 55
+docker exec -it demo_osrc_23ai bash
+sqlplus soe/soe@orclpdb1
+insert into soe.employee
+values (
+  920,
+  'ICEBERG',
+  'iceberg@gmail.com',
+  33,
+  '010-2222-3333',
+  'Iceberg Test',
+  sysdate
+);
+commit;
+
+docker logs --tail 80 demo_kafka_iceberg_writer
+
+docker exec demo_kafka_iceberg_writer python /app/query_iceberg.py
+
+cd /home/oracle
+sh stopLakehouse.sh
+docker ps --filter name=demo_minio --filter name=demo_iceberg_catalog --filter name=demo_trino --filter name=demo_kafka_iceberg_writer --format "table {{.Names}} | {{.Status}}"

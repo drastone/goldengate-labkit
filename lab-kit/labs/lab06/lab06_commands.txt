@@ -1,291 +1,82 @@
-docker exec -it demo_osrc_23ai bash
-cd /home/oracle/script/osa
-sqlplus "soe/soe@orclpdb1" @create_objects_v1_2.sql
-
-sh gen_0.sh 2
-sh gen_base.sh 100 1
-
-# DDL synchronization policy and verification
-stop d01
-edit params d01
-
-# D01 parameter editor content
-REPLICAT D01
-USERIDALIAS trg_ogg DOMAIN OracleGoldenGate
-ASSUMETARGETDEFS
-APPLYNOOPUPDATES
-DISCARDFILE D01_PERF.dsc, PURGE, MEGABYTES 100
-REPORTCOUNT EVERY 1 MINUTES RATE
-
-DDL &
-INCLUDE MAPPED OBJTYPE TABLE INSTR 'CREATE' &
-INCLUDE MAPPED OBJTYPE TABLE INSTR 'TRUNCATE' &
-INCLUDE MAPPED OBJTYPE TABLE INSTR 'DROP' &
-INCLUDE MAPPED OBJTYPE TABLE INSTR 'ALTER' &
-EXCLUDE MAPPED OBJTYPE SEQUENCE INSTR 'CREATE' &
-EXCLUDE MAPPED OBJTYPE SEQUENCE INSTR 'DROP'
-
-MAP SOE.*, TARGET SOE.*;
-
-# Back at the Admin Client prompt after saving the parameter file
-view params d01
-start d01
+docker exec -it -u ogg demo_ogg_23ai adminclient
+connect http://localhost as oggadmin !
 info all
+view GLOBALS
+info credentialstore
 
-create table soe.daily_fund_price (
-  dt varchar2(8),
-  fund_code varchar2(20),
-  price number
-);
-alter table soe.daily_fund_price add description varchar2(50);
+ALTER CREDENTIALSTORE ADD USER ogg@oracle_src_23ai:1521/ORCLPDB1 PASSWORD ogg ALIAS src_ogg DOMAIN OracleGoldenGate
+ALTER CREDENTIALSTORE ADD USER ogg@oracle_trg_23ai:1521/ORCLPDB1 PASSWORD ogg ALIAS trg_ogg DOMAIN OracleGoldenGate
+info credentialstore
 
-stats d01
+DBLOGIN USERIDALIAS src_ogg DOMAIN OracleGoldenGate
+DBLOGIN USERIDALIAS trg_ogg DOMAIN OracleGoldenGate
+info profile default
 
-# Target DB terminal: verify the replicated table and column
-docker exec -it demo_otrg_23ai bash
-sqlplus soe/soe@orclpdb1
-col table_name for a30
-col status for a30
-select table_name, status
-from user_tables
-where table_name = 'DAILY_FUND_PRICE';
-col column_name for a20
-col data_type for a20
-select column_name, data_type
-from user_tab_columns
-where table_name = 'DAILY_FUND_PRICE'
-order by column_id;
+edit params c01
+view params c01
 
-# Admin Client terminal: table initial load and D02 change catch-up
-stop d01
+DBLOGIN USERIDALIAS src_ogg DOMAIN OracleGoldenGate
+INFO SCHEMATRANDATA SOE
+ADD SCHEMATRANDATA SOE
+INFO SCHEMATRANDATA SOE
+add extract c01 integrated tranlog begin now
+add exttrail ca extract c01 megabytes 100
+register extract c01 database
+
+DBLOGIN USERIDALIAS trg_ogg DOMAIN OracleGoldenGate
+ADD CHECKPOINTTABLE OGG.GGSCKPT
+INFO CHECKPOINTTABLE OGG.GGSCKPT
 edit params d01
-
-# Add this line above MAP SOE.*, TARGET SOE.* in the D01 parameter editor
-MAPEXCLUDE SOE.EMPLOYEE;
-
-# Back at the Admin Client prompt after saving the parameter file
 view params d01
-start d01
-info all
-
-# Target DB SOE SQL*Plus terminal: create the Source database link
-show user
-create database link to_src
-connect to soe identified by soe
-using 'oracle_src_23ai:1521/ORCLPDB1';
-select 1 as ping
-from dual@to_src;
-
-# Source DB terminal: record the initial-load base SCN
-exit
-exit
-docker exec -it demo_osrc_23ai bash
-sqlplus soe/soe@orclpdb1
-select current_scn as base_scn
-from v$database;
-
-# Target DB terminal: load the Source snapshot as of the base SCN
-exit
-exit
-docker exec -it demo_otrg_23ai bash
-sqlplus soe/soe@orclpdb1
-truncate table soe.employee;
-insert into soe.employee
-select * from soe.employee@to_src as of scn 4566117;
-commit;
-
-# Source DB terminal: generate changes after the base SCN
-exit
-exit
-docker exec -it demo_osrc_23ai bash
-sqlplus soe/soe@orclpdb1
-insert into soe.employee
-values (33, 'Sophia', 'sophia@gmail.com', 28, '010-1111-4444', 'Data Analyst', sysdate);
-insert into soe.employee
-values (34, 'Ethan', 'ethan@gmail.com', 35, '010-1111-5555', 'Backend Developer', sysdate);
-insert into soe.employee
-values (35, 'Mia', 'mia@gmail.com', 32, '010-1111-6666', 'Product Manager', sysdate);
-update soe.employee
-set designation = 'Senior Data Engineer'
-where id = 33;
-commit;
-
-# Admin Client terminal: start temporary Replicat D02 after the base SCN
-edit params d02
-view params d02
 dblogin useridalias trg_ogg
-add replicat d02, exttrail ca, checkpointtable OGG.GGSCKPT
+add replicat d01, exttrail ca, checkpointtable OGG.GGSCKPT
 info all
-start replicat d02 aftercsn 4566117
-send d02 status
-stats d02
-
-set linesize 160
-set pagesize 100
-col id for 999
-col name for a10
-col email for a25
-col age for 99
-col phonenumber for a15
-col designation for a25
-col created for a20
-select count(*) as row_count
-from soe.employee;
-select id,
-       name,
-       email,
-       age,
-       phonenumber,
-       designation,
-       to_char(created, 'YYYY-MM-DD HH24:MI:SS') as created
-from soe.employee
-where id in (33, 34, 35)
-order by id;
-
-stop c01
-send d01 status
-send d02 status
-stop d02
-delete replicat d02
-info all
-stop d01
-edit params d01
-
-# Comment out this line in the D01 parameter editor
---MAPEXCLUDE SOE.EMPLOYEE;
-
-# Confirm that MAP SOE.*, TARGET SOE.*; remains enabled, then save
-
-# Back at the Admin Client prompt after saving the parameter file
-view params d01
-start d01
 start c01
 info all
+start d01
+info all
 
-ls -ltr /u02/Deployment/var/lib/data
-/u01/ogg/bin/logdump
-open /u02/Deployment/var/lib/data/ca000000000
-ghdr on
-detail on
-next
-next
-n
-n
+cd /home/oracle/labs/lab06
+cat lab06_commands.txt
 
-# Target DB SOE SQL*Plus terminal: create the DW target table
-show user
-create table soe.employee_dw (
+docker exec -it demo_osrc_23ai bash
+sqlplus soe/soe@orclpdb1
+
+create table soe.staff (
   id number not null primary key,
   name varchar2(100),
   email varchar2(100),
   age number,
-  phonenumber_masked varchar2(20),
-  job_title varchar2(100),
+  phonenumber varchar2(20),
+  job varchar2(100),
   created date
 );
 
-# Admin Client terminal: add a second mapping to D01
-stop d01
-edit params d01
-
-# Add this mapping above MAP SOE.*, TARGET SOE.*;
-MAP SOE.EMPLOYEE, TARGET SOE.EMPLOYEE_DW,
-  COLMAP (
-    USEDEFAULTS,
-    JOB_TITLE = DESIGNATION,
-    PHONENUMBER_MASKED = @STRCAT(@STREXT(PHONENUMBER, 1, 9), '****')
-  );
-
-# Confirm that the existing wildcard mapping remains enabled
-MAP SOE.*, TARGET SOE.*;
-
-# Back at the Admin Client prompt after saving the D01 parameter file
-view params d01
-start d01
-info d01
-
-# Source DB SOE SQL*Plus terminal: generate a change after D01 restarts
-insert into soe.employee
-values (61, 'Olivia', 'olivia@gmail.com', 34, '010-7777-8888', 'Data Architect', sysdate);
+insert into soe.staff values (1,'Vincent','Vincent@gmail.com',30,'010-1111-2222','DBA',sysdate);
+commit;
+insert into soe.staff values (2,'Daniel','daniel@gmail.com',30,'010-1111-3333','Data Scientist',sysdate);
+commit;
+update soe.staff set job = 'Data Engineer' where id = 2;
+commit;
+delete from soe.staff where id = 1;
 commit;
 
-# Target DB SOE SQL*Plus terminal: verify the transformed DW row
-set linesize 140
-col name for a12
-col phonenumber_masked for a20
-col job_title for a25
-select id, name, age, phonenumber_masked, job_title
-from soe.employee_dw
-where id = 61;
-
-# Admin Client terminal: verify both D01 mappings
+docker exec -it -u ogg demo_ogg_23ai adminclient
+stats c01
 stats d01
 
-# Admin Client terminal: remove the temporary DW mapping from D01
-stop d01
-edit params d01
+docker exec -it demo_otrg_23ai bash
+sqlplus soe/soe@orclpdb1
+set linesize 80
+col id for 999
+col name for a10
+col email for a25
+col age for 99
+col job for a20
+select id, name, email, age, job
+from soe.staff
+order by id;
 
-# Delete the complete MAP SOE.EMPLOYEE ... EMPLOYEE_DW block added above.
-# Keep the existing MAP SOE.*, TARGET SOE.*; line enabled.
-
-# Back at the Admin Client prompt after saving the D01 parameter file
-view params d01
-start d01
-info d01
-
-# Target DB SOE SQL*Plus terminal: remove the DW lab table
-drop table soe.employee_dw purge;
-
-# Source DB SOE SQL*Plus terminal: remove the lab row; D01 applies the delete to Target
-delete from soe.employee where id = 61;
-commit;
-
-# Admin Client terminal: create a temporary Core Extract for text/SAM output
-dblogin useridalias src_ogg domain OracleGoldenGate
-edit params txt01
-
-# Paste the following lines into the TXT01 parameter editor, then save
-EXTRACT TXT01
-USERIDALIAS src_ogg DOMAIN OracleGoldenGate
-TRANLOGOPTIONS INTEGRATEDPARAMS (max_sga_size 128)
-OUTPUTFORMAT TEXT, DELIMITER '|', NONAMES, OP, IND, _TRANSTMTS, _WHOLEFILE, TS
-EXTFILE /u02/Deployment/var/lib/data/employee.sam, PURGE
-TABLE SOE.EMPLOYEE;
-
-# Back at the Admin Client prompt
-view params txt01
-add extract TXT01, integrated tranlog, begin now
-register extract TXT01 database
-start TXT01
-info TXT01
-
-# Source DB SOE SQL*Plus terminal: generate separate INSERT, UPDATE, DELETE transactions
-select count(*) as existing_rows
-from soe.employee
-where id = 990006;
-
-insert into soe.employee
-  (id, name, email, age, phonenumber, designation, created)
-values (990006, 'SAM_DEMO', 'sam_demo@example.com', 31,
-        '010-9999-0006', 'Data Engineer', sysdate);
-commit;
-
-update soe.employee
-set designation = 'Senior Data Engineer'
-where id = 990006;
-commit;
-
-delete from soe.employee where id = 990006;
-commit;
-
-# Base Linux terminal: inspect the generated SAM file without closing Admin Client
-docker exec demo_ogg_23ai cat /u02/Deployment/var/lib/data/employee.sam
-
-# Admin Client terminal: remove only the temporary TXT01 Extract
-stop TXT01
-unregister extract TXT01 database
-delete extract TXT01!
-
-# Base Linux terminal: remove temporary lab files
-docker exec demo_ogg_23ai rm -f /u02/Deployment/var/lib/data/employee.sam
-docker exec demo_ogg_23ai rm -f /u02/Deployment/etc/conf/ogg/txt01.prm
+info all
+view report c01
+view report d01

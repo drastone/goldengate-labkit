@@ -1,0 +1,9 @@
+cd /home/oracle/labs/lab14
+pwd
+sh lab14_init.sh
+
+# Continue with the Chapter 14 browser procedure:
+# 1. Check the GoldenGate Console process, lag, checkpoint, and heartbeat state.
+# 2. Create one transaction in a Source APEX business application.
+# 3. Verify the committed Source SOE row and GoldenGate capture/apply path.
+# 4. Verify the matching event in the Target business application.

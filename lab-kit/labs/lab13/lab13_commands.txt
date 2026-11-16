@@ -1,0 +1,30 @@
+cd /home/oracle/labs/lab13
+cat lab13_init.sh
+bash lab13_init.sh
+
+cat ../lab12/lab12_prepare_media.sh
+cat ../lab12/lab12_install_apex.sh
+cat ../lab12/lab12_install_ords.sh
+cat ../lab12/lab12_configure_workspace.sh
+cat ../lab12/check_lab12.sh
+
+bash ../lab12/check_lab12.sh
+
+ls -ltr /home/oracle/logs/lab12
+
+ls -lh /home/oracle/oracle/pkg/apex_26.1.zip
+ls -lh /home/oracle/oracle/pkg/ords-26.2.3.237.1104.zip
+
+curl -I http://localhost:8080/ords/
+curl -I http://localhost:35080/ords/
+curl -I http://localhost:36080/ords/
+ssh -i ./.ssh/id_ed25519 -p 7822 -L 36080:127.0.0.1:36080 root@219.240.178.144
+
+# Destructive recovery commands. Read the warnings before use.
+cat ../lab12/remove_ords.sh
+cat ../lab12/remove_apex.sh
+cat ../lab12/lab12_reset.sh
+
+ls -lh /home/oracle/oracle/pkg/f101_ogg_console.sql
+cat ../lab12/copy_app101_to_windows.sh
+bash ../lab12/copy_app101_to_windows.sh

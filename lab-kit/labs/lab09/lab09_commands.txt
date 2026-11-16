@@ -1,38 +1,69 @@
+docker exec demo_centos sh -lc "ss -ltn | grep ':9092 '"
+docker exec demo_centos /usr/local/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list
+
+docker exec -it -u ogg demo_ogg_23ai adminclient
+connect http://localhost as oggadmin !
+info distpath all
+alter credentialstore add user oggadmin password WElcome1234## alias oggbd_admin domain OracleGoldenGate
+shell cat /u01/ogg/scripts/obey/add_dpkaf01.oby
+obey /u01/ogg/scripts/obey/add_dpkaf01.oby
+start distpath dpkaf01
+info distpath all
+info distpath dpkaf01
+
+docker exec -it -u ogg demo_oggbd_23ai adminclient
+connect http://localhost as oggadmin !
+shell ls -l /u02/Deployment/etc/conf/ogg/kaf01*
+shell cat /u02/Deployment/etc/conf/ogg/kaf01.prm
+shell cat /u02/Deployment/etc/conf/ogg/kaf01.props
+shell cat /u02/Deployment/etc/conf/ogg/kaf01-producer.properties
+view params kaf01
+add replicat KAF01 exttrail da
+start kaf01
+info all
+stats kaf01
+
+docker exec -it demo_centos bash
+kafka-topics.sh --bootstrap-server localhost:9092 --list
+kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic SOE.EMPLOYEE --from-beginning --property print.key=true --timeout-ms 30000
+/root/consume_soe_employee.sh
+KAFKA_FROM_BEGINNING=N /root/consume_soe_employee.sh
+/root/consume_soe_employee.sh SOE.OTHER_TABLE
+
+edit params c01
+view params c01
+stop c01
+start c01
+info all
 alter replicat kaf01, extseqno 4, extrba 3865
 
-cd /home/oracle/labs/lab09
-sh lab09_init.sh
-
-docker ps --filter name=demo_minio --filter name=demo_iceberg_catalog --format "table {{.Names}} | {{.Status}} | {{.Ports}}"
-
-cd /home/oracle/oracle/script/lakehouse/kafka-iceberg-writer
-pwd
-ls -ltr
-cat docker-compose.kafka-iceberg-writer.yml
-\cp -f .env.example .env
-chmod 600 .env
-cat .env
-docker compose --env-file .env -f docker-compose.kafka-iceberg-writer.yml up -d --build
-docker logs --tail 80 demo_kafka_iceberg_writer
+shell vi /u02/Deployment/etc/conf/ogg/kaf01.props
+shell cat /u02/Deployment/etc/conf/ogg/kaf01.props
+stop kaf01
+info kaf01 detail
+start kaf01
+info kaf01
 
 docker exec -it demo_osrc_23ai bash
-sqlplus soe/soe@orclpdb1
-insert into soe.employee
-values (
-  920,
-  'ICEBERG',
-  'iceberg@gmail.com',
-  33,
-  '010-2222-3333',
-  'Iceberg Test',
-  sysdate
-);
-commit;
+cd /home/oracle/script/sql
+cat pk_update_employee_prepare.sql
+sqlplus "soe/soe@orclpdb1" @pk_update_employee_prepare.sql
 
-docker logs --tail 80 demo_kafka_iceberg_writer
+docker exec -it demo_centos bash
+/usr/local/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic SOE.EMPLOYEE --property print.key=true --timeout-ms 600000
 
-docker exec demo_kafka_iceberg_writer python /app/query_iceberg.py
+cat pk_update_employee_run.sql
+sqlplus "soe/soe@orclpdb1" @pk_update_employee_run.sql
 
-cd /home/oracle
-sh stopLakehouse.sh
-docker ps --filter name=demo_minio --filter name=demo_iceberg_catalog --filter name=demo_trino --filter name=demo_kafka_iceberg_writer --format "table {{.Names}} | {{.Status}}"
+shell vi /u02/Deployment/etc/conf/ogg/kaf01.props
+shell cat /u02/Deployment/etc/conf/ogg/kaf01.props
+shell cat /u02/Deployment/etc/conf/ogg/kaf01-pk-abend.props
+stop kaf01
+alter replicat kaf01, extseqno 4, extrba 3865
+start kaf01
+info all
+view report kaf01
+shell vi /u02/Deployment/etc/conf/ogg/kaf01.props
+shell cat /u02/Deployment/etc/conf/ogg/kaf01.props
+start kaf01
+info all

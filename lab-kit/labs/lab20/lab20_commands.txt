@@ -1,1 +1,4 @@
+cd /home/oracle/labs/lab20
+sh start_lab20_fabric_console.sh
 sh lab20_init.sh
+sh show_lab20_status.sh
