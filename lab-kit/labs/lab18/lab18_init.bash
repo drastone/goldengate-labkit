@@ -21,6 +21,7 @@ CONTAINER_APP_DIR="/home/oracle/labs/lab18/apps"
 LOG_DIR="${LOG_DIR:-$(cd "${LAB18_DIR}/../.." && pwd)/logs/lab18}"
 LOG_FILE="${LOG_FILE:-${LOG_DIR}/$(date '+%Y%m%d-%H%M%S')-lab18-init.log}"
 THEME_SOURCE_APP_ID="${THEME_SOURCE_APP_ID:-102}"
+THEME_SOURCE_EXPORT="${APP_DIR}/f${THEME_SOURCE_APP_ID}.sql"
 APP_IDS=(300 310 320 330 340 350 360 370 380 390 400)
 
 STARTED_AT="$(date +%s)"
@@ -94,9 +95,11 @@ require_prerequisites() {
   log "OK: APEX workspace ${APEX_WORKSPACE_NAME}"
 
   theme_source_count="$(application_count "${THEME_SOURCE_APP_ID}")"
-  [ "${theme_source_count:-0}" -eq 1 ] ||
-    fail "Theme source App ${THEME_SOURCE_APP_ID} is missing from workspace ${APEX_WORKSPACE_NAME}. Run lab12_init.sh first."
-  log "OK: Theme source App ${THEME_SOURCE_APP_ID}"
+  if [ "${theme_source_count:-0}" -eq 1 ]; then
+    log "OK: Theme source App ${THEME_SOURCE_APP_ID}"
+  else
+    log "INFO: Theme source App ${THEME_SOURCE_APP_ID} is not installed; Lab 18 will import it first."
+  fi
 
   curl -fsS --max-time 10 -o /dev/null "http://127.0.0.1:${HOST_ORDS_PORT}/ords/" ||
     fail "ORDS is not responding on host port ${HOST_ORDS_PORT}."
@@ -104,6 +107,8 @@ require_prerequisites() {
 
   [ -s "${APP_DIR}/repair_subscribed_theme.sql" ] ||
     fail "Theme repair SQL not found: ${APP_DIR}/repair_subscribed_theme.sql"
+  [ -s "${THEME_SOURCE_EXPORT}" ] ||
+    fail "Theme source App export not found: ${THEME_SOURCE_EXPORT}"
 
   for app_id in "${APP_IDS[@]}"; do
     export_file="${APP_DIR}/f${app_id}.sql"
@@ -207,8 +212,11 @@ main() {
   log "==> START: lab18-init"
   log "INFO: Target App Builder -> http://localhost:${HOST_ORDS_PORT}/ords/"
   log "INFO: App 101 remains a separate manual import; this script manages Apps ${APP_IDS[*]}."
+  log "INFO: App ${THEME_SOURCE_APP_ID} is installed only when needed as the subscribed-theme source."
 
   require_prerequisites
+  stage_file "${THEME_SOURCE_EXPORT}" "${CONTAINER_APP_DIR}/f${THEME_SOURCE_APP_ID}.sql" "Theme source App ${THEME_SOURCE_APP_ID} export"
+  import_app "${THEME_SOURCE_APP_ID}"
   stage_file "${APP_DIR}/repair_subscribed_theme.sql" "${CONTAINER_APP_DIR}/repair_subscribed_theme.sql" "Theme 42 repair SQL"
 
   for app_id in "${APP_IDS[@]}"; do
