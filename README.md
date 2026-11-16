@@ -32,12 +32,14 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
-현재 검증본 v0.94는 5장의 Source/Target 데이터베이스 준비를
+현재 검증본 v0.95는 5장의 Source/Target 데이터베이스 준비를
 `labs/lab05/lab05_init.sh`로 자동화한다. 이 스크립트는 GoldenGate 설정,
 Source ARCHIVELOG와 supplemental logging, SOE/OGG 계정과 tablespace,
 capture/apply 권한을 멱등 구성하고 독립 검증까지 수행한다. 저자 baseline도
 같은 reader-facing 스크립트를 호출하므로 별도의 수동 SQL 입력이나
-`--ack-manual lab05`가 필요하지 않다.
+`--ack-manual lab05`가 필요하지 않다. 별도 writer tools는 누적 baseline의
+통합 로그와 함께 방문한 각 Lab의 실행, 완료, 건너뜀 또는 수동 중지 결과를
+timestamp가 포함된 Lab별 로그 파일로 저장한다.
 
 v0.89는 12장의 `lab12_init.sh`가 Source와 Target 양쪽에
 APEX/ORDS를 구성하도록 확장한다. Source에는 업무 application 100, 102, 110,
