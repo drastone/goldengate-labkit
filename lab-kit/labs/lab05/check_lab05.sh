@@ -42,6 +42,7 @@ begin
   select log_mode, supplemental_log_data_min
     into l_log_mode, l_supplemental
     from v$database;
+
   if lower(l_enabled) <> 'true' then
     raise_application_error(-20001, 'enable_goldengate_replication is not TRUE');
   end if;
@@ -64,11 +65,13 @@ begin
   if l_count <> 2 then
     raise_application_error(-20004, 'Source SOE/OGG accounts are not both OPEN');
   end if;
+
   select count(*) into l_count from dba_tablespaces
    where tablespace_name in ('SOE', 'OGG');
   if l_count <> 2 then
     raise_application_error(-20005, 'Source SOE/OGG tablespaces are missing');
   end if;
+
   select count(*) into l_count from dba_role_privs
    where grantee = 'OGG' and granted_role = 'OGG_CAPTURE';
   if l_count <> 1 then
@@ -106,16 +109,19 @@ begin
   if l_count <> 2 then
     raise_application_error(-20012, 'Target SOE/OGG accounts are not both OPEN');
   end if;
+
   select count(*) into l_count from dba_tablespaces
    where tablespace_name in ('SOE', 'OGG');
   if l_count <> 2 then
     raise_application_error(-20013, 'Target SOE/OGG tablespaces are missing');
   end if;
+
   select count(*) into l_count from dba_role_privs
    where grantee = 'OGG' and granted_role = 'OGG_APPLY';
   if l_count <> 1 then
     raise_application_error(-20014, 'Target OGG_APPLY role is missing');
   end if;
+
   select count(distinct privilege) into l_count from dba_sys_privs
    where grantee = 'OGG'
      and privilege in (

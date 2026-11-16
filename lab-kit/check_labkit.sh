@@ -76,6 +76,8 @@ for lab_no in 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20; do
   check_build_context_path "labs/lab${lab_no}/lab${lab_no}_commands.txt"
 done
 check_build_context_executable "startDocker.sh"
+check_build_context_executable "labs/lab05/lab05_init.sh"
+check_build_context_executable "labs/lab05/check_lab05.sh"
 check_build_context_executable "labs/lab09/lab09_init.sh"
 check_build_context_executable "labs/lab10/lab10_init.sh"
 check_build_context_executable "troubleshooting/scripts/ensure_apex_static_path.sh"
