@@ -39,6 +39,12 @@ APEX/ORDS를 구성하도록 확장한다. Source에는 업무 application 100, 
 않은 APEX/ORDS를 오류로 취급하지 않고 안내 후 건너뛰며, 12장 이후에는
 35080과 36080 endpoint를 모두 기동·검증한다.
 
+18장의 `lab18_init.sh`는 Target의 APEX/ORDS와 `OGG` workspace를 확인한 뒤
+업무 application 300부터 400까지 11개를 자동으로 import한다. App 101은
+GoldenGate 통합 Console의 수동 import 절차를 위해 제외하며, Data Mesh
+Control Tower App 410은 19장 이후 흐름에서 별도로 준비한다. 이미 설치된
+업무 application은 `SKIP`으로 건너뛰므로 같은 script를 다시 실행해도 된다.
+
 v0.84에서 반영한 OSA/GGSA Geo Spatial 서울권 초기 화면, 자동 확대 방지,
 Pie visualization의 선택형 `Use 3D rendering`, OSA script 경로 정리는 그대로
 유지한다.
