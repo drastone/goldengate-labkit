@@ -201,9 +201,7 @@ for container in ${DB_CONTAINERS}; do
   docker exec -u root "${container}" yum install -y wget vi
   docker exec -u root "${container}" yum install -y langpacks-ko libnsl.x86_64
 
-  echo "==> ${container}: install Java RPMs"
-  docker exec -u root "${container}" rpm -Uvh /home/oracle/pkg/jdk-17.0.6_linux-x64_bin.rpm || true
-  docker exec -u root "${container}" rpm -Uvh /home/oracle/pkg/jdk-8u211-linux-x64.rpm || true
+  echo "INFO: ${container}: ORDS uses the canonical JDK 21 installed by the Chapter 12 setup."
 
   echo "==> ${container}: set ownership"
   docker exec -u root "${container}" chown -R oracle:oinstall /home/oracle/pkg /home/oracle/msa /home/oracle/script

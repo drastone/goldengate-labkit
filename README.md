@@ -32,6 +32,12 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
+v0.102는 데이터베이스 컨테이너 초기화에서 더 이상 사용하지 않는 JDK 17과
+JDK 8 RPM 설치 시도를 제거한다. ORDS용 Java는 12장의 표준 설치 절차가
+JDK 21로 구성하므로, 제품 media에 구형 RPM이 없어도 불필요한 오류가
+출력되지 않는다. 별도 저자 도구는 `writer_prepare_lab15.sh`와
+`writer_prepare_lab16.sh` 실행 시 `OGGADMIN_PASS`를 숨김 입력으로 받는다.
+
 v0.101은 7장의 기본 Source 업무 객체 SQL을
 `create_source_business_objects.sql`, 15장의 OSA 전체 Source 준비 script를
 `prepare_osa_source_objects.sh`로 구분한다. 기존 이름은 호환 wrapper로 남긴다.
