@@ -1,5 +1,70 @@
 #!/usr/bin/env bash
 
+select_labkit_utf8_locale() {
+  selected_locale=""
+  for candidate in C.UTF-8 C.utf8 en_US.UTF-8 en_US.utf8 ko_KR.UTF-8 ko_KR.utf8; do
+    if LANG="${candidate}" LC_ALL="${candidate}" locale charmap 2>/dev/null | grep -qx 'UTF-8'; then
+      selected_locale="${candidate}"
+      break
+    fi
+  done
+
+  [ -n "${selected_locale}" ]
+}
+
+configure_host_utf8_profiles() {
+  if [ "$(id -u)" -ne 0 ]; then
+    echo "ERROR: Base Linux UTF-8 profile configuration requires root." >&2
+    return 1
+  fi
+
+  if ! select_labkit_utf8_locale; then
+    echo "ERROR: no installed UTF-8 locale is available on Base Linux." >&2
+    return 1
+  fi
+
+  echo "==> Base Linux: configure UTF-8 shell profiles"
+  begin_marker='# BEGIN GOLDENGATE LAB UTF-8'
+  end_marker='# END GOLDENGATE LAB UTF-8'
+
+  update_host_profile() {
+    profile="$1"
+    [ -f "${profile}" ] || return 0
+
+    sed -i "\|^${begin_marker}$|,\|^${end_marker}$|d" "${profile}"
+    {
+      printf '\n%s\n' "${begin_marker}"
+      printf 'export LANG=%s\n' "${selected_locale}"
+      printf 'export LC_CTYPE=%s\n' "${selected_locale}"
+      printf 'export LC_ALL=%s\n' "${selected_locale}"
+      printf '%s\n' "${end_marker}"
+    } >> "${profile}"
+  }
+
+  mkdir -p /etc/profile.d
+  {
+    printf '%s\n' "${begin_marker}"
+    printf 'export LANG=%s\n' "${selected_locale}"
+    printf 'export LC_CTYPE=%s\n' "${selected_locale}"
+    printf 'export LC_ALL=%s\n' "${selected_locale}"
+    printf '%s\n' "${end_marker}"
+  } > /etc/profile.d/goldengate-lab-utf8.sh
+  chmod 644 /etc/profile.d/goldengate-lab-utf8.sh
+
+  for profile in /root/.bashrc /root/.bash_profile /root/.profile \
+                 /home/oracle/.bashrc /home/oracle/.bash_profile /home/oracle/.profile; do
+    update_host_profile "${profile}"
+  done
+
+  export LANG="${selected_locale}"
+  export LC_CTYPE="${selected_locale}"
+  export LC_ALL="${selected_locale}"
+  actual_charmap="$(locale charmap)"
+  [ "${actual_charmap}" = "UTF-8" ]
+  echo "OK: Base Linux UTF-8 shell locale configured as ${selected_locale}."
+  echo "INFO: Run 'source /etc/profile.d/goldengate-lab-utf8.sh' in an already-open parent shell, or sign in again."
+}
+
 configure_container_utf8_profiles() {
   container="$1"
 
@@ -14,7 +79,7 @@ set -eu
 
 locale_name=""
 for candidate in C.UTF-8 C.utf8 en_US.UTF-8 en_US.utf8 ko_KR.UTF-8 ko_KR.utf8; do
-  if LANG="${candidate}" LC_CTYPE="${candidate}" locale charmap 2>/dev/null | grep -qx 'UTF-8'; then
+  if LANG="${candidate}" LC_ALL="${candidate}" locale charmap 2>/dev/null | grep -qx 'UTF-8'; then
     locale_name="${candidate}"
     break
   fi
@@ -37,6 +102,7 @@ update_profile() {
     printf '\n%s\n' "${begin_marker}"
     printf 'export LANG=%s\n' "${locale_name}"
     printf 'export LC_CTYPE=%s\n' "${locale_name}"
+    printf 'export LC_ALL=%s\n' "${locale_name}"
     printf '%s\n' "${end_marker}"
   } >> "${profile}"
 }
@@ -46,6 +112,7 @@ mkdir -p /etc/profile.d
   printf '%s\n' "${begin_marker}"
   printf 'export LANG=%s\n' "${locale_name}"
   printf 'export LC_CTYPE=%s\n' "${locale_name}"
+  printf 'export LC_ALL=%s\n' "${locale_name}"
   printf '%s\n' "${end_marker}"
 } > /etc/profile.d/goldengate-lab-utf8.sh
 chmod 644 /etc/profile.d/goldengate-lab-utf8.sh
@@ -55,7 +122,7 @@ for profile in /root/.bashrc /root/.bash_profile /root/.profile \
   update_profile "${profile}"
 done
 
-actual_charmap=$(LANG="${locale_name}" LC_CTYPE="${locale_name}" locale charmap)
+actual_charmap=$(LANG="${locale_name}" LC_ALL="${locale_name}" locale charmap)
 [ "${actual_charmap}" = "UTF-8" ]
 echo "OK: UTF-8 shell locale configured as ${locale_name}."
 CONTAINER_SCRIPT

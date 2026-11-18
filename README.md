@@ -32,6 +32,11 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
+v0.105는 `create_docker.sh`가 컨테이너뿐 아니라 Base Linux의 root와 oracle
+profile에도 UTF-8 locale을 영구 설정한다. `LANG`, `LC_CTYPE`, `LC_ALL`을
+설치된 UTF-8 locale로 통일하고, 이미 열려 있는 부모 셸에는 profile을 다시
+읽거나 재로그인하라는 안내를 출력한다.
+
 v0.104는 한글 업무 데이터가 들어 있는 OSA SQL 네 개를 UTF-8/LF로
 정규화한다. 첫 줄은 LF이고 나머지는 CRLF였던 혼합 줄바꿈을 제거해 `vi`에서
 `^M`과 깨진 한글이 나타나지 않으며, 릴리스 빌드가 UTF-8 유효성과 CR 문자
