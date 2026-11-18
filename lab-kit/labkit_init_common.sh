@@ -95,14 +95,21 @@ end_marker='# END GOLDENGATE LAB UTF-8'
 
 update_profile() {
   profile="$1"
-  [ -f "${profile}" ] || return 0
+  profile_home=$(dirname "${profile}")
+  [ -d "${profile_home}" ] || return 0
+
+  if [ ! -e "${profile}" ]; then
+    : > "${profile}"
+    profile_owner=$(stat -c '%u:%g' "${profile_home}")
+    chown "${profile_owner}" "${profile}"
+  fi
 
   sed -i "\|^${begin_marker}$|,\|^${end_marker}$|d" "${profile}"
   {
     printf '\n%s\n' "${begin_marker}"
-    printf 'export LANG=%s\n' "${locale_name}"
-    printf 'export LC_CTYPE=%s\n' "${locale_name}"
-    printf 'export LC_ALL=%s\n' "${locale_name}"
+    printf 'if [ -r /etc/profile.d/goldengate-lab-utf8.sh ]; then\n'
+    printf '  . /etc/profile.d/goldengate-lab-utf8.sh\n'
+    printf 'fi\n'
     printf '%s\n' "${end_marker}"
   } >> "${profile}"
 }
@@ -117,13 +124,23 @@ mkdir -p /etc/profile.d
 } > /etc/profile.d/goldengate-lab-utf8.sh
 chmod 644 /etc/profile.d/goldengate-lab-utf8.sh
 
-for profile in /root/.bashrc /root/.bash_profile /root/.profile \
-               /home/*/.bashrc /home/*/.bash_profile /home/*/.profile; do
-  update_profile "${profile}"
+configured_profiles=0
+for profile_home in /root /home/*; do
+  [ -d "${profile_home}" ] || continue
+  for profile_name in .bashrc .bash_profile .profile; do
+    profile="${profile_home}/${profile_name}"
+    update_profile "${profile}"
+    profile_charmap=$(bash --noprofile --norc -c '. "$1"; locale charmap' _ "${profile}")
+    if [ "${profile_charmap}" != "UTF-8" ]; then
+      echo "ERROR: UTF-8 profile verification failed: ${profile}" >&2
+      exit 1
+    fi
+    configured_profiles=$((configured_profiles + 1))
+  done
 done
 
 actual_charmap=$(LANG="${locale_name}" LC_ALL="${locale_name}" locale charmap)
 [ "${actual_charmap}" = "UTF-8" ]
-echo "OK: UTF-8 shell locale configured as ${locale_name}."
+echo "OK: UTF-8 shell locale configured as ${locale_name} in ${configured_profiles} profiles."
 CONTAINER_SCRIPT
 }

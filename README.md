@@ -32,6 +32,13 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
+v0.106은 `oracle/init.sh`와 `centos/init.sh`가 호출하는 공통 초기화
+함수에서 각 컨테이너의 root 및 서비스 계정 `.bash_profile`, `.bashrc`,
+`.profile`에 `/etc/profile.d/goldengate-lab-utf8.sh`를 읽는 블록을 직접
+반영한다. init 단계에서 각 profile을 새 셸로 읽어 `locale charmap`이
+`UTF-8`인지 검증하므로 별도의 수동 locale 설정 없이 다음 로그인부터
+한글 SQL을 정상적으로 편집할 수 있다.
+
 v0.105는 `create_docker.sh`가 컨테이너뿐 아니라 Base Linux의 root와 oracle
 profile에도 UTF-8 locale을 영구 설정한다. `LANG`, `LC_CTYPE`, `LC_ALL`을
 설치된 UTF-8 locale로 통일하고, 이미 열려 있는 부모 셸에는 profile을 다시
