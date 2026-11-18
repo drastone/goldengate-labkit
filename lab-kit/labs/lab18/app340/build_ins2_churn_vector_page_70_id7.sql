@@ -854,3 +854,4 @@ end;
 
 set verify on feedback on define on
 prompt Churn candidate care page installed as App 340 Page 70.
+exit

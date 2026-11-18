@@ -32,6 +32,11 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
+v0.100은 `lab18_init.sh`가 연속 실행하는 App 340 관련 SQL 세 개를 모두
+점검해 Page 70 vector 구성 SQL과 FP care 구성 SQL에도 명시적 `exit`를
+추가한다. 각 단계의 완료 메시지 이후 SQL*Plus가 입력을 기다리지 않고
+다음 검증 단계로 진행한다.
+
 v0.99는 App 340 설치 SQL이 완료된 뒤 SQL*Plus를 명시적으로 종료하도록
 `exit`를 추가한다. 이로써 `lab18_init.sh`가 App 340 설치 완료 메시지에서
 입력을 기다리며 멈추지 않고 후속 검증 단계로 진행한다.

@@ -549,3 +549,4 @@ select source_cust_id, customer_name, assigned_fp_id, work_type, contact_priorit
   from soe.ins2_churn_action_queue_v
  order by contact_rank, churn_score desc, due_date
  fetch first 3 rows only;
+exit
