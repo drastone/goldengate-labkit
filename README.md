@@ -32,6 +32,9 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
+v0.97은 APEX demo 계정 갱신 결과의 SQL*Plus 열 폭과 제목을 정리해 사용자명,
+잠금 상태, 만료일, 실패 횟수를 한 화면에서 읽기 쉽게 표시한다.
+
 v0.96은 `startDocker.sh`가 Compose bind mount로 제공되는 GoldenGate API
 helper를 다시 `docker cp`하지 않도록 개선한다. mount된 파일의 존재를 확인한
 뒤 API와 Data Fabric helper를 재시작하고 health endpoint까지 검증하므로
