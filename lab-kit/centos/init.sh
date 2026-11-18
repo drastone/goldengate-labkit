@@ -2,9 +2,16 @@
 set -eu
 
 CENTOS_LAB_DIR="${CENTOS_LAB_DIR:-$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)}"
+LABKIT_INIT_COMMON="${LABKIT_INIT_COMMON:-${CENTOS_LAB_DIR}/../labkit_init_common.sh}"
 BIGDATA_CONTAINER="${BIGDATA_CONTAINER:-demo_centos}"
 BIGDATA_SCRIPT_SOURCE="${BIGDATA_SCRIPT_SOURCE:-${CENTOS_LAB_DIR}/script}"
 BIGDATA_SCRIPT_TARGET="${BIGDATA_SCRIPT_TARGET:-/u01}"
+
+if [ ! -f "${LABKIT_INIT_COMMON}" ]; then
+  echo "ERROR: Lab Kit init helper not found: ${LABKIT_INIT_COMMON}" >&2
+  exit 1
+fi
+. "${LABKIT_INIT_COMMON}"
 
 systemctl_available() {
   docker exec -u root "${BIGDATA_CONTAINER}" bash -lc 'systemctl list-unit-files >/dev/null 2>&1'
@@ -146,6 +153,9 @@ install_stream_analytics_runtime() {
 
     cp /home/oracle/conf/spark-env.sh /home/oracle/spark/conf/
     cp /home/oracle/conf/spark-defaults.conf /home/oracle/spark/conf/
+    chown oracle:oinstall \
+      /home/oracle/spark/conf/spark-env.sh \
+      /home/oracle/spark/conf/spark-defaults.conf
 
     mkdir -p /usr/local/kafka/config /usr/local/kafka/logs
     cp /home/oracle/conf/server.properties /usr/local/kafka/config/server.properties
@@ -169,12 +179,17 @@ if ! docker inspect "${BIGDATA_CONTAINER}" >/dev/null 2>&1; then
   exit 0
 fi
 
+configure_container_utf8_profiles "${BIGDATA_CONTAINER}"
+
 install_stream_analytics_runtime
 
 if [ -d "${BIGDATA_SCRIPT_SOURCE}" ]; then
   echo "==> ${BIGDATA_CONTAINER}: sync Big Data helper scripts"
+  docker exec -u root "${BIGDATA_CONTAINER}" mkdir -p "${BIGDATA_SCRIPT_TARGET}"
   docker cp "${BIGDATA_SCRIPT_SOURCE}/." "${BIGDATA_CONTAINER}:${BIGDATA_SCRIPT_TARGET}/"
-  docker exec -u root "${BIGDATA_CONTAINER}" bash -lc "chmod 755 '${BIGDATA_SCRIPT_TARGET}'/*.sh 2>/dev/null || true"
+  docker exec -u root "${BIGDATA_CONTAINER}" bash -lc \
+    "chmod 755 '${BIGDATA_SCRIPT_TARGET}'/*.sh 2>/dev/null || true; \
+     ln -sfn '${BIGDATA_SCRIPT_TARGET}/consume_soe_employee.sh' /root/consume_soe_employee.sh"
 else
   echo "INFO: Big Data helper script source not found: ${BIGDATA_SCRIPT_SOURCE}"
 fi

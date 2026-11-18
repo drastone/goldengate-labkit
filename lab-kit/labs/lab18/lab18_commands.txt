@@ -4,21 +4,27 @@ sh lab18_init.sh
 docker exec -it demo_otrg_23ai bash
 sqlplus soe/soe@orclpdb1
 
-desc INS2_CHURN_FP_CARE
+desc soe.INS2_CHURN_FP_CARE
 
 select count(*) replicated_call_rows
-from call_center_log;
+from soe.call_center_log;
 
 select count(*) care_rows
-from ins2_churn_fp_care;
+from soe.ins2_churn_fp_care;
 
 set lines 240 pages 80
 col customer_name format a14
-col work_type format a22
-col contact_priority format a16
+col work_type format a24
+col contact_priority format a18
+col cnt format 999999
 col risk_band format a12
 col churn_reason format a24
 col consult_text format a60
+
+select work_type, contact_priority, count(*) cnt
+from soe.ins2_churn_action_queue_v
+group by work_type, contact_priority
+order by min(contact_rank), contact_priority;
 
 select source_cust_id,
        customer_name,
@@ -29,7 +35,7 @@ select source_cust_id,
        churn_score,
        churn_reason,
        substr(consult_text, 1, 60) consult_text
-from ins2_churn_action_queue_v
+from soe.ins2_churn_action_queue_v
 order by contact_rank, churn_score desc
 fetch first 8 rows only;
 

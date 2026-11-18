@@ -539,6 +539,11 @@ commit;
 
 prompt FP care coaching extension installed.
 
+set lines 120 pages 80
+col work_type format a24
+col contact_priority format a18
+col cnt format 999999
+
 select work_type, contact_priority, count(*) cnt
   from soe.ins2_churn_action_queue_v
  group by work_type, contact_priority

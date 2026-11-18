@@ -150,6 +150,45 @@ run_admin_ignore() {
   fi
 }
 
+verify_database_login() {
+  container="$1"
+  label="$2"
+  login="$3"
+
+  if ! docker exec -i -u oracle "${container}" bash -lc \
+      "printf 'exit\\n' | sqlplus -L -s '${login}@orclpdb1'" \
+      >/dev/null 2>&1; then
+    echo "ERROR: ${label} database login is not ready: ${login%%/*}/<documented-password>." >&2
+    echo "ERROR: Complete the Chapter 5 Source/Target database preparation, then rerun this reset." >&2
+    return 1
+  fi
+}
+
+verify_credential_alias_login() {
+  alias_name="$1"
+
+  if ! run_admin "${OGGHUB_CONTAINER}" \
+      "dblogin useridalias ${alias_name} domain ${DOMAIN}" >/dev/null; then
+    echo "ERROR: GoldenGate database credential alias is not ready: ${alias_name}." >&2
+    echo "ERROR: Complete the Chapter 6 credential-store procedure, then rerun this reset." >&2
+    return 1
+  fi
+}
+
+verify_reset_prerequisites() {
+  echo "==> Verify database accounts and GoldenGate credential aliases"
+  verify_database_login "${SOURCE_DB_CONTAINER}" "Source SOE" "soe/soe"
+  verify_database_login "${SOURCE_DB_CONTAINER}" "Source OGG" "ogg/ogg"
+  verify_credential_alias_login "${SOURCE_DB_ALIAS}"
+
+  if is_yes "${ORACLE_TARGET_ACTIVE}"; then
+    verify_database_login "${TARGET_DB_CONTAINER}" "Target SOE" "soe/soe"
+    verify_database_login "${TARGET_DB_CONTAINER}" "Target OGG" "ogg/ogg"
+    verify_credential_alias_login "${TARGET_DB_ALIAS}"
+  fi
+  echo "OK: database accounts and GoldenGate credential aliases are ready."
+}
+
 verify_ogg_group_running() {
   container="$1"
   group_name="$2"
@@ -402,11 +441,25 @@ set serveroutput on
 whenever sqlerror exit failure rollback
 alter session set container=ORCLPDB1;
 
-grant select on soe.address to ggadmin;
-grant select on soe.cust_pr to ggadmin;
-grant select on soe.cancelamt to ggadmin;
-grant select on soe.call_center_log to ggadmin;
-grant select on soe.cust_info to ggadmin;
+declare
+  l_count number;
+begin
+  select count(*) into l_count
+  from dba_users
+  where username = 'GGADMIN';
+
+  if l_count = 0 then
+    dbms_output.put_line('SKIP: GGADMIN is not installed; APEX grants are not required before the APEX lab.');
+  else
+    execute immediate 'grant select on soe.address to ggadmin';
+    execute immediate 'grant select on soe.cust_pr to ggadmin';
+    execute immediate 'grant select on soe.cancelamt to ggadmin';
+    execute immediate 'grant select on soe.call_center_log to ggadmin';
+    execute immediate 'grant select on soe.cust_info to ggadmin';
+    dbms_output.put_line('OK: Target SOE read grants applied to GGADMIN.');
+  end if;
+end;
+/
 
 exit
 SQL
@@ -700,6 +753,9 @@ if is_yes "${CONTAINER_PREPARE_ONLY}"; then
   exit 0
 fi
 
+PHASE="verify reset prerequisites"
+verify_reset_prerequisites
+
 echo
 echo "==> Stop OGGHUB processes"
 PHASE="stop OGGHUB processes"
@@ -924,6 +980,18 @@ if is_yes "${ORACLE_TARGET_ACTIVE}"; then
 fi
 
 echo
+echo "==> Ensure OGGHUB Big Data credential alias"
+PHASE="ensure OGGHUB Big Data credential alias"
+credential_output="$(run_admin "${OGGHUB_CONTAINER}" "info credentialstore")"
+printf '%s\n' "${credential_output}"
+if ! printf '%s\n' "${credential_output}" | grep -q 'Alias: oggbd_admin'; then
+  run_admin "${OGGHUB_CONTAINER}" \
+    "alter credentialstore add user ${OGG_USER} password ${OGG_PASS} alias oggbd_admin domain ${DOMAIN}"
+else
+  echo "SKIP: oggbd_admin credential alias already exists."
+fi
+
+echo
 echo "==> Recreate OGGHUB Distribution Path ${DISTPATH_NAME}"
 PHASE="recreate OGGHUB Distribution Path ${DISTPATH_NAME}"
 run_admin "${OGGHUB_CONTAINER}" \
@@ -969,7 +1037,7 @@ if is_yes "${CREATE_OBJECTS}"; then
   echo
   echo "==> Create OSA sample objects from Source DB"
   PHASE="create OSA sample objects from Source DB"
-  run_script_as_oracle "${SOURCE_DB_CONTAINER}" create_objects_v1_2.sh
+  run_script_as_oracle "${SOURCE_DB_CONTAINER}" prepare_osa_source_objects.sh
 
   echo
     echo "==> Seed 26ai churn business events in Source SOE"
@@ -1000,7 +1068,7 @@ if is_yes "${CREATE_OBJECTS}"; then
 else
   echo
   echo "INFO: OSA sample object creation is intentionally skipped."
-  echo "INFO: Run create_objects_v1_2.sh manually in the next lab step."
+  echo "INFO: Run prepare_osa_source_objects.sh manually in the next lab step."
 fi
 
 END_EPOCH="$(date +%s)"

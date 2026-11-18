@@ -32,6 +32,13 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
+v0.101은 7장의 기본 Source 업무 객체 SQL을
+`create_source_business_objects.sql`, 15장의 OSA 전체 Source 준비 script를
+`prepare_osa_source_objects.sh`로 구분한다. 기존 이름은 호환 wrapper로 남긴다.
+5,000건의 `SOE.CALL_CENTER_LOG` seed는 별도
+`call_center_log_inserts.sql`에서 읽어 가독성을 높였으며, 컨테이너 초기화가
+설치된 UTF-8 locale을 shell profile에 설정해 `vi`에서도 한글을 정상 표시한다.
+
 v0.100은 `lab18_init.sh`가 연속 실행하는 App 340 관련 SQL 세 개를 모두
 점검해 Page 70 vector 구성 SQL과 FP care 구성 SQL에도 명시적 `exit`를
 추가한다. 각 단계의 완료 메시지 이후 SQL*Plus가 입력을 기다리지 않고
