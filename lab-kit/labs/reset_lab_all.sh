@@ -38,6 +38,7 @@ SOURCE_TRAIL="${SOURCE_TRAIL:-ca}"
 TARGET_TRAIL="${TARGET_TRAIL:-da}"
 TARGET_TRAIL_SIZE_MB="${TARGET_TRAIL_SIZE_MB:-100}"
 OSA_SCRIPT_DIR="${OSA_SCRIPT_DIR:-/home/oracle/script/osa/23ai}"
+HOST_OSA_SCRIPT_DIR="${HOST_OSA_SCRIPT_DIR:-${BASE_LAB_HOME}/oracle/script/osa/23ai}"
 D01_BASELINE_PARAM="${D01_BASELINE_PARAM:-${LAB_HOME}/../oracle/script/ogg/params/d01.prm}"
 KAF01_BASELINE_PROPS="${KAF01_BASELINE_PROPS:-${LAB_HOME}/../oracle/script/oggbd/kafka/kaf01.props}"
 KAF01_RUNTIME_PROPS="${KAF01_RUNTIME_PROPS:-/u02/Deployment/etc/conf/ogg/kaf01.props}"
@@ -400,6 +401,53 @@ run_script_as_oracle() {
 	    "cd '${OSA_SCRIPT_DIR}' && sh '${script_name}'"
 }
 
+sync_source_osa_scripts() {
+  required_files="
+reset_osa_objects.sh
+prepare_osa_source_objects.sh
+call_center_log_inserts.sql
+cfund_ratio.sql
+prepare_ai_26ai_demo.sh
+"
+
+  echo "==> Sync canonical OSA scripts to ${SOURCE_DB_CONTAINER}"
+  for file_name in ${required_files}; do
+    source_file="${HOST_OSA_SCRIPT_DIR}/${file_name}"
+    if [ ! -f "${source_file}" ]; then
+      echo "ERROR: required host OSA file is missing: ${source_file}" >&2
+      echo "ERROR: restore the current Lab Kit files, then rerun this reset." >&2
+      return 1
+    fi
+  done
+
+  docker exec -u root "${SOURCE_DB_CONTAINER}" mkdir -p "${OSA_SCRIPT_DIR}"
+  for file_name in ${required_files}; do
+    docker cp "${HOST_OSA_SCRIPT_DIR}/${file_name}" \
+      "${SOURCE_DB_CONTAINER}:${OSA_SCRIPT_DIR}/${file_name}"
+  done
+  docker exec -u root "${SOURCE_DB_CONTAINER}" \
+    chown oracle:oinstall \
+      "${OSA_SCRIPT_DIR}/reset_osa_objects.sh" \
+      "${OSA_SCRIPT_DIR}/prepare_osa_source_objects.sh" \
+      "${OSA_SCRIPT_DIR}/call_center_log_inserts.sql" \
+      "${OSA_SCRIPT_DIR}/cfund_ratio.sql" \
+      "${OSA_SCRIPT_DIR}/prepare_ai_26ai_demo.sh"
+  docker exec -u root "${SOURCE_DB_CONTAINER}" \
+    chmod 0755 \
+      "${OSA_SCRIPT_DIR}/reset_osa_objects.sh" \
+      "${OSA_SCRIPT_DIR}/prepare_osa_source_objects.sh" \
+      "${OSA_SCRIPT_DIR}/prepare_ai_26ai_demo.sh"
+
+  for file_name in ${required_files}; do
+    if ! docker exec "${SOURCE_DB_CONTAINER}" \
+        test -f "${OSA_SCRIPT_DIR}/${file_name}"; then
+      echo "ERROR: OSA file was not staged in ${SOURCE_DB_CONTAINER}: ${file_name}" >&2
+      return 1
+    fi
+  done
+  echo "OK: canonical OSA scripts are current in ${SOURCE_DB_CONTAINER}."
+}
+
 wait_for_target_osa_objects() {
   timeout_seconds="$1"
   deadline="$(( $(date '+%s') + timeout_seconds ))"
@@ -747,6 +795,9 @@ fi
 
 ensure_required_containers_running
 ensure_bigdata_services_ready
+
+PHASE="sync canonical OSA scripts to Source DB"
+sync_source_osa_scripts
 
 if is_yes "${CONTAINER_PREPARE_ONLY}"; then
   echo "OK: container preparation check completed; reset work was not started."

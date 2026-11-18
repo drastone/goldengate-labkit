@@ -32,6 +32,12 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
+v0.103은 `reset_lab_all.sh`가 파괴적인 reset을 시작하기 전에 현재 호스트의
+OSA Source 스크립트와 SQL을 Source DB 컨테이너에 동기화한다. Lab Kit을
+갱신한 뒤 기존 컨테이너를 재사용해도 `prepare_osa_source_objects.sh`와 분리된
+seed SQL이 누락되지 않으며, 호스트 원본이 없으면 아무것도 변경하기 전에
+정확한 오류로 중단한다.
+
 v0.102는 데이터베이스 컨테이너 초기화에서 더 이상 사용하지 않는 JDK 17과
 JDK 8 RPM 설치 시도를 제거한다. ORDS용 Java는 12장의 표준 설치 절차가
 JDK 21로 구성하므로, 제품 media에 구형 RPM이 없어도 불필요한 오류가
