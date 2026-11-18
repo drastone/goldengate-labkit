@@ -32,6 +32,11 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
+v0.104는 한글 업무 데이터가 들어 있는 OSA SQL 네 개를 UTF-8/LF로
+정규화한다. 첫 줄은 LF이고 나머지는 CRLF였던 혼합 줄바꿈을 제거해 `vi`에서
+`^M`과 깨진 한글이 나타나지 않으며, 릴리스 빌드가 UTF-8 유효성과 CR 문자
+부재를 검사해 같은 문제가 재발하지 않도록 한다.
+
 v0.103은 `reset_lab_all.sh`가 파괴적인 reset을 시작하기 전에 현재 호스트의
 OSA Source 스크립트와 SQL을 Source DB 컨테이너에 동기화한다. Lab Kit을
 갱신한 뒤 기존 컨테이너를 재사용해도 `prepare_osa_source_objects.sh`와 분리된

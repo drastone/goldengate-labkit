@@ -3,7 +3,7 @@
 drop table soe.fundm purge;
 create table soe.fundm (
 fund_code varchar2(20) not null primary key,
-fund_name varchar2(100), 
+fund_name varchar2(100),
 fund_description varchar2(4000) -- 상품설명서
 );
 
@@ -347,11 +347,11 @@ set dt = to_char(sysdate,'YYYY') || substr(dt,5,4)
 commit;
 
 
-declare 
+declare
     k number;
-begin 
+begin
     k:= 1;
-	
+
 	-- 올해 1년치
     for i in 1..11 loop
         insert into soe.fund_price
@@ -360,7 +360,7 @@ begin
         where substr(dt,1,6) = to_char(sysdate,'YYYY') || '01'
         ;
     end loop;
-	
+
 	-- 과거 5년치
     for i in 1..60 loop
         insert into soe.fund_price
@@ -368,13 +368,13 @@ begin
         from soe.fund_price
         where substr(dt,1,6) = to_char(sysdate,'YYYY') || '01'
         ;
-    end loop; 	
+    end loop;
     commit;
 end;
 /
- 
---중복데이터 제거 
-DELETE 
+
+--중복데이터 제거
+DELETE
 FROM soe.fund_price
 WHERE ROWID IN (
     SELECT ROWID FROM (
@@ -382,25 +382,25 @@ WHERE ROWID IN (
             SELECT ROW_NUMBER() OVER(PARTITION BY dt,fund_code ORDER BY dt,fund_code) AS num
             FROM soe.fund_price
         )
-        WHERE num > 1 
+        WHERE num > 1
     )
 );
 
 commit;
 
 --향후 10년치 데이터 생성
-declare 
+declare
     vs_year number;
 begin
     select to_char(sysdate,'YYYY') vs_year into year from dual;
-    
+
     for i in 1..10 loop
         vs_year := vs_year + 1;
-        insert into soe.fund_price select vs_year || substr(dt,5,4), fund_code, price 
-        from soe.fund_price 
+        insert into soe.fund_price select vs_year || substr(dt,5,4), fund_code, price
+        from soe.fund_price
         where substr(dt,1,4) = to_char(sysdate,'YYYY')
         ;
-        
+
     end loop;
 end;
 /
@@ -423,7 +423,7 @@ cancel_yn varchar2(2)
 
 
 
-insert into soe.cfund_rat 
+insert into soe.cfund_rat
 select cust_id, fund_code1,fund_rat1,to_char(sysdate-1,'YYYYMMDDHH24MISS'),'N',0,'N'
 from soe.cfund_ratio
 where fund_code1 is not null
@@ -438,16 +438,16 @@ alter table soe.cfund_rat add constraint cfund_rat primary key (cust_id,fund_cod
 
 
 drop table SOE.ADDRESS purge;
-create table SOE.ADDRESS 
-(	
-CUST_ID NUMBER, 
+create table SOE.ADDRESS
+(
+CUST_ID NUMBER,
 FP_ID NUMBER,
-CATEGORY VARCHAR2(20 BYTE), 
-GUNMUL VARCHAR2(50 BYTE), 
-JUNGDON VARCHAR2(20 BYTE), 
-JUSO VARCHAR2(60 BYTE), 
-CNT NUMBER, 
-LAT NUMBER, 
+CATEGORY VARCHAR2(20 BYTE),
+GUNMUL VARCHAR2(50 BYTE),
+JUNGDON VARCHAR2(20 BYTE),
+JUSO VARCHAR2(60 BYTE),
+CNT NUMBER,
+LAT NUMBER,
 LON NUMBER
 ) ;
 
@@ -624,7 +624,7 @@ silhyo_yn varchar2(10),
 non_deposit_cnt number);
 
 insert into soe.cfund_deposit
-select cust_id, 
+select cust_id,
     deposit_date,
     deposit_amt,
     deposit_cnt,
@@ -650,7 +650,7 @@ commit;
 alter table soe.cfund_deposit add constraint cfund_deposit primary key (cust_id);
 
 
---##### 적립금 배치용 (잔고 좌수를 확인하여 중도인출 가능한 범위인지 확인할 수 있음) 
+--##### 적립금 배치용 (잔고 좌수를 확인하여 중도인출 가능한 범위인지 확인할 수 있음)
 drop table soe.reserves_amt purge;
 create table soe.reserves_amt (
 dt varchar2(8),
@@ -665,7 +665,7 @@ tot_amt number
 );
 alter table soe.reserves_amt add constraint reserves_amt_pk primary key (dt,cust_id,fund_code,op_gubun);
 
---## OpGubun master 
+--## OpGubun master
 drop table soe.opm purge;
 create table soe.opm (
 op_gubun varchar2(5),
@@ -763,9 +763,9 @@ create table soe.cancelfp (
 	tot_amt varchar2(20),
 	FP_ID NUMBER,
 	phonenumber varchar2(20),
-	CATEGORY VARCHAR2(20 BYTE), 
-	GUNMUL VARCHAR2(50 BYTE), 
-	JUNGDON VARCHAR2(20 BYTE), 
+	CATEGORY VARCHAR2(20 BYTE),
+	GUNMUL VARCHAR2(50 BYTE),
+	JUNGDON VARCHAR2(20 BYTE),
 	JUSO VARCHAR2(60 BYTE),
 	SMS VARCHAR2(100)
 );
@@ -783,14 +783,14 @@ Create table soe.msg (job_name varchar2(30), start_dt varchar2(30), end_dt varch
 drop table soe.CFUND_DT purge;
 create table soe.CFUND_DT (
 dt varchar2(8),
-keys number, 
+keys number,
 cust_id number,
 fund_code varchar2(20), -- 펀드 코드
 fund_name varchar2(100),
 fund_price varchar2(20), -- 펀드 당일 기준가
 fund_cnt number, -- 펀드 보유 좌수
 fund_amt number, -- 펀드 당일 평가액
-fund_description clob, -- 펀드 상품 설명서 
+fund_description clob, -- 펀드 상품 설명서
 op_gubun varchar2(5), -- op 구분, 1 : 입금, 2: 해약, 3: 중도인출
 op_gubun2 varchar2(5),
 cnt number,
