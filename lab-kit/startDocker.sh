@@ -312,6 +312,27 @@ sync_ogg_field_kit() {
   fi
 }
 
+sync_container_file() {
+  local source="$1"
+  local container="$2"
+  local target="$3"
+  local label="$4"
+
+  if docker inspect --format '{{range .Mounts}}{{println .Destination}}{{end}}' "${container}" 2>/dev/null | grep -Fqx "${target}"; then
+    if docker exec "${container}" test -f "${target}"; then
+      echo "OK: ${container}: ${label} is supplied by a Compose bind mount"
+      return 0
+    fi
+    echo "WARN: ${container}: mounted ${label} is unavailable at ${target}"
+    return 1
+  fi
+
+  docker cp "${source}" "${container}:${target}" || {
+    echo "WARN: ${container}: ${label} copy failed"
+    return 1
+  }
+}
+
 sync_ogg_api_server() {
   local container="$1"
   local deployment="$2"
@@ -338,14 +359,10 @@ sync_ogg_api_server() {
     echo "WARN: ${container}: cannot create OGG API script directory"
     return 0
   }
-  docker cp "${OGG_API_SERVER_SOURCE}" "${container}:${OGG_API_SERVER_TARGET}" || {
-    echo "WARN: ${container}: OGG API server copy failed"
-    return 0
-  }
-  docker cp "${hook_source}" "${container}:${OGG_API_START_HOOK_TARGET}" || {
-    echo "WARN: ${container}: OGG API startup hook copy failed"
-    return 0
-  }
+  sync_container_file "${OGG_API_SERVER_SOURCE}" "${container}" "${OGG_API_SERVER_TARGET}" \
+    "OGG API server" || return 0
+  sync_container_file "${hook_source}" "${container}" "${OGG_API_START_HOOK_TARGET}" \
+    "OGG API startup hook" || return 0
   docker exec -u root "${container}" bash -lc \
     "chmod 755 '${OGG_API_SERVER_TARGET}' '${OGG_API_START_HOOK_TARGET}' 2>/dev/null || true; \
      chown ogg:ogg '${OGG_API_SERVER_TARGET}' '${OGG_API_START_HOOK_TARGET}' 2>/dev/null || true" || {
@@ -395,14 +412,10 @@ sync_fabric_apply_service() {
     echo "WARN: ${container}: cannot create Data Fabric helper script directory"
     return 0
   }
-  docker cp "${FABRIC_APPLY_SERVICE_SOURCE}" "${container}:${FABRIC_APPLY_SERVICE_TARGET}" || {
-    echo "WARN: ${container}: Data Fabric apply helper copy failed"
-    return 0
-  }
-  docker cp "${FABRIC_APPLY_START_HOOK_SOURCE}" "${container}:${FABRIC_APPLY_START_HOOK_TARGET}" || {
-    echo "WARN: ${container}: Data Fabric apply helper startup hook copy failed"
-    return 0
-  }
+  sync_container_file "${FABRIC_APPLY_SERVICE_SOURCE}" "${container}" "${FABRIC_APPLY_SERVICE_TARGET}" \
+    "Data Fabric apply helper" || return 0
+  sync_container_file "${FABRIC_APPLY_START_HOOK_SOURCE}" "${container}" "${FABRIC_APPLY_START_HOOK_TARGET}" \
+    "Data Fabric apply helper startup hook" || return 0
   docker exec -u root "${container}" bash -lc \
     "chmod 755 '${FABRIC_APPLY_SERVICE_TARGET}' '${FABRIC_APPLY_START_HOOK_TARGET}' 2>/dev/null || true; \
      chown ogg:ogg '${FABRIC_APPLY_SERVICE_TARGET}' '${FABRIC_APPLY_START_HOOK_TARGET}' 2>/dev/null || true" || {
@@ -416,7 +429,7 @@ sync_fabric_apply_service() {
      chown ogg:ogg /u01/ogg/scripts/fabric_apply_service.log 2>/dev/null || true" || true
   docker exec -u ogg "${container}" bash -lc \
     "nohup env FABRIC_APPLY_PORT='${FABRIC_APPLY_PORT}' FABRIC_APPLY_TOKEN='${FABRIC_APPLY_TOKEN}' \
-       '${FABRIC_APPLY_SERVICE_TARGET}' >/u01/ogg/scripts/fabric_apply_service.log 2>&1 &" || {
+       python3 '${FABRIC_APPLY_SERVICE_TARGET}' >/u01/ogg/scripts/fabric_apply_service.log 2>&1 &" || {
       echo "WARN: ${container}: Data Fabric apply helper restart command failed"
       return 0
     }

@@ -32,6 +32,11 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
+v0.96은 `startDocker.sh`가 Compose bind mount로 제공되는 GoldenGate API
+helper를 다시 `docker cp`하지 않도록 개선한다. mount된 파일의 존재를 확인한
+뒤 API와 Data Fabric helper를 재시작하고 health endpoint까지 검증하므로
+`device or resource busy` 오류 없이 기존 컨테이너와 신규 환경을 모두 지원한다.
+
 5장의 Source/Target 데이터베이스 준비는 책의 SQL*Plus 절차와
 `labs/lab05/lab05_commands.txt`를 따라 수행한다. 저자의 반복 검증을 위한
 자동 구성은 별도 writer tools에만 두며 reader-facing `lab05_init.sh`는
