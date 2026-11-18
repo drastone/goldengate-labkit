@@ -10,10 +10,20 @@ fi
 
 set -euo pipefail
 
+LAB20_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LAB_HOME="${LAB_HOME:-$(cd "${LAB20_DIR}/../.." && pwd)}"
+LAB_LOGGING="${LAB_HOME}/troubleshooting/scripts/lab_init_logging.sh"
 OGGHUB_CONTAINER="${OGGHUB_CONTAINER:-demo_ogg_23ai}"
 DOMAIN="${DOMAIN:-OracleGoldenGate}"
 NORMAL_TRAIL="${NORMAL_TRAIL:-k1}"
 HEAVY_TRAIL="${HEAVY_TRAIL:-k2}"
+
+if [ ! -f "${LAB_LOGGING}" ]; then
+  echo "ERROR: shared Lab logging helper not found: ${LAB_LOGGING}" >&2
+  exit 1
+fi
+source "${LAB_LOGGING}"
+lab_init_log_begin lab20 lab20-init
 
 printf "Reset Chapter 20 Data Fabric GoldenGate lanes\n"
 printf "Host        : "; uname -n
@@ -351,3 +361,4 @@ run_admin "${OGGHUB_CONTAINER}" \
 
 printf "\nChapter 20 Data Fabric GoldenGate lanes reset and configured.\n"
 printf "Open Data Fabric Canvas Design and click Refresh Metadata to reload topology metadata.\n"
+lab_init_log_finish

@@ -42,8 +42,12 @@ lab12_begin_stage() {
   mkdir -p "${LAB12_LOG_DIR}"
   LAB12_LOG_FILE="${LAB12_LOG_FILE:-${LAB12_LOG_DIR}/$(lab12_timestamp)-${LAB12_STAGE}.log}"
   LAB12_STAGE_START="$(date +%s)"
+  ln -sfn "$(basename "${LAB12_LOG_FILE}")" "${LAB12_LOG_DIR}/latest.log"
   exec > >(tee -a "${LAB12_LOG_FILE}") 2>&1
   trap 'lab12_fail_stage $?' ERR
+  trap 'lab12_interrupt_stage SIGHUP 129' HUP
+  trap 'lab12_interrupt_stage SIGINT 130' INT
+  trap 'lab12_interrupt_stage SIGTERM 143' TERM
 
   lab12_log "==> START: ${LAB12_STAGE}"
   lab12_log "INFO: log file: ${LAB12_LOG_FILE}"
@@ -51,15 +55,26 @@ lab12_begin_stage() {
 
 lab12_fail_stage() {
   local rc="$1"
-  trap - ERR
+  trap - ERR HUP INT TERM
   lab12_log "ERROR: ${LAB12_STAGE} failed with exit code ${rc}."
   lab12_log "ERROR: elapsed time: $(lab12_elapsed "${LAB12_STAGE_START}")"
   lab12_log "ERROR: review log: ${LAB12_LOG_FILE}"
   exit "${rc}"
 }
 
+lab12_interrupt_stage() {
+  local signal_name="$1"
+  local rc="$2"
+
+  trap - ERR HUP INT TERM
+  lab12_log "ERROR: ${LAB12_STAGE} was interrupted by ${signal_name}."
+  lab12_log "ERROR: elapsed time: $(lab12_elapsed "${LAB12_STAGE_START}")"
+  lab12_log "ERROR: review log: ${LAB12_LOG_FILE}"
+  exit "${rc}"
+}
+
 lab12_finish_stage() {
-  trap - ERR
+  trap - ERR HUP INT TERM
   lab12_log "OK: ${LAB12_STAGE} completed."
   lab12_log "OK: elapsed time: $(lab12_elapsed "${LAB12_STAGE_START}")"
   lab12_log "OK: log file: ${LAB12_LOG_FILE}"

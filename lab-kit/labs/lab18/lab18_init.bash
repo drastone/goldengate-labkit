@@ -34,6 +34,7 @@ TARGET_SQL_FILES=(
 
 STARTED_AT="$(date +%s)"
 mkdir -p "${LOG_DIR}"
+ln -sfn "$(basename "${LOG_FILE}")" "${LOG_DIR}/latest.log"
 exec > >(tee -a "${LOG_FILE}") 2>&1
 
 log() {
@@ -60,6 +61,20 @@ on_error() {
   exit "${rc}"
 }
 trap 'on_error $?' ERR
+
+on_signal() {
+  local signal_name="$1"
+  local rc="$2"
+
+  trap - ERR HUP INT TERM
+  log "ERROR: lab18_init.sh was interrupted by ${signal_name}."
+  log "ERROR: elapsed time: $(elapsed)"
+  log "ERROR: review log: ${LOG_FILE}"
+  exit "${rc}"
+}
+trap 'on_signal SIGHUP 129' HUP
+trap 'on_signal SIGINT 130' INT
+trap 'on_signal SIGTERM 143' TERM
 
 sql_sys() {
   docker exec -i -u oracle "${TARGET_DB_CONTAINER}" bash -lc "sqlplus -s / as sysdba" <<SQL
@@ -329,7 +344,7 @@ main() {
 
   verify_apps
   verify_target_objects
-  trap - ERR
+  trap - ERR HUP INT TERM
   log "OK: Lab 18 APEX business applications are ready."
   log "OK: elapsed time: $(elapsed)"
   log "OK: log file: ${LOG_FILE}"

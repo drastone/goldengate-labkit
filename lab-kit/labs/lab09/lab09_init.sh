@@ -8,19 +8,27 @@ if [ -z "${BASH_VERSION:-}" ] || shopt -qo posix 2>/dev/null; then
   exit 1
 fi
 
-set -eu
+set -Eeuo pipefail
 
 # Prepare only the optional Lakehouse services needed by the Chapter 9 lab.
 # The Kafka-Iceberg writer remains opt-in so no Kafka records are consumed yet.
 
 LAB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LAB_HOME="${LAB_HOME:-$(cd "${LAB_DIR}/../.." && pwd)}"
+LAB_LOGGING="${LAB_HOME}/troubleshooting/scripts/lab_init_logging.sh"
 START_LAKEHOUSE="${START_LAKEHOUSE:-${LAB_HOME}/startLakehouse.sh}"
 DOCKER_NETWORK="${DOCKER_NETWORK:-oracle_ogg_network}"
 MINIO_BUCKET="${MINIO_BUCKET:-warehouse}"
 MINIO_MC="/opt/bitnami/minio-client/bin/mc"
 MINIO_ROOT_USER="${MINIO_ROOT_USER:-admin}"
 MINIO_ROOT_PASSWORD="${MINIO_ROOT_PASSWORD:-WElcome1234##}"
+
+if [ ! -f "${LAB_LOGGING}" ]; then
+  echo "ERROR: shared Lab logging helper not found: ${LAB_LOGGING}" >&2
+  exit 1
+fi
+source "${LAB_LOGGING}"
+lab_init_log_begin "${LAB_LOG_NAME:-lab09}" "${LAB_LOG_STAGE:-lab09-init}"
 
 require_command() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -118,3 +126,4 @@ else
 fi
 
 echo "OK: Chapter 9 Lakehouse initialization completed."
+lab_init_log_finish

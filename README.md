@@ -32,6 +32,12 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
+v0.98은 실제 독자용 `labXX_init.sh` 실행 결과를 장별 중앙 로그 디렉터리
+`/home/oracle/logs/labXX`에 저장한다. 정상 완료, 명령 실패, SSH 연결 종료를
+포함한 signal, 수행 시간과 로그 경로를 기록하며 `latest.log`가 가장 최근
+실행 로그를 가리킨다. 책에서 수동 절차로 진행하는 5장과 11장의 불필요한
+init script도 배포본에서 제거해 id7 및 원고 흐름과 일치시켰다.
+
 v0.97은 APEX demo 계정 갱신 결과의 SQL*Plus 열 폭과 제목을 정리해 사용자명,
 잠금 상태, 만료일, 실패 횟수를 한 화면에서 읽기 쉽게 표시한다.
 
