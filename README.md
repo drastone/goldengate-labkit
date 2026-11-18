@@ -32,6 +32,10 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
+v0.99는 App 340 설치 SQL이 완료된 뒤 SQL*Plus를 명시적으로 종료하도록
+`exit`를 추가한다. 이로써 `lab18_init.sh`가 App 340 설치 완료 메시지에서
+입력을 기다리며 멈추지 않고 후속 검증 단계로 진행한다.
+
 v0.98은 실제 독자용 `labXX_init.sh` 실행 결과를 장별 중앙 로그 디렉터리
 `/home/oracle/logs/labXX`에 저장한다. 정상 완료, 명령 실패, SSH 연결 종료를
 포함한 signal, 수행 시간과 로그 경로를 기록하며 `latest.log`가 가장 최근

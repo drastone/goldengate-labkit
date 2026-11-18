@@ -203,3 +203,4 @@ end;
 /
 
 prompt Insurance Information System 2.0 installed as App 340.
+exit
