@@ -32,6 +32,12 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
+v0.107은 저자용 writer-tools의 resume 체크포인트에 다섯 Lab Kit
+컨테이너의 식별값을 함께 저장한다. 일반 stop/start에서는 완료 상태를
+재사용하지만 `stopDocker.sh --rm` 후 컨테이너가 재생성되면 이전 완료
+표시를 자동으로 무효화하고 해당 baseline을 다시 수행한다. 독자용 Lab Kit
+실행 로직은 v0.106과 동일하다.
+
 v0.106은 `oracle/init.sh`와 `centos/init.sh`가 호출하는 공통 초기화
 함수에서 각 컨테이너의 root 및 서비스 계정 `.bash_profile`, `.bashrc`,
 `.profile`에 `/etc/profile.d/goldengate-lab-utf8.sh`를 읽는 블록을 직접
