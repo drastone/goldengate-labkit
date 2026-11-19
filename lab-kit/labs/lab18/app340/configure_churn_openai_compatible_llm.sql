@@ -62,7 +62,7 @@ values
 
 create or replace package soe.ins2_churn_llm_pkg authid definer as
   function smoke_test return clob;
-  procedure generate_comments(p_limit number default 20);
+  procedure generate_comments(p_limit number default 2);
 end ins2_churn_llm_pkg;
 /
 
@@ -157,7 +157,7 @@ create or replace package body soe.ins2_churn_llm_pkg as
     return request_llm('한국어 한 문장으로 답하십시오. GoldenGate CDC 이벤트를 FP 고객 케어 메시지로 연결합니다.');
   end smoke_test;
 
-  procedure generate_comments(p_limit number default 20) is
+  procedure generate_comments(p_limit number default 2) is
     l_provider   varchar2(40);
     l_base_url   varchar2(1000);
     l_model_name varchar2(200);
@@ -192,6 +192,7 @@ create or replace package body soe.ins2_churn_llm_pkg as
                      from soe.ins2_churn_llm_result x
                     where x.source_cust_id = q.source_cust_id
                       and nvl(x.log_id, -1) = nvl(q.log_id, -1)
+                      and x.status = 'GENERATED'
                  )
            order by contact_rank, churn_score desc, source_cust_id
         )
@@ -291,14 +292,14 @@ begin
       begin
         soe.ins2_churn_vector_pkg.refresh_vectors(500);
         soe.ins2_churn_vector_pkg.sync_care_queue;
-        soe.ins2_churn_llm_pkg.generate_comments(20);
+        soe.ins2_churn_llm_pkg.generate_comments(2);
       end;
     ]',
     start_date      => systimestamp,
     repeat_interval => 'freq=minutely;interval=1',
     enabled         => true,
     auto_drop       => false,
-    comments        => 'Refresh GoldenGate-driven churn queue and generate external LLM comments for new unprocessed customer events.'
+    comments        => 'Refresh the churn queue and retry up to two non-generated LLM comments per minute.'
   );
 end;
 /

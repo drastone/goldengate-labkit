@@ -32,6 +32,12 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
+v0.117은 Chapter 18의 선택형 외부 LLM Scheduler를 분당 2건으로 제한하고,
+rate limit으로 실패한 행을 중복 생성 없이 다음 주기에 재시도한다. SOE
+계정의 상태 확인 SQL은 별도 DBA 권한 없이 `USER_SCHEDULER_JOBS`를 사용한다.
+전체 재현 소스는 `oracle-goldengate-data-platform` 저장소의 불변 태그
+`labkit-v0.117`에 보존한다.
+
 v0.109는 저자용 Lab 06 자동화가 Target에 검증 테이블을 직접 만들거나
 데이터를 넣지 않고, Source에서 발생한 `SOE.STAFF` DDL과 DML이 C01, trail,
 D01을 거쳐 Target에 도착하도록 바로잡는다. 실행별 시각 토큰을 확인하므로
