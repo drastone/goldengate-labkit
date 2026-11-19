@@ -32,6 +32,12 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
+v0.108은 `reset_lab_all.sh`가 GoldenGate process 정의와 OS process의 종료를
+확인한 뒤 소유 trail을 제거하고, 재구성 후에는 임시 트랜잭션으로
+Source-Capture-Distribution-Kafka 전체 전달을 검증한다. Chapter 20 reset도
+이전 lane과 checkpoint를 정리하며, OSA 시작/종료 및 상태 점검은 stale PID,
+workload SQL 오류, 알려진 vendor 진단을 구분해 더 명확한 결과를 제공한다.
+
 v0.107은 저자용 writer-tools의 resume 체크포인트에 다섯 Lab Kit
 컨테이너의 식별값을 함께 저장한다. 일반 stop/start에서는 완료 상태를
 재사용하지만 `stopDocker.sh --rm` 후 컨테이너가 재생성되면 이전 완료
