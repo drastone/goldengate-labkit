@@ -32,6 +32,12 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
+v0.109는 저자용 Lab 06 자동화가 Target에 검증 테이블을 직접 만들거나
+데이터를 넣지 않고, Source에서 발생한 `SOE.STAFF` DDL과 DML이 C01, trail,
+D01을 거쳐 Target에 도착하도록 바로잡는다. 실행별 시각 토큰을 확인하므로
+이전 Target 값이 남아 있어도 새 복제를 성공으로 오인하지 않으며, D01이
+ABENDED되면 긴 대기 없이 보고서 원인과 함께 중단한다.
+
 v0.108은 `reset_lab_all.sh`가 GoldenGate process 정의와 OS process의 종료를
 확인한 뒤 소유 trail을 제거하고, 재구성 후에는 임시 트랜잭션으로
 Source-Capture-Distribution-Kafka 전체 전달을 검증한다. Chapter 20 reset도
