@@ -31,9 +31,14 @@ fi
 source "${LAB_LOGGING}"
 lab_init_log_begin lab20 lab20-init
 RUNTIME_START="${LAB20_DIR}/start_lab20_fabric_console.sh"
+FABRIC_DESIGNER_INSTALL="${LAB20_DIR}/install_data_fabric_designer.sh"
 
 if [ ! -x "${RUNTIME_START}" ]; then
   printf "ERROR: Chapter 20 runtime helper is missing or not executable: %s\n" "${RUNTIME_START}" >&2
+  exit 1
+fi
+if [ ! -x "${FABRIC_DESIGNER_INSTALL}" ]; then
+  printf "ERROR: Chapter 20 Data Fabric Designer installer is missing or not executable: %s\n" "${FABRIC_DESIGNER_INSTALL}" >&2
   exit 1
 fi
 
@@ -97,6 +102,10 @@ printf "\n"
 
 printf "==> Verify the manual Chapter 13 App 101 import.\n"
 verify_manual_app101_import
+printf "\n"
+
+printf "==> Install or repair the Chapter 20 Data Fabric Designer objects.\n"
+bash "${FABRIC_DESIGNER_INSTALL}"
 printf "\n"
 
 printf "Reset Chapter 20 Data Fabric GoldenGate lanes\n"

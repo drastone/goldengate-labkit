@@ -32,6 +32,13 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
+v0.132는 App 101의 Supporting Objects에 Chapter 20 Data Fabric 테이블과
+`GGADMIN.FABRIC_DESIGNER_PKG`를 포함한다. 따라서 13장에서 App 101을 수동으로
+가져오며 Supporting Objects를 설치한 깨끗한 환경에서도 Canvas 페이지가
+별도 사전 상태 없이 렌더링된다. 기존 App 101 설치는 `lab20_init.sh`가 같은
+정식 설치 SQL로 보완하고, OGG 워크스페이스 내부 ID를 동적으로 확인하며
+패키지 명세와 본문이 모두 `VALID`인지 검증한다.
+
 v0.131은 독자용 Lab Kit 동작을 v0.130과 동일하게 유지한다. 별도
 writer-tools의 누적 Lab 16 경로가 APEX/ORDS 설치 후 기존 저자용 App 101
 helper를 호출하도록 보완하여, Lab 19까지 완료한 저자 baseline에 13장의

@@ -13,6 +13,7 @@ alter session set container=ORCLPDB1;
 --   require Kafka, Iceberg, Trino, or dashboard containers to be running.
 --------------------------------------------------------------------------------
 
+-- BEGIN APP101 FABRIC SUPPORTING OBJECTS
 create table if not exists ggadmin.fabric_node (
   node_code       varchar2(80) primary key,
   node_name       varchar2(200) not null,
@@ -123,6 +124,7 @@ comment on table ggadmin.fabric_supplemental_log is
 comment on table ggadmin.fabric_change_request is
   'Data Fabric Set Table Wizard에서 생성한 GoldenGate parameter 변경 요청과 restart plan.';
 
+-- BEGIN PRIVILEGED FABRIC ACL
 begin
   for p in (select 'GGADMIN' principal from dual union all select 'APEX_260100' from dual) loop
     begin
@@ -146,6 +148,7 @@ begin
   commit;
 end;
 /
+-- END PRIVILEGED FABRIC ACL
 
 declare
   procedure upsert_node(
@@ -2305,22 +2308,26 @@ grant select on ggadmin.fabric_node_property to apex_260100;
 grant select on ggadmin.fabric_table_column to apex_260100;
 grant select on ggadmin.fabric_supplemental_log to apex_260100;
 grant execute on ggadmin.fabric_designer_pkg to apex_260100;
+-- END APP101 FABRIC SUPPORTING OBJECTS
 
 prompt --application/set_environment
+declare
+  l_workspace_id number;
 begin
-  apex_util.set_security_group_id(3000124735735904);
-end;
-/
+  select workspace_id
+    into l_workspace_id
+    from apex_workspaces
+   where workspace = 'OGG';
 
-begin
-wwv_flow_imp.import_begin (
- p_version_yyyy_mm_dd=>'2026.03.30'
-,p_release=>'26.1.0'
-,p_default_workspace_id=>3000124735735904
-,p_default_application_id=>101
-,p_default_id_offset=>10228337575640159
-,p_default_owner=>'GGADMIN'
-);
+  apex_util.set_security_group_id(l_workspace_id);
+  wwv_flow_imp.import_begin (
+   p_version_yyyy_mm_dd=>'2026.03.30'
+  ,p_release=>'26.1.0'
+  ,p_default_workspace_id=>l_workspace_id
+  ,p_default_application_id=>101
+  ,p_default_id_offset=>10228337575640159
+  ,p_default_owner=>'GGADMIN'
+  );
 end;
 /
 
@@ -3179,5 +3186,24 @@ select list_item_display_sequence seq,
 select count(*) fabric_nodes from ggadmin.fabric_node;
 select count(*) fabric_edges from ggadmin.fabric_edge;
 select count(*) fabric_columns from ggadmin.fabric_table_column;
+
+declare
+  l_valid_objects number;
+begin
+  select count(*)
+    into l_valid_objects
+    from dba_objects
+   where owner = 'GGADMIN'
+     and object_name = 'FABRIC_DESIGNER_PKG'
+     and object_type in ('PACKAGE', 'PACKAGE BODY')
+     and status = 'VALID';
+
+  if l_valid_objects <> 2 then
+    raise_application_error(
+      -20020,
+      'GGADMIN.FABRIC_DESIGNER_PKG package and package body are not both VALID');
+  end if;
+end;
+/
 
 prompt App 101 Data Fabric Designer installed.
