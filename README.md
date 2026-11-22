@@ -32,6 +32,12 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
+v0.131은 독자용 Lab Kit 동작을 v0.130과 동일하게 유지한다. 별도
+writer-tools의 누적 Lab 16 경로가 APEX/ORDS 설치 후 기존 저자용 App 101
+helper를 호출하도록 보완하여, Lab 19까지 완료한 저자 baseline에 13장의
+수동 import 완료 상태가 누락되지 않게 한다. 책과 독자용 Lab 13 절차는
+변경하지 않는다.
+
 v0.130은 13장의 App 101 실습을 APEX App Builder를 이용한 독자 수동 import
 절차로 그대로 유지한다. 저자 누적 자동화는 별도 writer-tools에서 이 완료
 상태를 만들며 독자용 `lab13_init.sh`에 import 로직을 넣지 않는다. Lab 20은
