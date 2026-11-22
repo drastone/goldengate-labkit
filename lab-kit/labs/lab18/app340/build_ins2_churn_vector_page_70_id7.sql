@@ -101,6 +101,7 @@ values
 create or replace package soe.ins2_churn_vector_pkg authid definer as
   procedure refresh_vectors(p_max_logs number default 5000);
   procedure sync_care_queue;
+  function feature_vector(p_text varchar2) return vector deterministic;
   function keyword_score(
     p_text varchar2,
     p_call_cnt_3m number,
@@ -116,6 +117,28 @@ create or replace package body soe.ins2_churn_vector_pkg as
   function has_text(p_text varchar2, p_pattern varchar2) return boolean deterministic is
   begin
     return instr(lower(nvl(p_text, '')), lower(p_pattern)) > 0;
+  end;
+
+  function feature_vector(p_text varchar2) return vector deterministic is
+    l_json varchar2(32767);
+  begin
+    -- The reader path is deliberately key-less. Encode stable business signals
+    -- locally so vector distance works without an external API or ONNX model.
+    l_json := '['
+      || case when has_text(p_text, '해약') or has_text(p_text, '해지') then '1' else '0' end
+      || ',' || case when has_text(p_text, '환급금') or has_text(p_text, '수익률') or has_text(p_text, '보험료') then '1' else '0' end
+      || ',' || case when has_text(p_text, '타사') or has_text(p_text, '갈아타') or has_text(p_text, '이전') then '1' else '0' end
+      || ',' || case when has_text(p_text, '경기 악화') or has_text(p_text, '유지 어렵') or has_text(p_text, '부담') then '1' else '0' end
+      || ',' || case when has_text(p_text, '콜센터') or has_text(p_text, '상담') or has_text(p_text, '불친절') then '1' else '0' end
+      || ',' || case when has_text(p_text, '청구') or has_text(p_text, '보험금') or has_text(p_text, '지급') then '1' else '0' end
+      || ',' || case when has_text(p_text, '앱') or has_text(p_text, '인증') or has_text(p_text, '모바일') then '1' else '0' end
+      || ',1';
+
+    for i in 9..384 loop
+      l_json := l_json || ',0';
+    end loop;
+
+    return to_vector(l_json || ']', 384, float32);
   end;
 
   function keyword_reason(p_text varchar2) return varchar2 deterministic is
@@ -238,14 +261,10 @@ create or replace package body soe.ins2_churn_vector_pkg as
     for r in (
       select seed_code, seed_text
         from soe.ins2_churn_seed_phrase
-       where seed_vector is null or vector_status <> 'READY'
     ) loop
       begin
         update soe.ins2_churn_seed_phrase
-           set seed_vector = dbms_vector.utl_to_embedding(
-                                r.seed_text,
-                                json('{"model":"GGADMIN.CHURN_MODEL"}')
-                              ),
+           set seed_vector = soe.ins2_churn_vector_pkg.feature_vector(r.seed_text),
                vector_status = 'READY',
                vector_error = null,
                updated_at = systimestamp
@@ -267,17 +286,13 @@ create or replace package body soe.ins2_churn_vector_pkg as
           select log_id, consult_text
             from soe.ins2_churn_call_vector
            where consult_text is not null
-             and (consult_vector is null or vector_status <> 'READY')
            order by log_id desc
         )
        where rownum <= nvl(p_max_logs, 1000000000)
     ) loop
       begin
         update soe.ins2_churn_call_vector
-           set consult_vector = dbms_vector.utl_to_embedding(
-                                  r.consult_text,
-                                  json('{"model":"GGADMIN.CHURN_MODEL"}')
-                                ),
+           set consult_vector = soe.ins2_churn_vector_pkg.feature_vector(r.consult_text),
                vector_status = 'READY',
                vector_error = null,
                refreshed_at = systimestamp
@@ -554,6 +569,9 @@ grant execute on soe.ins2_churn_vector_pkg to ggadmin;
 grant execute on soe.ins2_churn_kpi_html to ggadmin;
 grant execute on soe.ins2_churn_risk_band_html to ggadmin;
 
+prompt Target SOE churn vector objects are ready. Page 70 is provided by the complete App 340 export.
+exit
+
 prompt --application/set_environment
 declare
   l_workspace_id number;
@@ -746,13 +764,14 @@ wwv_flow_imp_page.create_page_plug(
 );
 wwv_flow_imp_page.create_page_plug(
  p_id=>wwv_flow_imp.id(3000000700000005)
-,p_plug_name=>'위험등급 분포'
+,p_plug_name=>'위험등급 분포 / FP AI 대응 코멘트'
 ,p_static_id=>'churn-risk-band-chart'
-,p_title=>'위험등급 분포'
-,p_region_template_options=>'#DEFAULT#'
-,p_plug_template=>wwv_flow_imp.id(141244323274746647196)
+,p_title=>'위험등급 분포 / FP AI 대응 코멘트'
+,p_region_template_options=>'#DEFAULT#:t-Region--scrollBody'
+,p_escape_on_http_output=>'Y'
+,p_plug_template=>wwv_flow_imp.id(141244325373906647198)
 ,p_plug_display_sequence=>20
-,p_plug_source=>'begin sys.htp.prn(soe.ins2_churn_risk_band_html()); end;'
+,p_plug_source=>'begin sys.htp.prn(soe.ins2_churn_risk_band_html()); sys.htp.prn(soe.ins2_churn_fp_coach_html()); end;'
 ,p_plug_source_type=>'NATIVE_PLSQL'
 );
 wwv_flow_imp_page.create_page_plug(
@@ -764,7 +783,7 @@ wwv_flow_imp_page.create_page_plug(
 ,p_plug_template=>wwv_flow_imp.id(141244323274746647196)
 ,p_plug_display_sequence=>30
 ,p_query_type=>'SQL'
-,p_plug_source=>'select source_cust_id "고객ID", assigned_fp_id "담당FP", risk_band "위험등급", churn_score "해약가능점수", churn_reason "주요사유", due_date "케어기한", care_status "조치상태", fund_name "상품", call_cnt_3m "3개월콜수", late_pmt_cnt "연체횟수", consult_text "최근상담", action_memo "권장액션", vector_distance "벡터거리" from soe.ins2_churn_action_queue_v order by churn_score desc, due_date'
+,p_plug_source=>'select work_type "업무유형", contact_priority "접촉우선순위", source_cust_id "고객ID", customer_name "고객명", assigned_fp_id "담당FP", risk_band "위험등급", churn_score "해약가능점수", churn_reason "주요사유", due_date "케어기한", care_status "조치상태", main_product "대표계약", policy_count "계약수", total_amt "총계약금액", max_overdue "최대연체", fund_name "상담펀드", call_cnt_3m "3개월콜수", late_pmt_cnt "연체횟수", consult_text "최근상담", fp_coach_comment "FP대응코멘트", action_memo "권장액션", vector_distance "벡터거리" from soe.ins2_churn_action_queue_v order by contact_rank, churn_score desc, due_date'
 ,p_plug_source_type=>'NATIVE_IR'
 ,p_plug_query_options=>'DERIVED_REPORT_COLUMNS'
 );
@@ -788,7 +807,7 @@ wwv_flow_imp_page.create_worksheet_rpt(
 ,p_report_alias=>'700100'
 ,p_status=>'PUBLIC'
 ,p_is_default=>'Y'
-,p_report_columns=>'"고객ID":"담당FP":"위험등급":"해약가능점수":"주요사유":"케어기한":"조치상태":"상품":"3개월콜수":"연체횟수":"최근상담":"권장액션":"벡터거리"'
+,p_report_columns=>'고객ID:담당FP:위험등급:해약가능점수:주요사유:케어기한:조치상태'
 );
 wwv_flow_imp_page.create_page_plug(
  p_id=>wwv_flow_imp.id(3000000700000011)
@@ -823,7 +842,7 @@ wwv_flow_imp_page.create_worksheet_rpt(
 ,p_report_alias=>'700200'
 ,p_status=>'PUBLIC'
 ,p_is_default=>'Y'
-,p_report_columns=>'"로그ID":"고객ID":"상담시각":"위험등급":"해약가능점수":"벡터매칭사유":"벡터유사점수":"키워드점수":"벡터상태":"상품":"상담내용"'
+,p_report_columns=>'로그ID:고객ID:상담시각:위험등급:해약가능점수:벡터매칭사유:벡터유사점수:벡터상태'
 );
 wwv_flow_imp_page.create_page_process(
  p_id=>wwv_flow_imp.id(3000000700000014)

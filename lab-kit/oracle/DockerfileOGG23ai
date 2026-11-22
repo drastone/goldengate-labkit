@@ -1,0 +1,17 @@
+FROM oracle/goldengate:23.26.1-oracle
+
+# OGG Admin Client API Server - auto-start on container startup
+# Keep helper programs outside /u01/ogg because the base image manages that tree.
+# 99_start_ogg_api.sh: /u01/ogg/scripts/startup/ (runs after OGG starts)
+COPY ogg_api_server.py /u01/ogg_api_server.py
+COPY fabric_apply_service.py /u01/fabric_apply_service.py
+COPY 98_start_fabric_apply_service.sh /u01/ogg/scripts/startup/98_start_fabric_apply_service.sh
+COPY 99_start_ogg_api_ogghub.sh /u01/ogg/scripts/startup/99_start_ogg_api.sh
+COPY script/ogg /u01/ogg/scripts/field-kit
+COPY script/ogg/obey /u01/ogg/scripts/obey
+RUN chmod +x /u01/ogg/scripts/startup/98_start_fabric_apply_service.sh /u01/ogg/scripts/startup/99_start_ogg_api.sh \
+    && chmod +x /u01/ogg_api_server.py \
+    && chmod +x /u01/fabric_apply_service.py \
+    && chmod +x /u01/ogg/scripts/field-kit/*.sh /u01/ogg/scripts/field-kit/ogg_field_kit.py \
+    && mkdir -p /u01/ogg/scripts/field-kit/trails \
+    && chown -R ogg:ogg /u01/ogg/scripts/field-kit /u01/ogg/scripts/obey

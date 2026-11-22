@@ -1,0 +1,33 @@
+services:
+  kafka-iceberg-writer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ogg-kafka-iceberg-writer:0.1
+    container_name: demo_kafka_iceberg_writer
+    environment:
+      WRITER_MODE: raw
+      KAFKA_BOOTSTRAP: demo_centos:9092
+      KAFKA_TOPIC: SOE.EMPLOYEE
+      KAFKA_GROUP_ID: iceberg-writer-soe-employee
+      AUTO_OFFSET_RESET: latest
+      BATCH_INTERVAL_SEC: "30"
+      BATCH_MAX_ROWS: "5000"
+      ICEBERG_CATALOG_NAME: insurance
+      ICEBERG_CATALOG_TYPE: rest
+      ICEBERG_CATALOG_URI: http://demo_iceberg_catalog:8181
+      ICEBERG_TABLE: insurance.soe_employee_cdc_raw
+      ICEBERG_CREATE_TABLE_IF_MISSING: "true"
+      ICEBERG_S3_ENDPOINT: http://demo_minio:9000
+      ICEBERG_S3_ACCESS_KEY_ID: ${ICEBERG_S3_ACCESS_KEY_ID:?Set ICEBERG_S3_ACCESS_KEY_ID in .env}
+      ICEBERG_S3_SECRET_ACCESS_KEY: ${ICEBERG_S3_SECRET_ACCESS_KEY:?Set ICEBERG_S3_SECRET_ACCESS_KEY in .env}
+      ICEBERG_S3_PATH_STYLE_ACCESS: "true"
+      WRITER_MAX_BATCHES: "0"
+      DRY_RUN: "false"
+    networks:
+      - ogg_network
+
+networks:
+  ogg_network:
+    external: true
+    name: oracle_ogg_network

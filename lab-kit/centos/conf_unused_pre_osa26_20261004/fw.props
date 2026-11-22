@@ -1,0 +1,54 @@
+
+gg.handlerlist=filewriter
+
+#The File Writer Handler
+gg.handler.filewriter.type=filewriter
+gg.handler.filewriter.mode=op
+gg.handler.filewriter.pathMappingTemplate=./dirout
+gg.handler.filewriter.stateFileDirectory=./dirsta
+gg.handler.filewriter.fileNameMappingTemplate=${fullyQualifiedTableName}_${currentTimestamp}.txt
+gg.handler.filewriter.fileRollInterval=3m
+gg.handler.filewriter.finalizeAction=delete
+gg.handler.filewriter.inactivityRollInterval=3m
+gg.handler.filewriter.format=avro_row_ocf
+gg.handler.filewriter.includetokens=true
+gg.handler.filewriter.partitionByTable=true
+#Selecting the Parquet Event Handler
+gg.handler.filewriter.eventHandler=parquet
+#gg.handler.filewriter.eventHandler=hdfs
+gg.handler.filewriter.rollOnShutdown=true
+
+
+#The Parquet Event Handler
+gg.eventhandler.parquet.type=parquet
+gg.eventhandler.parquet.pathMappingTemplate=/u01/oggbd19/dirparquet
+gg.eventhandler.parquet.writeToHDFS=false
+gg.eventhandler.parquet.finalizeAction=none
+#Selecting the S3 Event Handler
+gg.eventhandler.parquet.eventHandler=hdfs
+gg.eventhandler.parquet.fileNameMappingTemplate=${tableName}_${currentTimestamp}.parquet
+
+#The HDFS Event Handler
+gg.eventhandler.hdfs.type=hdfs
+gg.eventhandler.hdfs.pathMappingTemplate=/tomsdir
+gg.eventhandler.hdfs.finalizeAction=none
+gg.eventhandler.hdfs.fileNameMappingTemplate=${fullyQualifiedTableName}_${currentTimestamp}.txt
+
+#The Command Event Handler
+
+goldengate.userexit.timestamp=utc
+goldengate.userexit.writers=javawriter
+javawriter.stats.display=TRUE
+javawriter.stats.full=TRUE
+
+gg.log=log4j
+gg.log.level=INFO
+gg.includeggtokens=true
+gg.report.time=30sec
+
+#Set the classpath here
+#User TODO - Need the AWS Java SDK, Parquet Dependencies, HDFS Client Dependencies
+gg.classpath=/home/oracle/hadoop/etc/hadoop:/home/oracle/hadoop/share/hadoop/common/lib/*:/home/oracle/hadoop/share/hadoop/common/*:/home/oracle/hadoop/share/hadoop/hdfs/*:/home/oracle/hadoop/share/hadoop/hdfs/lib/*:/u01/oggbd19/lib/*:/home/oracle/hadoop/share/hadoop/hdfs/parquet-format-2.3.0-incubating.jar
+
+javawriter.bootoptions=-Xmx512m -Xms32m -Djava.class.path=.:ggjava/ggjava.jar:./dirprm -Daws.accessKeyId=your_access_key -Daws.secretKey=your_secret_key 
+

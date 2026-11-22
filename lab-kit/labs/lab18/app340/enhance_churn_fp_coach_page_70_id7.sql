@@ -467,6 +467,9 @@ end;
 /
 
 declare
+  l_sgid number;
+  l_menu_id number;
+  l_menu_template_id number;
   l_source clob := q'~select work_type "업무유형",
        contact_priority "접촉우선순위",
        source_cust_id "고객ID",
@@ -490,8 +493,34 @@ declare
        vector_distance "벡터거리"
   from soe.ins2_churn_action_queue_v
  order by contact_rank, churn_score desc, due_date~';
-  l_report_columns varchar2(4000) := '"업무유형":"접촉우선순위":"고객ID":"고객명":"담당FP":"위험등급":"해약가능점수":"주요사유":"케어기한":"조치상태":"대표계약":"계약수":"총계약금액":"최대연체":"상담펀드":"3개월콜수":"연체횟수":"최근상담":"FP대응코멘트":"권장액션":"벡터거리"';
+  l_report_columns varchar2(4000) := '업무유형:접촉우선순위:고객ID:고객명:담당FP:위험등급:해약가능점수:주요사유:케어기한:조치상태';
 begin
+  select security_group_id
+    into l_sgid
+    from apex_260100.wwv_flows
+   where id = 340;
+  apex_260100.wwv_flow_api.set_security_group_id(l_sgid);
+
+  select menu_id, menu_template_id
+    into l_menu_id, l_menu_template_id
+    from apex_260100.wwv_flow_page_plugs
+   where flow_id = 340
+     and page_id = 40
+     and static_id = 'breadcrumb'
+     and plug_source_type = 'NATIVE_BREADCRUMB';
+
+  update apex_260100.wwv_flow_page_plugs
+     set menu_id = l_menu_id,
+         menu_template_id = l_menu_template_id,
+         plug_source_type = 'NATIVE_BREADCRUMB',
+         last_updated_by = 'CODEX',
+         last_updated_on = sysdate
+   where flow_id = 340
+     and page_id = 70
+     and static_id = 'breadcrumb';
+  if sql%rowcount <> 1 then
+    raise_application_error(-20700, 'Expected one Page 70 breadcrumb region, updated ' || sql%rowcount);
+  end if;
 
   update apex_260100.wwv_flow_page_plugs
      set plug_name = '위험등급 분포 / FP AI 대응 코멘트',
@@ -503,6 +532,9 @@ begin
    where flow_id = 340
      and page_id = 70
      and static_id = 'churn-risk-band-chart';
+  if sql%rowcount <> 1 then
+    raise_application_error(-20701, 'Expected one Page 70 AI coaching region, updated ' || sql%rowcount);
+  end if;
 
   begin
     apex_util.clear_app_cache(340);
@@ -517,6 +549,9 @@ begin
    where flow_id = 340
      and page_id = 70
      and static_id = 'churn-care-queue';
+  if sql%rowcount <> 1 then
+    raise_application_error(-20702, 'Expected one Page 70 care report region, updated ' || sql%rowcount);
+  end if;
 
   update apex_260100.wwv_flow_worksheet_rpts r
      set report_columns = l_report_columns,
@@ -532,6 +567,9 @@ begin
           and p.page_id = 70
           and p.static_id = 'churn-care-queue'
      );
+  if sql%rowcount < 1 then
+    raise_application_error(-20703, 'No Page 70 care report layouts were updated');
+  end if;
 end;
 /
 

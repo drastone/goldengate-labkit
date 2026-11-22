@@ -1,0 +1,147 @@
+###################################################################
+## Copyright(c) Oracle Corporation 2016, 2024. All rights reserved.           ##
+##                                                                            ##
+## Specify values for the variables listed below to customize your            ##
+## installation.                                                              ##
+##                                                                            ##
+## Each variable is associated with a comment. The comments can help to       ##
+## populate the variables with the appropriate values.                        ##
+##                                                                            ##
+## IMPORTANT NOTE: This file should be secured to have read permission only   ##
+## by the Oracle user or an administrator who owns this configuration to      ##
+## protect any sensitive input values.                                        ##
+##                                                                            ##
+###################################################################
+
+#--------------------------------------------------------------------------
+# Do not change the following system generated value. 
+#--------------------------------------------------------------------------
+oracle.install.responseFileVersion=/oracle/install/rspfmt_oggca_response_schema_v23_1_0
+
+###################################################################
+#                                                                              #
+#                          SECTION A - GENERAL                                 #
+#                                                                              #
+###################################################################
+CONFIGURATION_OPTION=ADD
+DEPLOYMENT_NAME=deploy04
+ADMINISTRATOR_USER=admin
+ADMINISTRATOR_PASSWORD=admin
+DEPLOYMENT_ADMINISTRATOR_USER=admin
+DEPLOYMENT_ADMINISTRATOR_PASSWORD=admin
+
+
+###################################################################
+#                                                                              #
+#                       SECTION C - SERVICE MANAGER                            #
+#                                                                              #
+###################################################################
+SERVICEMANAGER_DEPLOYMENT_HOME=/home/oracle/oggmsa/oggSM
+SERVICEMANAGER_ETC_HOME=
+SERVICEMANAGER_CONF_HOME=
+SERVICEMANAGER_SSL_HOME=
+SERVICEMANAGER_VAR_HOME=
+SERVICEMANAGER_DATA_HOME=
+SERVICEMANAGER_ARCHIVE_HOME=
+HOST_SERVICEMANAGER=172.28.0.4
+PORT_SERVICEMANAGER=5560
+SECURITY_ENABLED=false
+STRONG_PWD_POLICY_ENABLED=false
+CREATE_NEW_SERVICEMANAGER=true
+REGISTER_SERVICEMANAGER_AS_A_SERVICE=true
+INTEGRATE_SERVICEMANAGER_WITH_XAG=false
+EXISTING_SERVICEMANAGER_IS_XAG_ENABLED=false
+ENABLE_SERVICE_MANAGER_REMOTE_METRICS=false
+SERVICE_MANAGER_REMOTE_METRICS_LISTENING_HOST=
+SERVICE_MANAGER_REMOTE_METRICS_LISTENING_PORT=0
+
+###################################################################
+#                                                                             #  
+#                    SECTION D - CONFIGURATION SERVICE                        #
+#                                                                             #
+###################################################################
+CONFIGURATION_SERVICE_ENABLED=true
+CONFIGURATION_SERVICE_BACKEND_TYPE=FILESYSTEM
+CONFIGURATION_SERVICE_BACKEND_CONNECTION_STRING=
+CONFIGURATION_SERVICE_BACKEND_USERNAME=
+CONFIGURATION_SERVICE_BACKEND_PASSWORD=
+CONFIGURATION_SERVICE_BACKEND_TABLE_NAME=
+
+
+###################################################################
+#                                                                             #
+#                       SECTION E - SOFTWARE HOME                             #
+#                                                                             #
+###################################################################
+OGG_SOFTWARE_HOME=/home/oracle/oggmsa/ogg23
+
+
+####################################################################                                                                             #
+#                       SECTION F - DEPLOYMENT DIRECTORIES                    #
+#                                                                             #
+###################################################################
+OGG_DEPLOYMENT_HOME=/home/oracle/oggmsa/oggDeploy
+OGG_ETC_HOME=
+OGG_CONF_HOME=
+OGG_SSL_HOME=
+OGG_VAR_HOME=
+OGG_DATA_HOME=
+OGG_ARCHIVE_HOME=
+
+###################################################################
+#                                                                             #
+#                       SECTION G - ENVIRONMENT VARIABLES                     #
+#                                                                             #
+###################################################################
+ENV_LD_LIBRARY_PATH=${OGG_HOME}/lib/instantclient:${OGG_HOME}/lib
+ENV_TNS_ADMIN=/opt/oracle/product/23ai/dbhomeFree/network/admin
+ENV_STREAMS_POOL_SIZE=
+ENV_USER_VARS=
+
+
+###################################################################
+#                                                                             #
+#                           SECTION H - SECURITY                              #
+#           This section is only needed if Security will be enabled           #
+#                                                                             #
+###################################################################
+TLS_1_2_ENABLED=false
+TLS_1_3_ENABLED=true
+FIPS_ENABLED=false
+SERVER_CERTIFICATE=
+SERVER_CERTIFICATE_KEY_FILE=
+SERVER_CA_CERTIFICATES_FILE=
+CLIENT_CERTIFICATE=
+CLIENT_CERTIFICATE_KEY_FILE=
+CLIENT_CA_CERTIFICATES_FILE=
+
+
+###################################################################
+#                                                                             #
+#                           SECTION I - SERVICES                              #
+#                                                                             #
+###################################################################
+ADMINISTRATION_SERVER_ENABLED=true
+PORT_ADMINSRVR=5565
+DISTRIBUTION_SERVER_ENABLED=true
+PORT_DISTSRVR=5566
+NON_SECURE_DISTSRVR_CONNECTS_TO_SECURE_RCVRSRVR=false
+RECEIVER_SERVER_ENABLED=true
+PORT_RCVRSRVR=5567
+METRICS_SERVER_ENABLED=true
+METRICS_SERVER_IS_CRITICAL=false
+PORT_PMSRVR=5568
+PMSRVR_DATASTORE_TYPE=BDB
+PMSRVR_DATASTORE_HOME=/home/oracle/oggmsa/oggPM
+ENABLE_DEPLOYMENT_REMOTE_METRICS=false
+DEPLOYMENT_REMOTE_METRICS_LISTENING_HOST=
+DEPLOYMENT_REMOTE_METRICS_LISTENING_PORT=0
+
+
+###################################################################
+#                                                                             #
+#                       SECTION J - REPLICATION OPTIONS                       #
+#                                                                             #
+###################################################################
+
+OGG_SCHEMA=admin        

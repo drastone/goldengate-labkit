@@ -7,6 +7,7 @@ cd /home/oracle/labs/lab19
 sh start_lab19_lakehouse.sh
 docker stats --no-stream
 pwd
+cat create_ds_lake.sh
 sh create_ds_lake.sh
 sh show_ds_lake.sh
 sh start_iceberg_writer.sh

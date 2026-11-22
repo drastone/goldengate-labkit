@@ -1,12 +1,5 @@
 ## Lab Kit에 APEX 26.1과 ORDS 26.2.3 설치
 
-일반적인 12장 실습에서는 Base Linux의 `/home/oracle/labs/lab12`에서
-`bash lab12_init.sh`를 실행한다. 이 script는 Source `demo_osrc_23ai`와 Target
-`demo_otrg_23ai`에 APEX/ORDS를 순서대로 설치하고, Source에는 업무 application
-102와 실습 계정을 구성한 뒤 두 환경을 모두 검증한다. 아래 절차는 Target DB의
-APEX/ORDS 설치 과정을 직접 확인하거나 부분 설치를 복구할 때 사용하는 수동
-절차다.
-
 `demo_otrg_23ai` container에는 처음부터 APEX/ORDS가 준비되어 있지 않을 수 있다. 이 경우 GoldenGate 통합 Console을 import하기 전에 Target DB container에 APEX와 ORDS를 설치한다. 이 책은 재현성을 위해 다음 version을 기준으로 한다.
 
 표 12.5 APEX/ORDS 설치 기준 version

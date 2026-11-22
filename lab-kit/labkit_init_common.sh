@@ -12,7 +12,7 @@ select_labkit_utf8_locale() {
   [ -n "${selected_locale}" ]
 }
 
-configure_host_utf8_profiles() {
+configure_host_shell_profiles() {
   if [ "$(id -u)" -ne 0 ]; then
     echo "ERROR: Base Linux UTF-8 profile configuration requires root." >&2
     return 1
@@ -24,32 +24,45 @@ configure_host_utf8_profiles() {
   fi
 
   echo "==> Base Linux: configure UTF-8 shell profiles"
-  begin_marker='# BEGIN GOLDENGATE LAB UTF-8'
-  end_marker='# END GOLDENGATE LAB UTF-8'
+  locale_begin_marker='# BEGIN GOLDENGATE LAB UTF-8'
+  locale_end_marker='# END GOLDENGATE LAB UTF-8'
+  prompt_begin_marker='# BEGIN GOLDENGATE LAB PROMPT'
+  prompt_end_marker='# END GOLDENGATE LAB PROMPT'
 
   update_host_profile() {
     profile="$1"
     [ -f "${profile}" ] || return 0
 
-    sed -i "\|^${begin_marker}$|,\|^${end_marker}$|d" "${profile}"
+    sed -i "\|^${locale_begin_marker}$|,\|^${locale_end_marker}$|d" "${profile}"
+    sed -i "\|^${prompt_begin_marker}$|,\|^${prompt_end_marker}$|d" "${profile}"
+    sed -i '/^# OGG Lab prompt standard$/d' "${profile}"
+    sed -i '\|^\[ -f /etc/profile.d/ogg-lab-prompt.sh \] && \. /etc/profile.d/ogg-lab-prompt.sh$|d' "${profile}"
     {
-      printf '\n%s\n' "${begin_marker}"
+      printf '\n%s\n' "${locale_begin_marker}"
       printf 'export LANG=%s\n' "${selected_locale}"
       printf 'export LC_CTYPE=%s\n' "${selected_locale}"
       printf 'export LC_ALL=%s\n' "${selected_locale}"
-      printf '%s\n' "${end_marker}"
+      printf '%s\n' "${locale_end_marker}"
+      printf '\n%s\n' "${prompt_begin_marker}"
+      printf 'if [ -r /etc/profile.d/ogg-lab-prompt.sh ]; then\n'
+      printf '  . /etc/profile.d/ogg-lab-prompt.sh\n'
+      printf 'fi\n'
+      printf '%s\n' "${prompt_end_marker}"
     } >> "${profile}"
   }
 
   mkdir -p /etc/profile.d
   {
-    printf '%s\n' "${begin_marker}"
+    printf '%s\n' "${locale_begin_marker}"
     printf 'export LANG=%s\n' "${selected_locale}"
     printf 'export LC_CTYPE=%s\n' "${selected_locale}"
     printf 'export LC_ALL=%s\n' "${selected_locale}"
-    printf '%s\n' "${end_marker}"
+    printf '%s\n' "${locale_end_marker}"
   } > /etc/profile.d/goldengate-lab-utf8.sh
   chmod 644 /etc/profile.d/goldengate-lab-utf8.sh
+
+  printf '%s\n' "export PS1='[\\u \\W]\\\$ '" > /etc/profile.d/ogg-lab-prompt.sh
+  chmod 644 /etc/profile.d/ogg-lab-prompt.sh
 
   for profile in /root/.bashrc /root/.bash_profile /root/.profile \
                  /home/oracle/.bashrc /home/oracle/.bash_profile /home/oracle/.profile; do
@@ -62,7 +75,12 @@ configure_host_utf8_profiles() {
   actual_charmap="$(locale charmap)"
   [ "${actual_charmap}" = "UTF-8" ]
   echo "OK: Base Linux UTF-8 shell locale configured as ${selected_locale}."
-  echo "INFO: Run 'source /etc/profile.d/goldengate-lab-utf8.sh' in an already-open parent shell, or sign in again."
+  echo "OK: Base Linux shell prompt configured as '[user directory]'."
+  echo "INFO: Sign in again to apply the UTF-8 locale and standard prompt to an existing shell."
+}
+
+configure_host_utf8_profiles() {
+  configure_host_shell_profiles "$@"
 }
 
 configure_container_utf8_profiles() {

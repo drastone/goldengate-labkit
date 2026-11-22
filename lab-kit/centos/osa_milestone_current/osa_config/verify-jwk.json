@@ -1,0 +1,9 @@
+{
+  "keys" : [ {
+    "kty" : "RSA",
+    "e" : "AQAB",
+    "kid" : "verify-rsa",
+    "alg" : "RS512",
+    "n" : "qyRlnu5SM0ar9tpSRDcr51JHzEGeidtzcNy4sGIecDgozjI2X9JTw_SL7UmFcOvyaiFbUB7ksqdjCIHknFfiGGuTCSSj_p222F9X2Qibxry4hvPfZn5xhhseCbd6FuX17LX9N1WbCHWiElpxQ69dLlsZn9mPknEqP3S2dLK2wwvaPw3lQhltgo4EFPVuc08KOWi-DcHMAHDpcvX_YTl1PDqV2KYzEh1jM2fk3bRJJ88rg728Jot8zrciesUlZOWCxyncQvKr543hAu92uib6SAJ5cv3H0CpN3MXipTJ3E273WHbaLmgyaErUGRBuDJQn3sYTYJHEoeqgJZNuzQ25Zw"
+  } ]
+}

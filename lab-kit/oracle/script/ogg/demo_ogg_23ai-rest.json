@@ -1,0 +1,10 @@
+{
+  "targets": {
+    "onprem-rest": {
+      "admin_url": "http://127.0.0.1:9112/services/v2",
+      "admin_user": "oggadmin",
+      "description": "demo_ogg_23ai GoldenGate Admin Service via Docker host port. REST-only, no OS trail directory assumed.",
+      "mode": "rest"
+    }
+  }
+}

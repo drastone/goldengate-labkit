@@ -32,6 +32,13 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
+v0.128은 `lab20_init.sh`가 Lab 20에서 사용하지 않는 기존 핵심 복제 경로
+`C01`과 `D01`을 명시적으로 정상 종료하고 `STOPPED` 상태를 확인한다.
+Data Fabric 실습 경로인 `FC01`, `FC02`, `FD01`, `FD02`, `FD03`은 모두
+`RUNNING`인지 검증하므로, 독자는 Lab 20에 필요한 프로세스와 이전 장의
+프로세스를 명확히 구분할 수 있다. 이 흐름은 독자 기준 환경인 id7에서
+초기 실행과 즉시 재실행으로 검증했다.
+
 v0.109는 저자용 Lab 06 자동화가 Target에 검증 테이블을 직접 만들거나
 데이터를 넣지 않고, Source에서 발생한 `SOE.STAFF` DDL과 DML이 C01, trail,
 D01을 거쳐 Target에 도착하도록 바로잡는다. 실행별 시각 토큰을 확인하므로

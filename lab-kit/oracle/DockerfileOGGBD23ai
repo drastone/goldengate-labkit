@@ -1,0 +1,9 @@
+FROM oracle/oggforbigdata:23.26.1-daa
+
+# OGG Admin Client API Server - auto-start on container startup
+# Keep helper programs outside /u01/ogg because the base image manages that tree.
+# 99_start_ogg_api.sh: /u01/ogg/scripts/startup/ (runs after OGG starts)
+COPY ogg_api_server.py /u01/ogg_api_server.py
+COPY 99_start_ogg_api_oggbd.sh /u01/ogg/scripts/startup/99_start_ogg_api.sh
+RUN chmod +x /u01/ogg/scripts/startup/99_start_ogg_api.sh \
+    && chmod +x /u01/ogg_api_server.py

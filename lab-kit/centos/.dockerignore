@@ -1,0 +1,13 @@
+# Keep the Big Data/analytics build context limited to files used by Dockerfile.
+# The pkg directory often contains optional or historical product media; sending
+# those files to Docker makes create_docker.sh much slower on notebook WSL.
+
+pkg/*
+
+logs/
+*.log
+cliauth*
+wget*.sh
+wget*.log
+*.tmp
+tmp/

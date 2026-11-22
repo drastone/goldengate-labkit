@@ -109,16 +109,32 @@ show errors function soe.ins2_churn_llm_html
 
 grant execute on soe.ins2_churn_llm_html to ggadmin;
 
-update apex_260100.wwv_flow_page_plugs
-   set plug_name = '위험등급 분포 / FP AI 대응 코멘트',
-       title = '위험등급 분포 / FP AI 대응 코멘트',
-       plug_source = 'begin sys.htp.prn(soe.ins2_churn_risk_band_html()); sys.htp.prn(soe.ins2_churn_fp_coach_html()); sys.htp.prn(soe.ins2_churn_llm_html()); end;',
-       plug_source_type = 'NATIVE_PLSQL',
-       last_updated_by = 'CODEX',
-       last_updated_on = sysdate
- where flow_id = 340
-   and page_id = 70
-   and static_id = 'churn-risk-band-chart';
+declare
+  l_sgid number;
+begin
+  select security_group_id
+    into l_sgid
+    from apex_260100.wwv_flows
+   where id = 340;
+  apex_260100.wwv_flow_api.set_security_group_id(l_sgid);
+
+  update apex_260100.wwv_flow_page_plugs
+     set plug_name = '위험등급 분포 / FP AI 대응 코멘트',
+         title = '위험등급 분포 / FP AI 대응 코멘트',
+         plug_source = 'begin sys.htp.prn(soe.ins2_churn_risk_band_html()); sys.htp.prn(soe.ins2_churn_fp_coach_html()); sys.htp.prn(soe.ins2_churn_llm_html()); end;',
+         plug_source_type = 'NATIVE_PLSQL',
+         last_updated_by = 'CODEX',
+         last_updated_on = sysdate
+   where flow_id = 340
+     and page_id = 70
+     and static_id = 'churn-risk-band-chart';
+  if sql%rowcount <> 1 then
+    raise_application_error(-20704, 'Expected one Page 70 LLM result region, updated ' || sql%rowcount);
+  end if;
+end;
+/
+
+commit;
 
 begin
   apex_util.clear_app_cache(340);
@@ -127,7 +143,5 @@ exception
     null;
 end;
 /
-
-commit;
 
 prompt Enhanced Page 70 with real external LLM result cards.

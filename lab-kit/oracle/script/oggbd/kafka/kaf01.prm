@@ -1,0 +1,4 @@
+REPLICAT KAF01
+TARGETDB LIBFILE libggjava.so SET property=/u02/Deployment/etc/conf/ogg/kaf01.props
+REPORTCOUNT EVERY 1 MINUTES, RATE
+MAP SOE.*, TARGET SOE.*;

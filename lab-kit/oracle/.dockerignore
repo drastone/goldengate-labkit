@@ -1,0 +1,20 @@
+# Keep the Oracle Database extension build context small.
+# Product media downloaded for image builds or older labs can be several GB,
+# but Dockerfile23ai only needs the Java RPMs at container initialization time.
+
+pkg/*
+!pkg/jdk-17.0.6_linux-x64_bin.rpm
+!pkg/jdk-8u211-linux-x64.rpm
+!pkg/*.sql
+!pkg/*.sh
+!pkg/*.txt
+!pkg/*.conf
+!pkg/*.properties
+
+logs/
+*.log
+cliauth*
+wget*.sh
+wget*.log
+*.tmp
+tmp/

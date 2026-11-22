@@ -1,0 +1,17 @@
+#!/bin/bash
+set -e
+
+CRONTAB_FILE=${1:-}
+
+[[ $CRONTAB_FILE ]] || \
+    (echo "Usage: $0 /path/to/crontab"; exit 1)
+
+echo "Validating crontab: $CRONTAB_FILE"
+# Validate the crontab parses
+/usr/local/bin/supercronic -debug -test "$CRONTAB_FILE" 2>&1
+
+echo "Configuring supercronic to use the crontab: $CRONTAB_FILE"
+sed -i 's|%CRONTAB_FILE%|'"$CRONTAB_FILE"'|g' /etc/sv/supercronic/run
+
+ln -s /etc/sv/supercronic /etc/service/
+echo "Successfully configured and enabled supercronic"

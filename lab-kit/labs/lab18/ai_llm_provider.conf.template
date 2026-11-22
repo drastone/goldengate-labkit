@@ -1,0 +1,14 @@
+# Optional Chapter 18 real LLM provider configuration.
+#
+# Copy this file to ai_llm_provider.conf and replace the placeholder values.
+# Do not commit or share the file after entering your API key.
+#
+# The default example uses a GroqCloud OpenAI-compatible endpoint.
+# It is not api.openai.com. It uses the OpenAI-compatible request format.
+# Free quota, rate limits, and billing rules can change, so check the provider
+# Usage/Billing page before running the optional real-LLM lab.
+
+AI_PROVIDER=openai_compatible
+AI_BASE_URL=https://api.groq.com/openai/v1/chat/completions
+AI_MODEL=qwen/qwen3.8-27b
+AI_API_KEY=<YOUR_PROVIDER_API_KEY>

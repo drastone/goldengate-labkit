@@ -1,0 +1,2 @@
+add distpath dpkaf01 source trail://localhost:9013/services/v2/source?trail=ca target ogg://demo_oggbd_23ai:9014/services/v2/targets?trail=da targettype recvsrvr authentication useridalias oggbd_admin domain OracleGoldenGate
+alter distpath dpkaf01 target sizemb 100

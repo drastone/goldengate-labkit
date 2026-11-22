@@ -1,0 +1,85 @@
+<?xml version="1.0"?>
+<!DOCTYPE Configure PUBLIC "-//Jetty//Configure//EN" "http://www.eclipse.org/jetty/configure_9_3.dtd">
+
+<!-- =============================================================== -->
+<!-- Configure jdbc/OSADataSource data source                        -->
+<!-- =============================================================== -->
+<Configure id="Server" class="org.eclipse.jetty.server.Server">
+
+    <!-- SAMPLE OSA DATASOURCE CONFIGURATION FOR ORACLE.
+         Configure the URL, user, and obfuscated password during the OSA lab. -->
+    <New id="osads" class="org.eclipse.jetty.plus.jndi.Resource">
+         <Arg>
+             <Ref refid="wac"/>
+         </Arg>
+         <Arg>jdbc/OSADataSource</Arg>
+         <Arg>
+             <New class="oracle.jdbc.pool.OracleDataSource">
+                 <Set name="URL">jdbc:oracle:thin:@HOST:1521/ORCLPDB1</Set>
+                 <Set name="User">OSA_USER</Set>
+                 <Set name="Password">
+                    <Call class="org.eclipse.jetty.util.security.Password" name="deobfuscate">
+                        <Arg>OBF:OBFUSCATED_PASSWORD</Arg>
+                    </Call>
+                </Set>
+                <Set name="connectionCachingEnabled">true</Set>
+                <Set name="connectionCacheProperties">
+                    <New class="java.util.Properties">
+                        <Call name="setProperty"><Arg>MinLimit</Arg><Arg>1</Arg></Call>
+                        <Call name="setProperty"><Arg>MaxLimit</Arg><Arg>15</Arg></Call>
+                        <Call name="setProperty"><Arg>InitialLimit</Arg><Arg>1</Arg></Call>
+                    </New>
+                </Set>
+             </New>
+         </Arg>
+     </New>
+
+    <!-- SAMPLE OSA DATASOURCE CONFIGURATION FOR ADW-->
+    <!--
+    <New id="osads" class="org.eclipse.jetty.plus.jndi.Resource">
+         <Arg>
+             <Ref refid="wac"/>
+         </Arg>
+         <Arg>jdbc/OSADataSource</Arg>
+         <Arg>
+             <New class="oracle.jdbc.pool.OracleDataSource" type="adw">
+                 <Set name="URL">jdbc:oracle:thin:@oracletestdb_high?TNS_ADMIN=/scratch/oracletest/Wallet_oracletestdb</Set>
+                 <Set name="User">{OSA_USER}</Set>
+                 <Set name="Password">
+                    <Call class="org.eclipse.jetty.util.security.Password" name="deobfuscate">
+                        <Arg>{OBF:OBFUSCATE_PASSWORD}</Arg>
+                    </Call>
+                </Set>
+                <Set name="connectionCachingEnabled">true</Set>
+                <Set name="connectionCacheProperties">
+                    <New class="java.util.Properties">
+                        <Call name="setProperty"><Arg>MinLimit</Arg><Arg>1</Arg></Call>
+                        <Call name="setProperty"><Arg>MaxLimit</Arg><Arg>15</Arg></Call>
+                        <Call name="setProperty"><Arg>InitialLimit</Arg><Arg>1</Arg></Call>
+                    </New>
+                </Set>
+             </New>
+         </Arg>
+     </New>
+     -->
+    <!-- SAMPLE OSA DATASOURCE CONFIGURATION FOR MYSQL-->
+    <!--
+    <New id="osads" class="org.eclipse.jetty.plus.jndi.Resource">
+        <Arg>
+            <Ref refid="wac"/>
+        </Arg>
+        <Arg>jdbc/OSADataSource</Arg>
+        <Arg>
+            <New class="com.mysql.cj.jdbc.MysqlConnectionPoolDataSource">
+                <Set name="URL">jdbc:mysql://myhost.example.com:3306/OSADB</Set>
+                <Set name="User">osa</Set>
+                <Set name="Password">
+                    <Call class="org.eclipse.jetty.util.security.Password" name="deobfuscate">
+                        <Arg>{OBF:OBFUSCATE_PASSWORD}</Arg>
+                    </Call>
+                </Set>
+            </New>
+        </Arg>
+    </New>
+-->
+</Configure>

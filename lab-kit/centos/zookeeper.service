@@ -1,0 +1,17 @@
+[Unit]
+Description=Zookeeper Daemon
+Documentation=https://zookeeper.apache.org
+Requires=network.target
+After=network.target
+[Service] 
+Type=forking
+WorkingDirectory=/usr/local/zookeeper
+User=root
+Group=root
+ExecStart=/usr/local/zookeeper/bin/zkServer.sh start /usr/local/zookeeper/conf/zoo.cfg
+ExecStop=/usr/local/zookeeper/bin/zkServer.sh stop /usr/local/zookeeper/conf/zoo.cfg
+ExecReload=/usr/local/zookeeper/bin/zkServer.sh restart /usr/local/zookeeper/conf/zoo.cfg
+TimeoutSec=10
+Restart=on-abnormal
+[Install]
+WantedBy=default.target

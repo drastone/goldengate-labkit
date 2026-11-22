@@ -1,0 +1,152 @@
+FROM centos:7
+
+ENV container docker
+MAINTAINER The CentOS Project <cloud-ops@centos.org>
+
+RUN (cd /lib/systemd/system/sysinit.target.wants/; for i in *; do [ $i == systemd-tmpfiles-setup.service ] || rm -f $i; done); \
+rm -f /lib/systemd/system/multi-user.target.wants/*;\
+rm -f /etc/systemd/system/*.wants/*;\
+rm -f /lib/systemd/system/local-fs.target.wants/*; \
+rm -f /lib/systemd/system/sockets.target.wants/*udev*; \
+rm -f /lib/systemd/system/sockets.target.wants/*initctl*; \
+rm -f /lib/systemd/system/basic.target.wants/*;\
+rm -f /lib/systemd/system/anaconda.target.wants/*;
+
+#RUN yum install -y wget
+#RUN yum install -y unzip
+#RUN yum install -y openssh-server openssh-clients
+#RUN yum install -y net-tools
+#RUN ["/bin/bash", "-c", "yum -y install nginx"]
+
+# 20240930 by cys
+# centos does not support mirrorlist, need to modify valut.centos.org
+RUN cd /etc/yum.repos.d/ && sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
+RUN cd /etc/yum.repos.d/ && sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
+RUN yum install -y wget unzip openssh-server openssh-clients net-tools which; 
+#RUN systemctl enable sshd.service; systemctl start sshd.service
+
+RUN groupadd -g 54321 oinstall && groupadd -g 54322 dba && groupadd -g 54323 oper && useradd -u 54321 -g oinstall -G dba,oper oracle
+RUN rm -rf /run/nologin
+
+VOLUME [ "/sys/fs/cgroup" ]
+
+#RUN echo "#!/bin/sh" > /root/rmlogin.sh
+#RUN echo "rm -rf /run/nologin" >> /root/rmlogin.sh
+#RUN chmod +x /root/rmlogin.sh
+
+RUN echo "#!/bin/sh" > /rmlogin.sh && echo "rm -rf /run/nologin" >> /rmlogin.sh && chmod +x /rmlogin.sh
+CMD ["/rmlogin.sh"]
+
+CMD ["/usr/sbin/init"]
+#CMD [systemctl start sshd.service]
+#RUN systemctl enable sshd.service; systemctl start sshd.service
+
+# conf SPARK_HOME, OSA_HOME
+RUN echo "export JAVA_HOME=/usr/java/jdk1.8.0_211-amd64"  >> /home/oracle/.bashrc && echo "export SPARK_HOME=/home/oracle/spark" >> /home/oracle/.bashrc && echo "export OSA_HOME=/home/oracle/osa"  >> /home/oracle/.bashrc && echo "export LD_LIBRARY_PATH=\$JAVA_HOME/jre/lib/amd64/server:\$LD_LIBRARY_PATH" >> /home/oracle/.bashrc && echo "export PATH=\$JAVA_HOME/bin:\$HADOOP_HOME/bin:\$HADOOP_HOME/sbin:\$PATH" >> /home/oracle/.bashrc && echo "set -o vi" >> /home/oracle/.bashrc
+
+# install openjdk
+#RUN mkdir -p ~/pkg && cd ~/pkg && wget https://corretto.aws/downloads/latest/amazon-corretto-11-x64-linux-jdk.tar.gz && tar xvzf amazon-corretto-11-x64-linux-jdk.tar.gz && mv amazon-corretto-11.0.22.7.1-linux-x64/ /usr/local/java && echo export JAVA_HOME=/usr/local/java >> ~/.bash_profile
+
+# install zookeeper
+RUN mkdir -p ~/pkg && cd ~/pkg && wget downloads.apache.org/zookeeper/zookeeper-3.7.2/apache-zookeeper-3.7.2-bin.tar.gz && tar zxvf apache-zookeeper-3.7.2-bin.tar.gz -C /usr/local && cd /usr/local && chown -R root:root apache-zookeeper-3.7.2-bin && ln -s apache-zookeeper-3.7.2-bin zookeeper && mkdir -p /usr/local/zookeeper/data && echo 1 > /usr/local/zookeeper/data/myid
+
+#RUN echo export PATH=\$PATH:/usr/local/zookeeper/bin:/usr/local/kafka/bin:/usr/local/java/bin:$PATH >> ~/.bash_profile
+RUN echo JAVA_HOME=/usr/java/jdk1.8.0_211-amd64 >> ~/.bashrc && echo export PATH=$PATH:/usr/local/zookeeper/bin:/usr/local/kafka/bin:$JAVA_HOME/bin:$PATH >> ~/.bashrc && echo "set -o vi"  >> ~/.bashrc
+#RUN echo 1 > /usr/local/zookeeper/data/myid
+
+
+RUN cd /usr/local/zookeeper/conf && cp zoo_sample.cfg zoo.cfg && sed -i "s|/tmp/zookeeper|/usr/local/zookeeper/data|g" /usr/local/zookeeper/conf/zoo.cfg && echo admin.serverPort=8888 >> /usr/local/zookeeper/conf/zoo.cfg && echo server.1=172.28.0.11:2888:3888 >> /usr/local/zookeeper/conf/zoo.cfg
+
+COPY zookeeper.service /etc/systemd/system/
+COPY jdk-8u211-linux-x64.rpm /root/
+COPY script /root/
+COPY pkg /home/oracle/pkg
+COPY conf /home/oracle/conf
+COPY initSSH.sh /home/oracle/initSSH.sh
+
+# install spark
+RUN cd ~/pkg && wget --no-check-certificate https://archive.apache.org/dist/spark/spark-3.0.2/spark-3.0.2-bin-hadoop3.2.tgz && tar zxvf spark-3.0.2-bin-hadoop3.2.tgz -C /home/oracle/ && cd /home/oracle/ && chown -R oracle:oinstall spark-3.0.2-bin-hadoop3.2 && ln -s spark-3.0.2-bin-hadoop3.2 spark
+
+# conf spark 
+RUN cp /home/oracle/conf/spark-env.sh /home/oracle/spark/conf/
+RUN cp /home/oracle/conf/spark-defaults.conf /home/oracle/spark/conf/
+
+# install Oracle Stream Analytics
+RUN cd /home/oracle && unzip -d /home/oracle -oq /home/oracle/pkg/p34575004_191008_Linux-x86-64.zip && chown -R oracle:oinstall OSA-19.1.0.0.8 && ln -s OSA-19.1.0.0.8 osa
+
+# conf Oracle Stream Analytics
+RUN cp /home/oracle/conf/osa-env.sh /home/oracle/osa/osa-base/etc/
+RUN cp /home/oracle/conf/jetty-osa-datasource.xml /home/oracle/osa/osa-base/etc/
+
+# conf hadoop 
+#RUN cp /home/oracle/conf/core-site.xml /home/oracle/hadoop/etc/hadoop/
+#RUN cp /home/oracle/conf/hdfs-site.xml /home/oracle/hadoop/etc/hadoop/
+#RUN cp /home/oracle/conf/mapred-site.xml /home/oracle/hadoop/etc/hadoop/
+#RUN cp /home/oracle/conf/yarn-site.xml /home/oracle/hadoop/etc/hadoop/
+
+# OGGBD Home
+RUN mkdir -p /u01/oggbd19 && chown -R oracle:oinstall /u01
+COPY setOggBD.sh /u01/setOggBD.sh
+
+
+RUN cd /root && rpm -Uvh jdk-8u211-linux-x64.rpm
+
+#CMD ["/bin/bash", "systemctl daemon-reload"]
+#CMD ["/bin/bash", "systemctl enable"]
+#CMD ["/bin/bash", "systemctl start zookeeper"]
+
+RUN cd ~/pkg && wget --no-check-certificate https://archive.apache.org/dist/kafka/2.6.3/kafka_2.13-2.6.3.tgz && tar xvf kafka_2.13-2.6.3.tgz -C /usr/local && cd /usr/local && ln -s kafka_2.13-2.6.3 kafka
+#RUN ["echo", "export JAVA_HOME=/usr/sdf >> ~/.bash_profile"]
+#RUN ["echo", "export KAFKA_HEAP_OPTS=\"-Xms500m -Xmx500m\" >> ~/.bash_profile"]
+
+RUN echo export KAFKA_HEAP_OPTS=\"-Xms500m -Xmx500m\" >> ~/.bashrc
+#COPY conf.sh /root/
+#CMD ["/bin/bash", "/root/conf.sh"]
+
+RUN mkdir -p /usr/local/kafka/logs 
+COPY server.properties /usr/local/kafka/config
+
+COPY kafka.service /etc/systemd/system/
+
+# install mongodb 
+#RUN cd ~/pkg && wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-4.0.5.tgz && tar -zxvf mongodb-linux-x86_64-4.0.5.tgz && ln -s mongodb-linux-x86_64-4.0.5 mongodb && useradd mongod && mkdir -p /var/lib/mongo && chown -R mongod:mongod /opt/mongodb* && chown -R mongod: /var/lib/mongo 
+RUN cd ~/pkg && wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-4.0.5.tgz  && tar -zxvf mongodb-linux-x86_64-4.0.5.tgz -C /usr/local && cd /usr/local && ln -s mongodb-linux-x86_64-4.0.5 mongodb && useradd mongod && mkdir -p /var/lib/mongo && chown -R mongod:mongod /usr/local/mongodb* && chown -R mongod:mongod /var/lib/mongo
+
+COPY mongod.conf /etc/
+COPY mongod.service /etc/systemd/system/
+
+# install mysql 
+#RUN cd ~/pkg && wget https://downloads.mysql.com/archives/get/p/23/file/mysql-5.7.28-1.el7.x86_64.rpm-bundle.tar &&  tar -xvf mysql-5.7.28-1.el7.x86_64.rpm-bundle.tar -C /usr/local && cd /usr/local && yum localinstall -y mysql-community-* && echo max_allowed_packet=16M >> /etc/my.cnf && echo log_bin_trust_function_creators=1 >> /etc/my.cnf && echo lower_case_table_names=1 >> /etc/my.cnf && echo sql-mode = \"NO_ENGINE_SUBSTITUTION\" >> /etc/my.cnf
+RUN cd ~/pkg && wget https://downloads.mysql.com/archives/get/p/23/file/mysql-5.7.28-1.el7.x86_64.rpm-bundle.tar 
+RUN cd ~/pkg && tar -xvf mysql-5.7.28-1.el7.x86_64.rpm-bundle.tar -C /usr/local && cd /usr/local
+RUN cd /usr/local && yum localinstall -y mysql-community-* 
+RUN echo max_allowed_packet=16M >> /etc/my.cnf && echo log_bin_trust_function_creators=1 >> /etc/my.cnf && echo lower_case_table_names=1 >> /etc/my.cnf && echo sql-mode = \"NO_ENGINE_SUBSTITUTION\" >> /etc/my.cnf
+
+# intall prometheus 
+RUN cd ~/pkg && wget https://github.com/prometheus/prometheus/releases/download/v2.21.0/prometheus-2.21.0.linux-amd64.tar.gz && tar -xzvf prometheus-2.21.0.linux-amd64.tar.gz -C /usr/local && cd /usr/local && mv prometheus-2.21.0.linux-amd64/ prometheus 
+
+COPY prometheus.service /etc/systemd/system/
+
+RUN cd ~/pkg && wget https://github.com/prometheus/node_exporter/releases/download/v1.0.1/node_exporter-1.0.1.linux-amd64.tar.gz && tar -xzvf node_exporter-1.0.1.linux-amd64.tar.gz -C /usr/local && cd /usr/local && mv node_exporter-1.0.1.linux-amd64 node_exporter 
+
+COPY node_exporter.service /etc/systemd/system/
+
+RUN echo "  - job_name: 'node-1'" >> /usr/local/prometheus/prometheus.yml && echo "    static_configs: " >> /usr/local/prometheus/prometheus.yml && echo "    - targets: ['172.28.0.11:9100'] " >> /usr/local/prometheus/prometheus.yml
+
+# install grafana
+#RUN yum install -y initscripts urw-fonts 
+#RUN yum install -y initscripts urw-fonts python3 pip3 && pip3 install --upgrade --ignore-installed pip setuptools && pip3 install oracledb && pip3 install prometheus_client
+RUN yum install -y initscripts urw-fonts python3 pip3 
+RUN pip3 install --upgrade --ignore-installed pip setuptools 
+RUN pip3 install oracledb 
+RUN pip3 install prometheus_client
+#RUN cd ~/pkg && wget https://dl.grafana.com/oss/release/grafana-7.5.3-1.x86_64.rpm && yum install grafana-7.5.3-1.x86_64.rpm 
+RUN cd ~/pkg && wget https://dl.grafana.com/oss/release/grafana-7.5.3-1.x86_64.rpm && yum install -y grafana-7.5.3-1.x86_64.rpm
+
+
+#CMD ["/bin/bash", "systemctl daemon-reload"]
+#CMD ["/bin/bash", "systemctl enable kafka"]
+#CMD ["/bin/bash", "systemctl start kafka"]
+
+#ENTRYPOINT ["/bin/bash", "systemctl daemon-reload"]
+#ENTRYPOINT ["/bin/bash", "systemctl enable zookeeper"]

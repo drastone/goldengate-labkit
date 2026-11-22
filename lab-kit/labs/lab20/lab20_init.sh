@@ -14,9 +14,12 @@ LAB20_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LAB_HOME="${LAB_HOME:-$(cd "${LAB20_DIR}/../.." && pwd)}"
 LAB_LOGGING="${LAB_HOME}/troubleshooting/scripts/lab_init_logging.sh"
 OGGHUB_CONTAINER="${OGGHUB_CONTAINER:-demo_ogg_23ai}"
+TARGET_DB_CONTAINER="${TARGET_DB_CONTAINER:-demo_otrg_23ai}"
 DOMAIN="${DOMAIN:-OracleGoldenGate}"
 NORMAL_TRAIL="${NORMAL_TRAIL:-k1}"
 HEAVY_TRAIL="${HEAVY_TRAIL:-k2}"
+CHECKPOINT_TABLE="${CHECKPOINT_TABLE:-OGG.GGSCKPT}"
+RESET_SETTLE_SECONDS="${RESET_SETTLE_SECONDS:-5}"
 
 if [ ! -f "${LAB_LOGGING}" ]; then
   echo "ERROR: shared Lab logging helper not found: ${LAB_LOGGING}" >&2
@@ -24,6 +27,27 @@ if [ ! -f "${LAB_LOGGING}" ]; then
 fi
 source "${LAB_LOGGING}"
 lab_init_log_begin lab20 lab20-init
+RUNTIME_START="${LAB20_DIR}/start_lab20_fabric_console.sh"
+
+if [ ! -x "${RUNTIME_START}" ]; then
+  printf "ERROR: Chapter 20 runtime helper is missing or not executable: %s\n" "${RUNTIME_START}" >&2
+  exit 1
+fi
+
+printf "Chapter 20 uses only the minimum Data Fabric Console runtime.\n"
+printf "Required containers:\n"
+printf "  - demo_osrc_23ai  : Source Oracle Database\n"
+printf "  - demo_otrg_23ai  : Target Oracle Database and APEX/ORDS\n"
+printf "  - demo_ogg_23ai   : GoldenGate Hub and Fabric lanes\n"
+printf "  - demo_oggbd_23ai : GoldenGate Big Data deployment metadata\n"
+printf "Other Kafka/OSA and Lakehouse containers are stopped to release notebook resources.\n\n"
+printf "Legacy GoldenGate processes C01 and D01 belong to the earlier core replication path.\n"
+printf "Chapter 20 does not use that path, so this script stops C01 and D01 cleanly.\n"
+printf "Chapter 20 uses FC01/FC02 and FD01/FD02/FD03 for the Data Fabric exercises.\n\n"
+
+printf "==> Prepare the Chapter 20 minimum runtime.\n"
+bash "${RUNTIME_START}"
+printf "\n"
 
 printf "Reset Chapter 20 Data Fabric GoldenGate lanes\n"
 printf "Host        : "; uname -n
@@ -58,7 +82,10 @@ skip_patterns = (
     "OGG-08272",
 )
 lines = [line for line in text.splitlines() if not any(p in line for p in skip_patterns)]
-print("\n".join(lines).strip())
+rendered = "\n".join(lines).strip()
+print(rendered)
+if any("ERROR" in line.upper() for line in lines):
+    sys.exit(1)
 PY
   done
 }
@@ -96,6 +123,97 @@ except Exception as exc:
 PY
 }
 
+wait_group_running() {
+  local process_type="$1"
+  local process_name="$2"
+  local attempts="${3:-12}"
+  local delay_seconds="${4:-2}"
+  local allow_transient_abended="${5:-N}"
+  local status_text=""
+  local i=1
+
+  while [ "${i}" -le "${attempts}" ]; do
+    status_text="$(admin_output "${OGGHUB_CONTAINER}" "info ${process_type} ${process_name}" 2>&1 || true)"
+    if printf '%s\n' "${status_text}" | grep -Eq 'Status[[:space:]]+RUNNING'; then
+      printf "OK: %s %s is RUNNING.\n" "${process_type}" "${process_name}"
+      return 0
+    fi
+    if printf '%s\n' "${status_text}" | grep -Eiq 'does not exist|not found|ERROR'; then
+      printf "ERROR: %s %s did not reach RUNNING state.\n%s\n" \
+        "${process_type}" "${process_name}" "${status_text}" >&2
+      return 1
+    fi
+    if printf '%s\n' "${status_text}" | grep -Eiq 'ABENDED' && [ "${allow_transient_abended}" != "Y" ]; then
+      printf "ERROR: %s %s did not reach RUNNING state.\n%s\n" \
+        "${process_type}" "${process_name}" "${status_text}" >&2
+      return 1
+    fi
+    sleep "${delay_seconds}"
+    i=$((i + 1))
+  done
+
+  printf "ERROR: %s %s did not reach RUNNING state within %s seconds.\n%s\n" \
+    "${process_type}" "${process_name}" "$((attempts * delay_seconds))" "${status_text}" >&2
+  return 1
+}
+
+wait_group_stopped() {
+  local process_type="$1"
+  local process_name="$2"
+  local attempts="${3:-12}"
+  local delay_seconds="${4:-2}"
+  local status_text=""
+  local i=1
+
+  while [ "${i}" -le "${attempts}" ]; do
+    status_text="$(admin_output "${OGGHUB_CONTAINER}" "info ${process_type} ${process_name}" 2>&1 || true)"
+    if printf '%s\n' "${status_text}" | grep -Eq 'Status[[:space:]]+STOPPED'; then
+      printf "OK: %s %s is STOPPED.\n" "${process_type}" "${process_name}"
+      return 0
+    fi
+    if printf '%s\n' "${status_text}" | grep -Eiq 'does not exist|not found|OGG-12029'; then
+      printf "SKIP: %s %s is not registered.\n" "${process_type}" "${process_name}"
+      return 0
+    fi
+    if printf '%s\n' "${status_text}" | grep -Eiq 'Status[[:space:]]+ABENDED'; then
+      printf "ERROR: %s %s remains ABENDED instead of STOPPED.\n%s\n" \
+        "${process_type}" "${process_name}" "${status_text}" >&2
+      return 1
+    fi
+    sleep "${delay_seconds}"
+    i=$((i + 1))
+  done
+
+  printf "ERROR: %s %s did not reach STOPPED state within %s seconds.\n%s\n" \
+    "${process_type}" "${process_name}" "$((attempts * delay_seconds))" "${status_text}" >&2
+  return 1
+}
+
+stop_legacy_group() {
+  local process_type="$1"
+  local process_name="$2"
+  local status_text=""
+
+  status_text="$(admin_output "${OGGHUB_CONTAINER}" "info ${process_type} ${process_name}" 2>&1 || true)"
+  if printf '%s\n' "${status_text}" | grep -Eiq 'does not exist|not found|OGG-12029'; then
+    printf "SKIP: legacy %s %s is not registered.\n" "${process_type}" "${process_name}"
+    return 0
+  fi
+  if printf '%s\n' "${status_text}" | grep -Eq 'Status[[:space:]]+STOPPED'; then
+    printf "OK: legacy %s %s is already STOPPED.\n" "${process_type}" "${process_name}"
+    return 0
+  fi
+  if printf '%s\n' "${status_text}" | grep -Eq 'Status[[:space:]]+ABENDED'; then
+    printf "INFO: restart legacy %s %s so it can be stopped cleanly.\n" "${process_type}" "${process_name}"
+    run_admin "${OGGHUB_CONTAINER}" "start ${process_name}"
+    wait_group_running "${process_type}" "${process_name}" 24 2 Y
+  fi
+
+  printf "Stop legacy %s %s for the Chapter 20 minimum runtime.\n" "${process_type}" "${process_name}"
+  run_admin "${OGGHUB_CONTAINER}" "stop ${process_name}"
+  wait_group_stopped "${process_type}" "${process_name}"
+}
+
 wait_not_running() {
   local process_type="$1"
   local process_name="$2"
@@ -131,6 +249,23 @@ wait_not_running() {
   return 1
 }
 
+verify_groups_absent() {
+  local status_text=""
+  local group_name=""
+
+  if ! status_text="$(admin_output "${OGGHUB_CONTAINER}" "info all")"; then
+    printf "ERROR: could not verify removed GoldenGate process definitions.\n" >&2
+    return 1
+  fi
+  for group_name in "$@"; do
+    if printf '%s\n' "${status_text}" | grep -Eq "(EXTRACT|REPLICAT)[[:space:]]+[[:upper:]]+[[:space:]]+${group_name}([[:space:]]|$)"; then
+      printf "ERROR: %s remains registered; refusing to remove its trail.\n" "${group_name}" >&2
+      return 1
+    fi
+    printf "OK: %s is no longer registered.\n" "${group_name}"
+  done
+}
+
 run_admin_batch() {
   local container="$1"
   docker exec -i -u ogg "${container}" bash -lc "cd /u01/ogg && ./bin/adminclient" 2>&1 \
@@ -146,6 +281,41 @@ run_admin_batch() {
       -e 's/password [^ ]+/password ********/g' \
       -e '/^OGG /!{/Successfully logged into database/!{/INFO    OGG-/!d;};}'
 }
+
+clear_replicat_checkpoints() {
+  local groups_csv="$1"
+
+  if [ "$(docker inspect -f '{{.State.Running}}' "${TARGET_DB_CONTAINER}" 2>/dev/null || true)" != "true" ]; then
+    printf "ERROR: Target DB container must be running to clear Replicat checkpoints: %s\n" "${TARGET_DB_CONTAINER}" >&2
+    return 1
+  fi
+
+  docker exec -i -u oracle "${TARGET_DB_CONTAINER}" bash -lc 'sqlplus -s / as sysdba' <<SQL
+set serveroutput on feedback off verify off
+whenever sqlerror exit sql.sqlcode
+alter session set container=ORCLPDB1;
+declare
+  l_exists number;
+  l_rows   number := 0;
+begin
+  select count(*) into l_exists from dba_tables
+   where owner = 'OGG' and table_name = 'GGSCKPT';
+  if l_exists = 1 then
+    execute immediate q'[delete from ogg.ggsckpt where upper(group_name) in (${groups_csv})]';
+    l_rows := sql%rowcount;
+    commit;
+  end if;
+  dbms_output.put_line('OK: cleared ' || l_rows || ' stale Replicat checkpoint row(s).');
+end;
+/
+exit
+SQL
+}
+
+printf "Stop the earlier core replication processes that Chapter 20 does not use.\n"
+stop_legacy_group extract C01
+stop_legacy_group replicat D01
+printf "\n"
 
 printf "Reset existing Chapter 20 Replicat lanes if they exist.\n"
 set +e
@@ -171,6 +341,8 @@ delete replicat FD03!
 exit
 OGG
 set -e
+verify_groups_absent FD01 FD02 FD03
+clear_replicat_checkpoints "'FD01','FD02','FD03'"
 
 printf "\nReset existing Chapter 20 integrated Extract lanes if they exist.\n"
 set +e
@@ -195,6 +367,22 @@ delete extract FC02!
 exit
 OGG
 set -e
+verify_groups_absent FC01 FC02
+
+printf "\nWait for Chapter 20 process handles to settle before removing trails.\n"
+sleep "${RESET_SETTLE_SECONDS}"
+docker exec -i -u root "${OGGHUB_CONTAINER}" bash -lc "
+set -euo pipefail
+cd /u02/Deployment/var/lib
+shopt -s nullglob
+files=(data/${NORMAL_TRAIL}* data/${HEAVY_TRAIL}*)
+if [ \${#files[@]} -gt 0 ]; then
+  rm -f \"\${files[@]}\"
+  echo 'OK: removed stale Chapter 20 trails ${NORMAL_TRAIL}* and ${HEAVY_TRAIL}*.'
+else
+  echo 'SKIP: no stale Chapter 20 trail files were found.'
+fi
+"
 
 printf "\nCreate Chapter 20 Data Fabric parameter files.\n"
 docker exec -i -u root "${OGGHUB_CONTAINER}" bash -lc "cat > /u02/Deployment/etc/conf/ogg/fc01.prm <<'PRM'
@@ -222,7 +410,6 @@ TABLE SOE.EMPLOYEE;
 TABLE SOE.FUNDM;
 TABLE SOE.FUND_PRICE;
 TABLE SOE.HEARTBP;
-TABLE SOE.INS2_CHURN_FP_CARE_26AI;
 TABLE SOE.MSG;
 TABLE SOE.OGG_SYNC_UNIT_TEST;
 TABLE SOE.OPM;
@@ -277,7 +464,6 @@ MAP SOE.EMPLOYEE, TARGET SOE.EMPLOYEE;
 MAP SOE.FUNDM, TARGET SOE.FUNDM;
 MAP SOE.FUND_PRICE, TARGET SOE.FUND_PRICE;
 MAP SOE.HEARTBP, TARGET SOE.HEARTBP;
-MAP SOE.INS2_CHURN_FP_CARE_26AI, TARGET SOE.INS2_CHURN_FP_CARE_26AI;
 MAP SOE.MSG, TARGET SOE.MSG;
 MAP SOE.OGG_SYNC_UNIT_TEST, TARGET SOE.OGG_SYNC_UNIT_TEST;
 MAP SOE.OPM, TARGET SOE.OPM;
@@ -348,14 +534,21 @@ run_admin "${OGGHUB_CONTAINER}" \
 
 printf "\nCreate and start Chapter 20 Replicat lanes.\n"
 run_admin "${OGGHUB_CONTAINER}" \
-  "add replicat FD01, exttrail ${NORMAL_TRAIL}, begin now" \
-  "add replicat FD02, exttrail ${HEAVY_TRAIL}, begin now" \
-  "add replicat FD03, exttrail ${HEAVY_TRAIL}, begin now" \
+  "add replicat FD01, exttrail ${NORMAL_TRAIL}, checkpointtable ${CHECKPOINT_TABLE}, begin now" \
+  "add replicat FD02, exttrail ${HEAVY_TRAIL}, checkpointtable ${CHECKPOINT_TABLE}, begin now" \
+  "add replicat FD03, exttrail ${HEAVY_TRAIL}, checkpointtable ${CHECKPOINT_TABLE}, begin now" \
   "start FD01" \
   "start FD02" \
   "start FD03"
 
 printf "\nVerify Chapter 20 Data Fabric lanes.\n"
+wait_group_stopped extract C01
+wait_group_stopped replicat D01
+wait_group_running extract FC01
+wait_group_running extract FC02
+wait_group_running replicat FD01
+wait_group_running replicat FD02
+wait_group_running replicat FD03
 run_admin "${OGGHUB_CONTAINER}" \
   "info all"
 

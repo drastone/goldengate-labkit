@@ -16,6 +16,8 @@ REQUIRED_CONTAINER_WAIT_SECONDS="${REQUIRED_CONTAINER_WAIT_SECONDS:-180}"
 RESET_ORACLE_TARGET="${RESET_ORACLE_TARGET:-N}"
 BIGDATA_INIT_SCRIPT="${BIGDATA_INIT_SCRIPT:-${BASE_LAB_HOME}/centos/init.sh}"
 KAFKA_READY_WAIT_SECONDS="${KAFKA_READY_WAIT_SECONDS:-240}"
+KAFKA_HOME="${KAFKA_HOME:-/usr/local/kafka}"
+FLOW_WAIT_SECONDS="${FLOW_WAIT_SECONDS:-240}"
 
 OGGHUB_CONTAINER="${OGGHUB_CONTAINER:-demo_ogg_23ai}"
 OGGBD_CONTAINER="${OGGBD_CONTAINER:-demo_oggbd_23ai}"
@@ -36,6 +38,9 @@ KAFKA_REPLICAT_NAME="${KAFKA_REPLICAT_NAME:-KAF01}"
 
 SOURCE_TRAIL="${SOURCE_TRAIL:-ca}"
 TARGET_TRAIL="${TARGET_TRAIL:-da}"
+STALE_OGGHUB_EXTRACTS="${STALE_OGGHUB_EXTRACTS:-C02 FC01 FC02}"
+STALE_OGGHUB_REPLICATS="${STALE_OGGHUB_REPLICATS:-F01 F02 FD01 FD02 FD03}"
+STALE_OGGHUB_TRAILS="${STALE_OGGHUB_TRAILS:-k1 k2}"
 TARGET_TRAIL_SIZE_MB="${TARGET_TRAIL_SIZE_MB:-100}"
 OSA_SCRIPT_DIR="${OSA_SCRIPT_DIR:-/home/oracle/script/osa/23ai}"
 HOST_OSA_SCRIPT_DIR="${HOST_OSA_SCRIPT_DIR:-${BASE_LAB_HOME}/oracle/script/osa/23ai}"
@@ -149,6 +154,136 @@ run_admin_ignore() {
   if ! run_admin "${container}" "$@"; then
     echo "WARN: ignored Admin Client failure in ${container}: $*" >&2
   fi
+}
+
+ogg_group_exists() {
+  container="$1"
+  group_name="$2"
+  output="$(run_admin "${container}" "info all" 2>/dev/null || true)"
+  printf '%s\n' "${output}" | grep -Eq "(EXTRACT|REPLICAT)[[:space:]]+[[:upper:]]+[[:space:]]+${group_name}([[:space:]]|$)"
+}
+
+verify_ogg_group_absent() {
+  container="$1"
+  group_name="$2"
+
+  if ! output="$(run_admin "${container}" "info all")"; then
+    echo "ERROR: could not verify that ${group_name} was removed from ${container}." >&2
+    return 1
+  fi
+  if printf '%s\n' "${output}" | grep -Eq "(EXTRACT|REPLICAT)[[:space:]]+[[:upper:]]+[[:space:]]+${group_name}([[:space:]]|$)"; then
+    printf '%s\n' "${output}" >&2
+    echo "ERROR: ${group_name} remains registered in ${container}; refusing to remove its trail." >&2
+    return 1
+  fi
+  echo "OK: ${group_name} is no longer registered in ${container}."
+}
+
+verify_distpath_absent() {
+  container="$1"
+  path_name="$2"
+
+  if ! output="$(run_admin "${container}" "info distpath all")"; then
+    echo "ERROR: could not verify that Distribution Path ${path_name} was removed." >&2
+    return 1
+  fi
+  if printf '%s\n' "${output}" | grep -Eq "(^|[[:space:]])${path_name}([[:space:]]|$)"; then
+    printf '%s\n' "${output}" >&2
+    echo "ERROR: Distribution Path ${path_name} remains registered; refusing to remove its trail." >&2
+    return 1
+  fi
+  echo "OK: Distribution Path ${path_name} is no longer registered."
+}
+
+wait_for_kafka_source_data() {
+  deadline="$(( $(date '+%s') + FLOW_WAIT_SECONDS ))"
+  attempt=1
+
+  echo "==> Wait for live C01 -> ${DISTPATH_NAME} -> ${KAFKA_REPLICAT_NAME} delivery"
+  while :; do
+    offset="$(docker exec "${BIGDATA_CONTAINER}" bash -lc \
+      "timeout 15 '${KAFKA_HOME}/bin/kafka-get-offsets.sh' --bootstrap-server localhost:9092 --topic SOE.CFUND_DT --time -1" \
+      2>/dev/null | awk -F: '{sum += $3} END {print sum + 0}' || true)"
+    case "${offset}" in
+      ''|*[!0-9]*) offset=0 ;;
+    esac
+    if [ "${offset}" -gt 0 ]; then
+      echo "OK: live GoldenGate delivery reached SOE.CFUND_DT at offset ${offset} (attempt ${attempt})."
+      return 0
+    fi
+    if [ "$(date '+%s')" -ge "${deadline}" ]; then
+      echo "ERROR: SOE.CFUND_DT remained empty after ${FLOW_WAIT_SECONDS} seconds." >&2
+      return 1
+    fi
+    echo "INFO: waiting for live GoldenGate delivery to SOE.CFUND_DT (attempt ${attempt})."
+    sleep 5
+    attempt=$((attempt + 1))
+  done
+}
+
+emit_kafka_flow_probe() {
+  probe_key="$(date '+%s')"
+
+  echo "==> Emit a transient SOE.CFUND_DT delivery probe"
+  docker exec -i -u oracle "${SOURCE_DB_CONTAINER}" bash -lc \
+    "sqlplus -L -s soe/soe@orclpdb1" <<SQL
+whenever oserror exit failure
+whenever sqlerror exit sql.sqlcode
+set feedback off heading off pagesize 0 verify off
+
+delete from soe.cfund_dt
+ where cust_id = -999999
+   and op_gubun = 'V';
+commit;
+
+insert into soe.cfund_dt (
+  dt, keys, cust_id, fund_code, fund_name, fund_price, fund_cnt,
+  fund_amt, fund_description, op_gubun, op_gubun2, cnt, start_dt
+) values (
+  to_char(sysdate, 'YYYYMMDD'), ${probe_key}, -999999,
+  'LABKIT_FLOW_PROBE', 'Lab Kit flow probe', '0', 0,
+  0, 'Transient end-to-end delivery probe', 'V', 'V', 1,
+  to_char(sysdate, 'YYYYMMDDHH24MISS')
+);
+commit;
+
+delete from soe.cfund_dt
+ where cust_id = -999999
+   and op_gubun = 'V';
+commit;
+
+exit
+SQL
+  echo "OK: transient SOE.CFUND_DT delivery probe committed and removed from Source."
+}
+
+run_stats_with_retry() {
+  container="$1"
+  command_text="$2"
+  label="$3"
+  attempts="${4:-12}"
+  delay_seconds="${5:-5}"
+  attempt=1
+
+  while [ "${attempt}" -le "${attempts}" ]; do
+    if output="$(run_admin "${container}" "${command_text}" 2>&1)"; then
+      printf '%s\n' "${output}"
+      echo "OK: ${label} statistics are available (attempt ${attempt}/${attempts})."
+      return 0
+    fi
+    if ! printf '%s\n' "${output}" | grep -q 'OGG-15149'; then
+      printf '%s\n' "${output}" >&2
+      echo "ERROR: ${label} statistics failed for a reason other than initialization." >&2
+      return 1
+    fi
+    echo "INFO: ${label} is still initializing; retry statistics in ${delay_seconds}s (${attempt}/${attempts})."
+    sleep "${delay_seconds}"
+    attempt=$((attempt + 1))
+  done
+
+  printf '%s\n' "${output}" >&2
+  echo "ERROR: ${label} statistics remained unavailable after $((attempts * delay_seconds)) seconds." >&2
+  return 1
 }
 
 verify_database_login() {
@@ -830,12 +965,36 @@ run_admin_ignore "${OGGBD_CONTAINER}" \
   "stop ${KAFKA_REPLICAT_NAME}!" \
   "info all"
 
+echo
+echo "==> Stop stale Chapter 20 OGGHUB processes"
+PHASE="stop stale Chapter 20 OGGHUB processes"
+for group_name in ${STALE_OGGHUB_REPLICATS}; do
+  if ogg_group_exists "${OGGHUB_CONTAINER}" "${group_name}"; then
+    run_admin_ignore "${OGGHUB_CONTAINER}" "stop ${group_name}!"
+  else
+    echo "SKIP: stale Replicat ${group_name} does not exist."
+  fi
+done
+if ! is_yes "${ORACLE_TARGET_ACTIVE}"; then
+  echo "INFO: Target DB is stopped; stale Chapter 20 checkpoint-table rows are cleared by the Chapter 20 setup before lanes are recreated."
+fi
+for group_name in ${STALE_OGGHUB_EXTRACTS}; do
+  if ogg_group_exists "${OGGHUB_CONTAINER}" "${group_name}"; then
+    run_admin_ignore "${OGGHUB_CONTAINER}" "stop ${group_name}!"
+  else
+    echo "SKIP: stale Extract ${group_name} does not exist."
+  fi
+done
+
 wait_for_no_ogg_group_process "${OGGHUB_CONTAINER}" "${EXTRACT_NAME}" "${PROCESS_WAIT_SECONDS}"
 if is_yes "${ORACLE_TARGET_ACTIVE}"; then
   wait_for_no_ogg_group_process "${OGGHUB_CONTAINER}" "${ORACLE_REPLICAT_NAME}" "${PROCESS_WAIT_SECONDS}"
 fi
 wait_for_no_ogg_group_process "${OGGBD_CONTAINER}" "${KAFKA_REPLICAT_NAME}" "${PROCESS_WAIT_SECONDS}"
 wait_for_distpath_not_running "${OGGHUB_CONTAINER}" "${DISTPATH_NAME}" "${PROCESS_WAIT_SECONDS}"
+for group_name in ${STALE_OGGHUB_REPLICATS} ${STALE_OGGHUB_EXTRACTS}; do
+  wait_for_no_ogg_group_process "${OGGHUB_CONTAINER}" "${group_name}" "${PROCESS_WAIT_SECONDS}"
+done
 
 echo
 echo "==> Delete OGGHUB Extract"
@@ -871,6 +1030,42 @@ run_admin_ignore "${OGGBD_CONTAINER}" \
   "delete replicat ${KAFKA_REPLICAT_NAME}!" \
   "info all"
 
+echo
+echo "==> Delete stale Chapter 20 OGGHUB processes"
+PHASE="delete stale Chapter 20 OGGHUB processes"
+for group_name in ${STALE_OGGHUB_REPLICATS}; do
+  if ogg_group_exists "${OGGHUB_CONTAINER}" "${group_name}"; then
+    if is_yes "${ORACLE_TARGET_ACTIVE}"; then
+      run_admin_ignore "${OGGHUB_CONTAINER}" \
+        "dblogin useridalias ${TARGET_DB_ALIAS} domain ${DOMAIN}" \
+        "delete replicat ${group_name}!"
+    else
+      run_admin_ignore "${OGGHUB_CONTAINER}" "delete replicat ${group_name}!"
+    fi
+  else
+    echo "SKIP: stale Replicat ${group_name} is already absent."
+  fi
+done
+for group_name in ${STALE_OGGHUB_EXTRACTS}; do
+  if ogg_group_exists "${OGGHUB_CONTAINER}" "${group_name}"; then
+    run_admin_ignore "${OGGHUB_CONTAINER}" \
+      "dblogin useridalias ${SOURCE_DB_ALIAS} domain ${DOMAIN}" \
+      "delete extract ${group_name}!"
+  else
+    echo "SKIP: stale Extract ${group_name} is already absent."
+  fi
+done
+
+verify_ogg_group_absent "${OGGHUB_CONTAINER}" "${EXTRACT_NAME}"
+if is_yes "${ORACLE_TARGET_ACTIVE}"; then
+  verify_ogg_group_absent "${OGGHUB_CONTAINER}" "${ORACLE_REPLICAT_NAME}"
+fi
+verify_distpath_absent "${OGGHUB_CONTAINER}" "${DISTPATH_NAME}"
+verify_ogg_group_absent "${OGGBD_CONTAINER}" "${KAFKA_REPLICAT_NAME}"
+for group_name in ${STALE_OGGHUB_REPLICATS} ${STALE_OGGHUB_EXTRACTS}; do
+  verify_ogg_group_absent "${OGGHUB_CONTAINER}" "${group_name}"
+done
+
 wait_for_no_ogg_group_process "${OGGBD_CONTAINER}" "${KAFKA_REPLICAT_NAME}" "${PROCESS_WAIT_SECONDS}"
 wait_for_distpath_not_running "${OGGHUB_CONTAINER}" "${DISTPATH_NAME}" "${PROCESS_WAIT_SECONDS}"
 
@@ -893,6 +1088,24 @@ run_in_container "${OGGHUB_CONTAINER}" bash -lc "
     echo 'No ${SOURCE_TRAIL} trail files found.'
   fi
 "
+
+echo
+echo "==> Remove stale Chapter 20 OGGHUB trails"
+PHASE="remove stale Chapter 20 OGGHUB trails"
+for trail_name in ${STALE_OGGHUB_TRAILS}; do
+  run_in_container "${OGGHUB_CONTAINER}" bash -lc "
+    set -euo pipefail
+    cd /u02/Deployment/var/lib
+    shopt -s nullglob
+    files=(data/${trail_name}*)
+    if [ \${#files[@]} -gt 0 ]; then
+      rm -f \"\${files[@]}\"
+      echo 'OK: removed stale ${trail_name} trail files.'
+    else
+      echo 'SKIP: no stale ${trail_name} trail files were found.'
+    fi
+  "
+done
 
 echo
 echo "==> Remove OGGBD trail ${TARGET_TRAIL}*"
@@ -1095,6 +1308,14 @@ if is_yes "${CREATE_OBJECTS}"; then
     PHASE="seed 26ai churn business events in Source SOE"
   run_script_as_oracle "${SOURCE_DB_CONTAINER}" prepare_ai_26ai_demo.sh
 
+  echo
+  PHASE="emit live GoldenGate delivery probe"
+  emit_kafka_flow_probe
+
+  echo
+  PHASE="verify live GoldenGate delivery to Kafka"
+  wait_for_kafka_source_data
+
   if is_yes "${ORACLE_TARGET_ACTIVE}"; then
     echo
     PHASE="grant APEX access to replicated target objects"
@@ -1104,18 +1325,24 @@ if is_yes "${CREATE_OBJECTS}"; then
 
   echo
   echo "==> Verify OGGHUB Extract statistics"
-  run_admin "${OGGHUB_CONTAINER}" \
-    "stats extract ${EXTRACT_NAME} totalsonly soe.*"
+  PHASE="verify OGGHUB Extract statistics"
+  run_stats_with_retry "${OGGHUB_CONTAINER}" \
+    "stats extract ${EXTRACT_NAME} totalsonly soe.*" \
+    "Extract ${EXTRACT_NAME}"
   if is_yes "${ORACLE_TARGET_ACTIVE}"; then
     echo "==> Verify OGGHUB Oracle Replicat statistics"
-    run_admin "${OGGHUB_CONTAINER}" \
-      "stats replicat ${ORACLE_REPLICAT_NAME} totalsonly soe.*"
+    PHASE="verify OGGHUB Oracle Replicat statistics"
+    run_stats_with_retry "${OGGHUB_CONTAINER}" \
+      "stats replicat ${ORACLE_REPLICAT_NAME} totalsonly soe.*" \
+      "Replicat ${ORACLE_REPLICAT_NAME}"
   fi
 
   echo
   echo "==> Verify OGGBD Replicat statistics"
-  run_admin "${OGGBD_CONTAINER}" \
-    "stats replicat ${KAFKA_REPLICAT_NAME} totalsonly soe.*"
+  PHASE="verify OGGBD Replicat statistics"
+  run_stats_with_retry "${OGGBD_CONTAINER}" \
+    "stats replicat ${KAFKA_REPLICAT_NAME} totalsonly soe.*" \
+    "Replicat ${KAFKA_REPLICAT_NAME}"
 else
   echo
   echo "INFO: OSA sample object creation is intentionally skipped."

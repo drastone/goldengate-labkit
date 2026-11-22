@@ -73,7 +73,7 @@ from dual;
 begin
   ins2_churn_vector_pkg.refresh_vectors(500);
   ins2_churn_vector_pkg.sync_care_queue;
-  ins2_churn_llm_pkg.generate_comments(20);
+  ins2_churn_llm_pkg.generate_comments(2);
 end;
 /
 

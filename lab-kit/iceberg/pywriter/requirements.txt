@@ -1,0 +1,4 @@
+pyiceberg==0.7.1
+kafka-python==2.0.2
+pyarrow==15.0.2
+packaging==26.3

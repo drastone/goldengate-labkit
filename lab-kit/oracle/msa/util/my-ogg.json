@@ -1,0 +1,48 @@
+{
+  "targets": {
+    "oci-managed": {
+      "admin_url": "https://deployment-console-host:9011",
+      "admin_user": "oggadmin",
+      "description": "OCI GoldenGate managed deployment .",
+      "mode": "rest"
+    },
+    "onprem-rest": {
+      "admin_client_url": "http://127.0.0.1:9112",
+      "admin_url": "http://127.0.0.1:9112/services/v2",
+      "admin_user": "oggadmin",
+      "cli_mode": "local",
+      "client_ogg_home": "/u01/app/ogg/ogg2310",
+      "download_client_ogg_home": "/u01/app/ogg/ogg2310",
+      "description": "On-prem GoldenGate Admin Service through REST",
+      "mode": "rest",
+      "oracle_schema": "SOE",
+      "oracle_admin_connect": "/ as sysdba",
+      "oracle_pdb": "",
+      "oracle_sqlplus": "/u01/app/oracle/product/19c/WEST/bin/sqlplus",
+      "oracle_ext_dir_name": "OGG_FK_TRAIL_DIR"
+    },
+    "remote-source": {
+      "admin_url": "http://localhost:9011",
+      "admin_user": "oggadmin",
+      "description": "Self-managed GoldenGate reached through SSH. ",
+      "mode": "ssh",
+      "ogg_home": "/u01/oracle/msa/util",
+      "ssh": "ogg@customer-ogg-host",
+      "trail_dirs": [
+        "/u01/oracle/msa/util/var/lib/data",
+        "/u01/oracle/msa/util/dirdat"
+      ]
+    },
+    "source": {
+      "admin_url": "http://localhost:9011",
+      "admin_user": "oggadmin",
+      "description": "Self-managed GoldenGatet.",
+      "mode": "local",
+      "ogg_home": "/u01/oracle/msa/util",
+      "trail_dirs": [
+        "/u01/oracle/msa/util/var/lib/data",
+        "/u01/oracle/msa/util/dirdat"
+      ]
+    }
+  }
+}

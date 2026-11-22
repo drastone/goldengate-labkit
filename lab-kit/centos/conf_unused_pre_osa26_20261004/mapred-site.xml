@@ -1,0 +1,6 @@
+<configuration>
+	<property>
+		<name>mapreduce.jobtracker.address</name>
+		<value>localhost:9101</value>
+	</property>
+</configuration>

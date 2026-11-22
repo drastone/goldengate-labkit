@@ -1,0 +1,7 @@
+EXTRACT MRC01
+JVMOPTIONS CLASSPATH ggjava/ggjava.jar:/u02/Deployment/etc/conf/ogg/mongodb/lib/*
+SOURCEDB USERIDALIAS mongo_src_remote
+EXTTRAIL rc
+NO_ABEND_ON_DDL
+BINARY_JSON_FORMAT
+TABLE remote_capture.*;

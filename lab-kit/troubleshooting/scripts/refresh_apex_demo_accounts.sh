@@ -126,6 +126,11 @@ begin
 end;
 /
 
+column user_name format a30
+column account_locked heading ACC format a3
+column account_expiry heading ACCOUNT_EX format a10
+column failed_access_attempts heading FAILED_ACCESS_ATTEMPTS format 9999999999999999999990
+
 select user_name,
        account_locked,
        nvl(to_char(account_expiry, 'YYYY-MM-DD'), 'NEVER') account_expiry,

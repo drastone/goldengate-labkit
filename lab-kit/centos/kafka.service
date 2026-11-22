@@ -1,0 +1,15 @@
+[Unit]
+Description=Apache Kafka server (broker)
+Requires=network.target remote-fs.target zookeeper.service
+After=network.target remote-fs.target zookeeper.service
+[Service]
+Type=forking
+User=root
+Group=root
+Environment='KAFKA_HEAP_OPTS=-Xms500m -Xmx500m'
+ExecStart=/usr/local/kafka/bin/kafka-server-start.sh -daemon /usr/local/kafka/config/server.properties
+ExecStop=/usr/local/kafka/bin/kafka-server-stop.sh
+LimitNOFILE=16384:163840
+Restart=on-abnormal
+[Install]
+WantedBy=multi-user.target

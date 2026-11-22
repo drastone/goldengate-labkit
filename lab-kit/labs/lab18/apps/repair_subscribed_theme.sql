@@ -3,21 +3,30 @@ declare
   c_app_id            constant number := wwv_flow.g_flow_id;
   c_theme_source_app  constant number := 102;
   l_page_template     number;
+  l_login_template    number;
   l_region_template   number;
   l_button_template   number;
   l_field_template    number;
   l_menu_template     number;
+  l_top_nav_template  number;
+  l_side_nav_template number;
 begin
   select default_page_template,
+         login_template,
          default_region_template,
          default_button_template,
          default_label_template,
-         default_menu_template
+         default_menu_template,
+         default_top_nav_list_template,
+         default_side_nav_list_template
     into l_page_template,
+         l_login_template,
          l_region_template,
          l_button_template,
          l_field_template,
-         l_menu_template
+         l_menu_template,
+         l_top_nav_template,
+         l_side_nav_template
     from apex_260100.wwv_flow_themes
    where flow_id = c_theme_source_app
      and theme_id = 42;
@@ -40,6 +49,15 @@ begin
             from apex_260100.wwv_flows
            where id = c_theme_source_app)
    where f.id = c_app_id;
+
+  update apex_260100.wwv_flows
+     set navigation_list_template_id =
+           case upper(navigation_list_position)
+             when 'SIDE' then l_side_nav_template
+             when 'TOP' then l_top_nav_template
+             else navigation_list_template_id
+           end
+   where id = c_app_id;
 
   update apex_260100.wwv_flow_themes t
      set (default_page_template, default_dialog_template, error_template, printer_friendly_template,
@@ -69,6 +87,11 @@ begin
      and not exists (
        select 1 from apex_260100.wwv_flow_templates x where x.id = s.step_template
      );
+
+  update apex_260100.wwv_flow_steps
+     set step_template = l_login_template
+   where flow_id = c_app_id
+     and id = 9999;
 
   update apex_260100.wwv_flow_page_plugs p
      set plug_template = l_region_template

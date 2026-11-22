@@ -1,0 +1,16 @@
+{
+  "TABLE_NAME": "FREEPDB1.SOE.CFUND_DT",
+  "OP_TYPE": "I",
+  "OP_TS": "2026-07-21 06:15:33.000000",
+  "CURRENT_TS": "2026-07-21 06:15:34.000000",
+  "POS": "00000000000000123456",
+  "after": {
+    "DT": "20260721",
+    "CUST_ID": 2139,
+    "FUND_CODE": "FUNDAO01",
+    "FUND_NAME": "FUNDAO 주식형펀드01",
+    "FUND_AMT": 7410000,
+    "OP_GUBUN": "5",
+    "OP_GUBUN2": "1"
+  }
+}

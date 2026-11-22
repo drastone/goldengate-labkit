@@ -1,0 +1,15 @@
+{
+  "targets": {
+    "source": {
+      "description": "Source GoldenGate",
+      "admin_url": "http://localhost:9011",
+      "admin_user": "oggadmin",
+      "mode": "local",
+      "ogg_home": "/u01/oracle/msa/source",
+      "trail_dirs": [
+        "/u01/oracle/msa/source/dirdat",
+        "/u01/oracle/msa/source/var/lib/data"
+      ]
+    }
+  }
+}

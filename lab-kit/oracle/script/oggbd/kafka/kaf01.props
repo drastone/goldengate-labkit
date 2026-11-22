@@ -1,0 +1,12 @@
+# Properties file for Replicat kaf01.
+gg.handlerlist=kafkahandler
+gg.handler.kafkahandler.type=kafka
+gg.handler.kafkahandler.kafkaProducerConfigFile=/u02/Deployment/etc/conf/ogg/kaf01-producer.properties
+gg.handler.kafkahandler.topicMappingTemplate=${fullyQualifiedTableName}
+gg.handler.kafkahandler.keyMappingTemplate=${primaryKeys}
+gg.handler.kafkahandler.mode=op
+gg.handler.kafkahandler.format=json_row
+gg.handler.kafkahandler.format.pkUpdateHandling=delete-insert
+gg.handler.kafkahandler.format.metaColumnsTemplate=${objectname[TABLE_NAME]},${optype[OP_TYPE]},${timestamp[OP_TS]},${currenttimestamp[CURRENT_TS]},${position[POS]}
+gg.classpath=/u01/ogg/thirdparty/kafka/*:/u01/ogg/thirdparty/kafka_3.9.0/*
+jvm.bootoptions=-Xmx512m -Xms32m

@@ -1,0 +1,462 @@
+
+################################################################################
+## Copyright(c) Oracle Corporation 2016, 2021. All rights reserved.           ##
+##                                                                            ##
+## Specify values for the variables listed below to customize your            ##
+## installation.                                                              ##
+##                                                                            ##
+## Each variable is associated with a comment. The comments can help to       ##
+## populate the variables with the appropriate values.                        ##
+##                                                                            ##
+## IMPORTANT NOTE: This file should be secured to have read permission only   ##
+## by the Oracle user or an administrator who owns this configuration to      ##
+## protect any sensitive input values.                                        ##
+##                                                                            ##
+################################################################################
+
+#-------------------------------------------------------------------------------
+# Do not change the following system generated value. 
+#-------------------------------------------------------------------------------
+oracle.install.responseFileVersion=/oracle/install/rspfmt_oggca_response_schema_v21_1_0
+
+
+################################################################################
+##                                                                            ##
+## Oracle GoldenGate deployment configuration options and details             ##
+##                                                                            ##
+################################################################################
+
+################################################################################
+##                                                                            ##
+## Instructions to fill out this response file                                ##
+## -------------------------------------------                                ##
+## Fill out section A, B, and C for general deployment information            ##
+## Additionally:                                                              ##  
+## Fill out sections D, E, F, G, H, I, and J for adding a deployment          ##
+## Fill out section K for removing a deployment                               ##
+##                                                                            ##
+################################################################################
+
+################################################################################
+#                                                                              #
+#                          SECTION A - GENERAL                                 #
+#                                                                              #
+################################################################################
+
+#-------------------------------------------------------------------------------
+# Specify the configuration option.
+# Specify: 
+# - ADD    : for adding a new GoldenGate deployment.
+# - REMOVE : for removing an existing GoldenGate deployment. 
+#-------------------------------------------------------------------------------
+CONFIGURATION_OPTION=ADD
+
+#-------------------------------------------------------------------------------
+# Specify the name for the new or existing deployment.
+#-------------------------------------------------------------------------------
+DEPLOYMENT_NAME=deploy01
+
+
+################################################################################
+#                                                                              #
+#                       SECTION B - ADMINISTRATOR ACCOUNT                      #
+#                                                                              #
+# * If creating a new Service Manager, set the Administrator Account username  #
+#   and password.                                                              #
+#                                                                              #
+# * If reusing an existing Service Manager:                                    #
+#     * If external Identity Provider authorization profile is enabled,        #
+#       enter the external Identity Provider credentials.                      #
+#     * Otherwise, enter the credentials for the Administrator Account in      #
+#       the existing Service Manager.                                          #
+#                                                                              #
+################################################################################
+
+#-------------------------------------------------------------------------------
+# Specify the administrator account username or external Identity Provider username.
+#-------------------------------------------------------------------------------
+ADMINISTRATOR_USER=admin
+
+#-------------------------------------------------------------------------------
+# Specify the administrator account password or external Identity Provider password.
+#-------------------------------------------------------------------------------
+ADMINISTRATOR_PASSWORD=admin
+
+
+################################################################################
+#                                                                              #
+#                  SECTION B.1 - LOCAL ADMINISTRATOR ACCOUNT                   #
+#                                                                              #
+# * If reusing an existing Service Manager and external Identity Provider      #
+#   authorization profile is enabled, set the credentials for the local        #
+#   Administrator User.                                                        #
+#                                                                              #
+################################################################################
+
+# ------------------------------------------------------------------------------
+# Specify the local administrator user name.
+#-------------------------------------------------------------------------------
+LOCAL_ADMINISTRATOR_USER=
+
+#-------------------------------------------------------------------------------
+# Specify the local administrator password.
+#-------------------------------------------------------------------------------
+LOCAL_ADMINISTRATOR_PASSWORD=
+
+
+################################################################################
+#                                                                              #
+#                       SECTION C - SERVICE MANAGER                            #
+#                                                                              #
+################################################################################
+
+#-------------------------------------------------------------------------------
+# Specify the location for the Service Manager deployment.
+# This is only needed if the Service Manager deployment doesn't exist already.
+#-------------------------------------------------------------------------------
+SERVICEMANAGER_DEPLOYMENT_HOME=/home/oracle/oggmsa/oggSM
+
+#-------------------------------------------------------------------------------
+# Specify the host for the Service Manager.
+#-------------------------------------------------------------------------------
+HOST_SERVICEMANAGER=172.28.0.9
+
+#-------------------------------------------------------------------------------
+# Specify the port for the Service Manager.
+#-------------------------------------------------------------------------------
+PORT_SERVICEMANAGER=5560
+
+#-------------------------------------------------------------------------------
+# Specify if SSL / TLS is or will be enabled for the deployment.
+# Specify true if SSL / TLS is or will be enabled, false otherwise.
+#-------------------------------------------------------------------------------
+SECURITY_ENABLED=false
+
+#-------------------------------------------------------------------------------
+# Specify if the deployment should enforce a strong password policy.
+# Specify true to enable strong password policy management.
+#-------------------------------------------------------------------------------
+STRONG_PWD_POLICY_ENABLED=false
+
+#-------------------------------------------------------------------------------
+# Specify if a new Service Manager should be created. 
+# Specify true if a new Service Manager should be created, false otherwise.
+#
+# This option is only needed when CONFIGURATION_OPTION is ADD.
+#-------------------------------------------------------------------------------
+CREATE_NEW_SERVICEMANAGER=true
+
+#-------------------------------------------------------------------------------
+# Specify if Service Manager should be registered as a service/daemon. This option is mutually exclusive with the 'INTEGRATE_SERVICEMANAGER_WITH_XAG' option.
+# Specify true if Service Manager should be registered as a service, false otherwise.
+#
+# This option is only needed when CONFIGURATION_OPTION is ADD.
+# This option does not apply to Windows platform.
+#-------------------------------------------------------------------------------
+REGISTER_SERVICEMANAGER_AS_A_SERVICE=false
+
+#-------------------------------------------------------------------------------
+# Specify if Service Manager should be integrated with XAG. This option is mutually exclusive with the 'REGISTER_SERVICEMANAGER_AS_A_SERVICE' option.
+# Specify true if Service Manager should be integrated with XAG, false otherwise.
+#
+# This option is only needed when CONFIGURATION_OPTION is ADD.
+# This option is only supported for Oracle databases.
+#-------------------------------------------------------------------------------
+INTEGRATE_SERVICEMANAGER_WITH_XAG=false
+
+#-------------------------------------------------------------------------------
+# If using an existing Service Manager, specify if it is integrated with XAG.
+# Specify true if the existing Service Manager is integrated with XAG, false otherwise.
+#
+# This option is only needed when CONFIGURATION_OPTION is ADD.
+# This option is only supported for Oracle databases.
+#-------------------------------------------------------------------------------
+EXISTING_SERVICEMANAGER_IS_XAG_ENABLED=false
+
+###############################################################################
+#                                                                             #
+#                       SECTION D - SOFTWARE HOME                             #
+#                                                                             #
+###############################################################################
+
+#-------------------------------------------------------------------------------
+# Specify the existing OGG software home location.
+#-------------------------------------------------------------------------------
+OGG_SOFTWARE_HOME=/home/oracle/oggmsa/ogg213
+
+
+###############################################################################
+#                                                                             #
+#                       SECTION E - DEPLOYMENT DIRECTORIES                    #
+#                                                                             #
+###############################################################################
+
+#-------------------------------------------------------------------------------
+# Specify the location of the new or existing OGG deployment.
+#-------------------------------------------------------------------------------
+OGG_DEPLOYMENT_HOME=/home/oracle/oggmsa/oggDeploy
+
+#-------------------------------------------------------------------------------
+# Specify the location for OGG_ETC_HOME.
+#-------------------------------------------------------------------------------
+#OGG_HOME=/home/oracle/oggmsa/ogg213
+OGG_ETC_HOME=/home/oracle/oggmsa/oggSM/etc
+
+#-------------------------------------------------------------------------------
+# Specify the location for OGG_CONF_HOME.
+#-------------------------------------------------------------------------------
+OGG_CONF_HOME=
+
+#-------------------------------------------------------------------------------
+# Specify the location for OGG_SSL_HOME.
+#-------------------------------------------------------------------------------
+OGG_SSL_HOME=
+
+#-------------------------------------------------------------------------------
+# Specify the location for OGG_VAR_HOME.
+#-------------------------------------------------------------------------------
+OGG_VAR_HOME=/home/oracle/oggmsa/oggSM/var 
+
+#-------------------------------------------------------------------------------
+# Specify the location for OGG_DATA_HOME.
+#-------------------------------------------------------------------------------
+OGG_DATA_HOME=
+
+
+###############################################################################
+#                                                                             #
+#                       SECTION F - ENVIRONMENT VARIABLES                     #
+#                                                                             #
+###############################################################################
+
+#-------------------------------------------------------------------------------
+# Specify the value for the ORACLE_HOME environment variable.
+#-------------------------------------------------------------------------------
+ENV_ORACLE_HOME=
+
+#-------------------------------------------------------------------------------
+# Specify the value for the LD_LIBRARY_PATH environment variable.
+#-------------------------------------------------------------------------------
+ENV_LD_LIBRARY_PATH=${OGG_HOME}/lib/instantclient:${OGG_HOME}/lib
+
+#-------------------------------------------------------------------------------
+# Specify the value for the TNS_ADMIN environment variable.
+# This environment variable is only for Oracle Databases.
+#-------------------------------------------------------------------------------
+ENV_TNS_ADMIN=/u01/app/oracle/product/12.2.0/db_server/network/admin
+
+#-------------------------------------------------------------------------------
+# This option is only needed when Sharding will be enabled.
+# Specify the value for the STREAMS_POOL_SIZE environment variable.
+# This environment variable is only for Oracle Databases.
+#-------------------------------------------------------------------------------
+ENV_STREAMS_POOL_SIZE=
+
+#-------------------------------------------------------------------------------
+# Specify any additional environment variables to be set in the deployment.
+#-------------------------------------------------------------------------------
+ENV_USER_VARS=
+
+
+###############################################################################
+#                                                                             #
+#                           SECTION G - SECURITY                              #
+#           This section is only needed if Security will be enabled           #
+#                                                                             #
+###############################################################################
+
+#-------------------------------------------------------------------------------
+# Specify if FIPS will be enabled.
+#-------------------------------------------------------------------------------
+FIPS_ENABLED=false
+
+#-------------------------------------------------------------------------------
+# Specify the Cipher Suites to be used for SSL.
+#-------------------------------------------------------------------------------
+CIPHER_SUITES=
+
+#-------------------------------------------------------------------------------
+# If SSL / TLS will be enabled, specify the server Wallet to be copied.
+#-------------------------------------------------------------------------------
+SERVER_WALLET=
+
+#-------------------------------------------------------------------------------
+# If SSL / TLS will be enabled, specify the server certificate 
+# to be imported.
+#-------------------------------------------------------------------------------
+SERVER_CERTIFICATE=
+
+#-------------------------------------------------------------------------------
+# If importing a server certificate, specify the private key file in PKCS#8 format
+#-------------------------------------------------------------------------------
+SERVER_CERTIFICATE_KEY_FILE=
+
+#-------------------------------------------------------------------------------
+# When providing a private key file for the server certificate, 
+# the passphrase must be specified
+#-------------------------------------------------------------------------------
+SERVER_CERTIFICATE_KEY_FILE_PWD=
+
+#-------------------------------------------------------------------------------
+# If SSL / TLS will be enabled, specify the client Wallet to be copied. (Optional)
+#-------------------------------------------------------------------------------
+CLIENT_WALLET=
+
+#-------------------------------------------------------------------------------
+# If SSL / TLS will be enabled, specify the client certificate 
+# to be imported. (Optional)
+#-------------------------------------------------------------------------------
+CLIENT_CERTIFICATE=
+
+#-------------------------------------------------------------------------------
+# If importing a client certificate, specify the private key file in PKCS#8 format
+#-------------------------------------------------------------------------------
+CLIENT_CERTIFICATE_KEY_FILE=
+
+#-------------------------------------------------------------------------------
+# When providing a private key file for the client certificate, 
+# the passphrase must be specified
+#-------------------------------------------------------------------------------
+CLIENT_CERTIFICATE_KEY_FILE_PWD=
+
+
+###############################################################################
+#                                                                             #
+#                           SECTION H - SHARDING                              #
+#                                                                             #
+###############################################################################
+
+#-------------------------------------------------------------------------------
+# Specify if Sharding will be enabled for this deployment.
+# Specify true if Sharding will be enabled for this deployment, false otherwise.
+#
+# This option is only supported for Oracle databases.
+#-------------------------------------------------------------------------------
+SHARDING_ENABLED=false
+
+#-------------------------------------------------------------------------------
+# Specify the Sharding user.
+#
+# This option is only needed when Sharding will be enabled.
+#-------------------------------------------------------------------------------
+SHARDING_USER=
+
+
+###############################################################################
+#                                                                             #
+#                           SECTION I - SERVICES                              #
+#                                                                             #
+###############################################################################
+
+#-------------------------------------------------------------------------------
+# Specify if the Administration server will be enabled.
+# Specify true if the Administration server will be enabled, false otherwise.
+#-------------------------------------------------------------------------------
+ADMINISTRATION_SERVER_ENABLED=true
+
+#-------------------------------------------------------------------------------
+# Required only if the Administration server will be enabled. 
+# Specify the port for Administration Server.
+#-------------------------------------------------------------------------------
+PORT_ADMINSRVR=5565
+
+#-------------------------------------------------------------------------------
+# Specify if the Distribution server will be enabled.
+# Specify true if the Distribution server will be enabled, false otherwise.
+#-------------------------------------------------------------------------------
+DISTRIBUTION_SERVER_ENABLED=true
+
+#-------------------------------------------------------------------------------
+# Required only if the Distribution server will be enabled. 
+# Specify the port for Distribution Server.
+#-------------------------------------------------------------------------------
+PORT_DISTSRVR=5566
+
+#-------------------------------------------------------------------------------
+# If security is disabled, specify if this non-secure deployment will be used
+# to send trail data to a secure deployment.
+#-------------------------------------------------------------------------------
+NON_SECURE_DISTSRVR_CONNECTS_TO_SECURE_RCVRSRVR=false
+
+#-------------------------------------------------------------------------------
+# Specify if the Receiver server will be enabled.
+# Specify true if the Receiver server will be enabled, false otherwise.
+#-------------------------------------------------------------------------------
+RECEIVER_SERVER_ENABLED=true
+
+#-------------------------------------------------------------------------------
+# Required only if the Receiver server will be enabled. 
+# Specify the port for Receiver Server.
+#-------------------------------------------------------------------------------
+PORT_RCVRSRVR=5567
+
+#-------------------------------------------------------------------------------
+# Specify if Performance Metrics server will be enabled.
+# Specify true if Performance Metrics server will be enabled, false otherwise.
+#-------------------------------------------------------------------------------
+METRICS_SERVER_ENABLED=true
+
+#-------------------------------------------------------------------------------
+# Specify if Performance Metrics server is a critical service.
+# Specify true if Performance Metrics server is a critical service, false otherwise.
+#
+# This is optional and only takes effect when Performance Metrics server will be enabled.
+# Also, this option should only be set when the Service Manager is integrated with XAG.
+# The default value is false.
+#
+# This option is only supported for Oracle databases.
+#-------------------------------------------------------------------------------
+METRICS_SERVER_IS_CRITICAL=false
+
+#-------------------------------------------------------------------------------
+# Specify the port for Performance Metrics server (TCP).
+#
+# This option is only needed when Performance Metrics server will be enabled.
+#-------------------------------------------------------------------------------
+PORT_PMSRVR=5568
+
+#-------------------------------------------------------------------------------
+# Specify the port for Performance Metrics server (UDP).
+#
+# This option is only needed when Performance Metrics server will be enabled.
+#-------------------------------------------------------------------------------
+UDP_PORT_PMSRVR=5569
+
+#-------------------------------------------------------------------------------
+# Specify the DataStore type for Performance Metrics server.
+# Valid values are: BDB, LMDB
+#
+# This option is only needed when Performance Metrics server will be enabled.
+#-------------------------------------------------------------------------------
+PMSRVR_DATASTORE_TYPE=BDB
+
+#-------------------------------------------------------------------------------
+# Specify the DataStore home location for Performance Metrics server.
+# This is optional and only takes effect when Performance Metrics server will be enabled.
+#-------------------------------------------------------------------------------
+PMSRVR_DATASTORE_HOME=/home/oracle/oggmsa/oggPM
+
+
+###############################################################################
+#                                                                             #
+#                       SECTION J - REPLICATION OPTIONS                       #
+#                                                                             #
+###############################################################################
+
+#-------------------------------------------------------------------------------
+# Specify the value for the GoldenGate schema.
+#-------------------------------------------------------------------------------
+OGG_SCHEMA=oggmsa
+
+
+###############################################################################
+#                                                                             #
+#                  SECTION K - REMOVE DEPLOYMENT OPTIONS                      #
+#                                                                             #
+###############################################################################
+
+#-------------------------------------------------------------------------------
+# Specify if the deployment files should be removed from disk.
+# Specify true if the deployment files should be removed, false otherwise.
+#-------------------------------------------------------------------------------
+REMOVE_DEPLOYMENT_FROM_DISK=

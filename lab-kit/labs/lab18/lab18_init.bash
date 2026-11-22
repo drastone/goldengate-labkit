@@ -29,6 +29,7 @@ TARGET_RAW_TABLES=(ADDRESS CUST_PR CANCELAMT CALL_CENTER_LOG CUST_INFO)
 TARGET_SQL_FILES=(
   build_insurance_info_app_340_id7.sql
   build_ins2_churn_vector_page_70_id7.sql
+  repair_page70_ir_columns_id7.sql
   enhance_churn_fp_coach_page_70_id7.sql
 )
 
@@ -215,12 +216,50 @@ import_app() {
   local app_id="$1"
   local host_file="${APP_DIR}/f${app_id}.sql"
   local container_file="${CONTAINER_APP_DIR}/f${app_id}.sql"
-  local app_offset app_count
+  local app_offset app_count app340_layout_state
 
   app_count="$(application_count "${app_id}")"
   if [ "${app_count:-0}" -eq 1 ]; then
-    log "SKIP: App ${app_id} is already installed."
-    return
+    if [ "${app_id}" -ne 340 ]; then
+      log "SKIP: App ${app_id} is already installed."
+      return
+    fi
+
+    app340_layout_state="$(sql_sys "
+select 'APP340_LAYOUT_STATE=' ||
+       case
+         when (select count(*)
+                 from apex_260100.wwv_flow_page_plugs
+                where flow_id = 340
+                  and page_id = 70
+                  and static_id = 'breadcrumb'
+                  and plug_source_type = 'NATIVE_BREADCRUMB'
+                  and menu_id is not null) = 1
+          and (select count(*)
+                 from apex_260100.wwv_flow_page_plugs
+                where flow_id = 340
+                  and page_id = 70
+                  and static_id = 'churn-risk-band-chart'
+                  and plug_name = '위험등급 분포 / FP AI 대응 코멘트'
+                  and instr(plug_source, 'soe.ins2_churn_risk_band_html') > 0
+                  and instr(plug_source, 'soe.ins2_churn_fp_coach_html') > 0) = 1
+          and (select count(*)
+                 from apex_260100.wwv_flow_page_plugs
+                where flow_id = 340
+                  and page_id = 70
+                  and static_id = 'churn-log-vector-match'
+                  and instr(plug_source, 'soe.ins2_churn_log_score_v') > 0) = 1
+         then 'CURRENT'
+         else 'OUTDATED'
+       end
+  from dual;" | sed -n 's/^[[:space:]]*APP340_LAYOUT_STATE=//p' | tail -1)"
+
+    if [ "${app340_layout_state}" = "CURRENT" ]; then
+      log "SKIP: App 340 is already installed with the complete Page 70 layout."
+      return
+    fi
+
+    log "INFO: App 340 is installed with an outdated Page 70 layout; reimporting the complete export."
   fi
 
   app_offset="$(sed -n 's/.*,p_default_id_offset=>\([0-9][0-9]*\).*/\1/p' "${host_file}" | head -1)"
@@ -248,14 +287,48 @@ SQL
   log "OK: imported App ${app_id}."
 }
 
+repair_app_theme() {
+  local app_id="$1"
+
+  log "==> Repair App ${app_id} Theme 42 navigation and page templates"
+  docker exec -i -u oracle "${TARGET_DB_CONTAINER}" bash -lc "sqlplus -s / as sysdba" <<SQL
+whenever sqlerror exit failure rollback
+set define off serveroutput on
+alter session set container=${TARGET_PDB};
+begin
+  apex_260100.wwv_flow.g_flow_id := ${app_id};
+end;
+/
+@${CONTAINER_APP_DIR}/repair_subscribed_theme.sql
+commit;
+exit
+SQL
+  log "OK: repaired App ${app_id} Theme 42 navigation and page templates."
+}
+
 verify_apps() {
-  local expected_csv installed_count app101_count
+  local expected_csv installed_count app101_count theme_issue_count
   expected_csv="$(IFS=,; printf '%s' "${APP_IDS[*]}")"
 
   installed_count="$(sql_sys "select 'INSTALLED_COUNT=' || count(*) from apex_applications where workspace = upper('${APEX_WORKSPACE_NAME}') and application_id in (${expected_csv});" |
     sed -n 's/^[[:space:]]*INSTALLED_COUNT=//p' | tail -1)"
   [ "${installed_count:-0}" -eq "${#APP_IDS[@]}" ] ||
     fail "Expected ${#APP_IDS[@]} Lab 18 apps, found ${installed_count:-0}."
+
+  theme_issue_count="$(sql_sys "
+select 'THEME_ISSUE_COUNT=' || count(*)
+  from apex_260100.wwv_flows f
+  join apex_260100.wwv_flow_themes t
+    on t.flow_id = f.id
+   and t.theme_id = 42
+ where f.id in (${expected_csv})
+   and ((upper(f.navigation_list_position) = 'SIDE'
+         and nvl(f.navigation_list_template_id, -1) <> nvl(t.default_side_nav_list_template, -2))
+     or (upper(f.navigation_list_position) = 'TOP'
+         and nvl(f.navigation_list_template_id, -1) <> nvl(t.default_top_nav_list_template, -2)));" |
+    sed -n 's/^[[:space:]]*THEME_ISSUE_COUNT=//p' | tail -1)"
+  [ "${theme_issue_count:-0}" -eq 0 ] ||
+    fail "Found ${theme_issue_count:-0} Lab 18 apps with an inconsistent navigation template."
 
   sql_sys "
 set pages 100
@@ -280,7 +353,8 @@ select application_id, application_name, alias
 }
 
 verify_target_objects() {
-  local object_count page_count grant_count source_owner_count
+  local object_count page_count grant_count source_owner_count page_template_issue_count page_region_template_issue_count
+  local ir_column_issue_count care_row_count score_row_count vector_ready_count vector_fallback_count
 
   object_count="$(sql_sys "
 select 'TARGET_OBJECT_COUNT=' || count(*)
@@ -297,6 +371,118 @@ select 'TARGET_OBJECT_COUNT=' || count(*)
   page_count="$(sql_sys "select 'PAGE_COUNT=' || count(*) from apex_application_pages where application_id = 340 and page_id = 70;" |
     sed -n 's/^[[:space:]]*PAGE_COUNT=//p' | tail -1)"
   [ "${page_count:-0}" -eq 1 ] || fail "App 340 Page 70 was not installed."
+
+  page_template_issue_count="$(sql_sys "
+select 'PAGE_TEMPLATE_ISSUE_COUNT=' || count(*)
+  from apex_260100.wwv_flow_steps s
+  join apex_260100.wwv_flow_themes t
+    on t.flow_id = s.flow_id
+   and t.theme_id = 42
+ where s.flow_id = 340
+   and ((s.id = 70 and nvl(s.step_template, -1) <> nvl(t.default_page_template, -2))
+     or (s.id = 9999 and nvl(s.step_template, -1) <> nvl(t.login_template, -2)));" |
+    sed -n 's/^[[:space:]]*PAGE_TEMPLATE_ISSUE_COUNT=//p' | tail -1)"
+  [ "${page_template_issue_count:-0}" -eq 0 ] ||
+    fail "App 340 Page 70 or Login page has an inconsistent page template."
+
+  page_region_template_issue_count="$(sql_sys "
+select 'PAGE_REGION_TEMPLATE_ISSUE_COUNT=' || count(*)
+  from apex_260100.wwv_flow_page_plugs p
+  left join apex_260100.wwv_flow_page_plug_templates t
+    on t.id = p.plug_template
+ where p.flow_id = 340
+   and p.page_id = 70
+   and p.plug_template is not null
+   and t.id is null;" |
+    sed -n 's/^[[:space:]]*PAGE_REGION_TEMPLATE_ISSUE_COUNT=//p' | tail -1)"
+  [ "${page_region_template_issue_count:-0}" -eq 0 ] ||
+    fail "App 340 Page 70 has ${page_region_template_issue_count:-0} invalid region templates."
+
+  ir_column_issue_count="$(sql_sys "
+select 'IR_COLUMN_ISSUE_COUNT=' || count(*)
+  from (
+    select e.region_name,
+           e.expected_count,
+           count(c.id) actual_count
+      from (
+        select 'FP 케어 우선순위' region_name, 21 expected_count from dual
+        union all
+        select '최근 상담 로그 벡터 매칭', 11 from dual
+      ) e
+      left join apex_260100.wwv_flow_page_plugs p
+        on p.flow_id = 340
+       and p.page_id = 70
+       and p.plug_name = e.region_name
+      left join apex_260100.wwv_flow_worksheets w
+        on w.flow_id = 340
+       and w.page_id = 70
+       and w.region_id = p.id
+      left join apex_260100.wwv_flow_worksheet_columns c
+        on c.flow_id = 340
+       and c.page_id = 70
+       and c.worksheet_id = w.id
+     group by e.region_name, e.expected_count
+    having count(c.id) <> e.expected_count
+  );" | sed -n 's/^[[:space:]]*IR_COLUMN_ISSUE_COUNT=//p' | tail -1)"
+  [ "${ir_column_issue_count:-0}" -eq 0 ] ||
+    fail "App 340 Page 70 has missing Interactive Report columns in ${ir_column_issue_count:-0} region(s)."
+
+  ir_report_issue_count="$(sql_sys "
+select 'IR_REPORT_ISSUE_COUNT=' || count(*)
+  from (
+    select e.static_id, r.id, r.report_columns, e.expected_columns
+      from (
+        select 'churn-care-queue' static_id,
+               '업무유형:접촉우선순위:고객ID:고객명:담당FP:위험등급:해약가능점수:주요사유:케어기한:조치상태' expected_columns from dual
+        union all
+        select 'churn-log-vector-match',
+               '로그ID:고객ID:상담시각:위험등급:해약가능점수:벡터매칭사유:벡터유사점수:벡터상태' from dual
+      ) e
+      left join apex_260100.wwv_flow_page_plugs p
+        on p.flow_id = 340 and p.page_id = 70 and p.static_id = e.static_id
+      left join apex_260100.wwv_flow_worksheets w on w.region_id = p.id
+      left join apex_260100.wwv_flow_worksheet_rpts r on r.worksheet_id = w.id
+  )
+ where id is null
+    or instr(report_columns, chr(34)) > 0
+    or report_columns <> expected_columns;" | sed -n 's/^[[:space:]]*IR_REPORT_ISSUE_COUNT=//p' | tail -1)"
+  [ "${ir_report_issue_count:-0}" -eq 0 ] ||
+    fail "App 340 Page 70 has ${ir_report_issue_count:-0} Interactive Report saved layouts with invalid column metadata."
+
+  page_layout_issue_count="$(sql_sys "
+select 'PAGE_LAYOUT_ISSUE_COUNT=' ||
+       ((select abs(1 - count(*)) from apex_260100.wwv_flow_page_plugs
+          where flow_id = 340 and page_id = 70 and static_id = 'breadcrumb') +
+        (select count(*) from apex_260100.wwv_flow_page_plugs
+          where flow_id = 340 and page_id = 70 and static_id = 'breadcrumb'
+            and (plug_source_type <> 'NATIVE_BREADCRUMB' or menu_id is null)) +
+        (select abs(1 - count(*)) from apex_260100.wwv_flow_page_plugs
+          where flow_id = 340 and page_id = 70 and static_id = 'churn-risk-band-chart') +
+        (select count(*) from apex_260100.wwv_flow_page_plugs
+          where flow_id = 340 and page_id = 70 and static_id = 'churn-risk-band-chart'
+            and (plug_name <> '위험등급 분포 / FP AI 대응 코멘트'
+              or instr(plug_source, 'soe.ins2_churn_risk_band_html') = 0
+              or instr(plug_source, 'soe.ins2_churn_fp_coach_html') = 0)))
+  from dual;" | sed -n 's/^[[:space:]]*PAGE_LAYOUT_ISSUE_COUNT=//p' | tail -1)"
+  [ "${page_layout_issue_count:-0}" -eq 0 ] ||
+    fail "App 340 Page 70 layout does not match the AI coaching screen."
+
+  care_row_count="$(sql_sys "select 'CARE_ROW_COUNT=' || count(*) from soe.ins2_churn_action_queue_v;" |
+    sed -n 's/^[[:space:]]*CARE_ROW_COUNT=//p' | tail -1)"
+  [ "${care_row_count:-0}" -gt 0 ] || fail "SOE.INS2_CHURN_ACTION_QUEUE_V contains no care candidates."
+
+  score_row_count="$(sql_sys "select 'SCORE_ROW_COUNT=' || count(*) from soe.ins2_churn_log_score_v;" |
+    sed -n 's/^[[:space:]]*SCORE_ROW_COUNT=//p' | tail -1)"
+  [ "${score_row_count:-0}" -gt 0 ] || fail "SOE.INS2_CHURN_LOG_SCORE_V contains no call-center scores."
+
+  vector_ready_count="$(sql_sys "select 'VECTOR_READY_COUNT=' || count(*) from soe.ins2_churn_call_vector where vector_status = 'READY';" |
+    sed -n 's/^[[:space:]]*VECTOR_READY_COUNT=//p' | tail -1)"
+  vector_fallback_count="$(sql_sys "select 'VECTOR_FALLBACK_COUNT=' || count(*) from soe.ins2_churn_call_vector where vector_status = 'FALLBACK';" |
+    sed -n 's/^[[:space:]]*VECTOR_FALLBACK_COUNT=//p' | tail -1)"
+  [ "${vector_ready_count:-0}" -gt 0 ] || fail "SOE.INS2_CHURN_CALL_VECTOR contains no READY vectors."
+  [ "${vector_fallback_count:-0}" -eq 0 ] ||
+    fail "SOE.INS2_CHURN_CALL_VECTOR contains ${vector_fallback_count:-0} FALLBACK vectors."
+  log "INFO: App 340 report rows: care=${care_row_count}, call scores=${score_row_count}; vector READY=${vector_ready_count:-0}, FALLBACK=${vector_fallback_count:-0}."
 
   grant_count="$(sql_sys "
 select 'GRANT_COUNT=' || count(*)
@@ -332,6 +518,7 @@ main() {
   for app_id in "${APP_IDS[@]}"; do
     stage_file "${APP_DIR}/f${app_id}.sql" "${CONTAINER_APP_DIR}/f${app_id}.sql" "App ${app_id} export"
     import_app "${app_id}"
+    repair_app_theme "${app_id}"
   done
 
 
@@ -340,6 +527,8 @@ main() {
 
   run_target_sql "build_insurance_info_app_340_id7.sql" "Target SOE App 340 business objects"
   run_target_sql "build_ins2_churn_vector_page_70_id7.sql" "Target SOE churn vector objects and App 340 Page 70"
+  repair_app_theme 340
+  run_target_sql "repair_page70_ir_columns_id7.sql" "App 340 Page 70 Interactive Report columns"
   run_target_sql "enhance_churn_fp_coach_page_70_id7.sql" "Target SOE FP care coaching objects"
 
   verify_apps

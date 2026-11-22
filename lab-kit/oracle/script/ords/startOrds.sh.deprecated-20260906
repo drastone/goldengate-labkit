@@ -1,0 +1,3 @@
+#!/bin/bash
+#. /home/oracle/scripts/setEnv.sh
+nohup ords --config /home/oracle/ords/config serve > /dev/null &
