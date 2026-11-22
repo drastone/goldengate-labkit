@@ -21,7 +21,12 @@ nodes because it is modeling their relationship, not replaying their workload.
 
 Use `lab20_init.sh` as the single Chapter 20 entry point. It stops the Kafka,
 OSA, and Lakehouse containers that are not needed, starts the four required
-containers, verifies Target APEX/ORDS, and then recreates the Data Fabric lanes:
+containers, verifies Target APEX/ORDS, and then recreates the Data Fabric lanes.
+Chapter 13 installs App 101 in the OGG workspace with `GGADMIN` as its parsing
+schema. Before printing the console URL, Chapter 20 verifies the
+`GOLDENGATE-CONSOLE` alias, Data Fabric Designer Page 200, and the ORDS endpoint.
+If that prerequisite is missing, it stops with the exact Chapter 13 recovery
+command instead of continuing with an unusable URL:
 
 ```bash
 sh lab20_init.sh
