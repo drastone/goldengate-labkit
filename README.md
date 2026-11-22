@@ -32,14 +32,6 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
-v0.129는 `lab13_init.sh`가 GoldenGate 통합 Console App 101과 Supporting
-Objects, alias `GOLDENGATE-CONSOLE`, Data Fabric Designer Page 200을 Target
-APEX에 자동 설치하고 실제 ORDS URL까지 확인한다. 이미 완전하게 설치된
-환경에서는 안전하게 `SKIP`한다. Lab 20은 이 선행 상태가 없으면 Lab 13
-복구 명령을 안내하고 초기화 전에 중단하므로 사용할 수 없는 Console URL을
-성공처럼 보여 주지 않는다. 이 흐름은 App 101이 없던 id7에서 최초 설치,
-즉시 재실행, Lab 20 전체 초기화 순서로 검증했다.
-
 v0.128은 `lab20_init.sh`가 Lab 20에서 사용하지 않는 기존 핵심 복제 경로
 `C01`과 `D01`을 명시적으로 정상 종료하고 `STOPPED` 상태를 확인한다.
 Data Fabric 실습 경로인 `FC01`, `FC02`, `FD01`, `FD02`, `FD03`은 모두
@@ -145,7 +137,7 @@ Lab 18 분석 객체를 Source가 아닌 Target 업무 schema `SOE`에 생성하
 App 340이 이 객체를 사용하도록 구성한다. 원천 복제가 준비되지 않았으면
 변경 전에 중지하고 `reset_lab_all.sh --create-objects` 복구 명령을 안내한다.
 
-App 101은 Lab 13의 `lab13_init.sh`가 자동으로 설치하며,
+App 101은 GoldenGate 통합 Console의 수동 import 절차를 위해 제외하며,
 Data Mesh Control Tower App 410은 19장 이후 흐름에서 별도로 준비한다.
 업무 application이 구독하는 Theme의 원본 App 102가 Target에 없으면 먼저
 자동으로 import한다. App 102, 이미 설치된 application, 이미 생성된

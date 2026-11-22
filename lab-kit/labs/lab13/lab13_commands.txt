@@ -26,4 +26,5 @@ cat ../lab12/remove_apex.sh
 cat ../lab12/lab12_reset.sh
 
 ls -lh /home/oracle/oracle/pkg/f101_ogg_console.sql
-curl -I http://localhost:36080/ords/r/ogg/goldengate-console
+cat ../lab12/copy_app101_to_windows.sh
+bash ../lab12/copy_app101_to_windows.sh

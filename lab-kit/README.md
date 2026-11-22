@@ -42,18 +42,12 @@ App 340 설치와 Page 70 vector 및 FP care 구성 SQL은 완료 후 SQL*Plus�
 실행 로그를 가리킨다. 책에서 수동 절차로 진행하는 5장과 11장에는 별도
 `labXX_init.sh`를 제공하지 않는다.
 
-13장에서는 `/home/oracle/labs/lab13/lab13_init.sh`가 Target APEX의 `OGG`
-workspace에 App 101을 application ID `101`, alias `GOLDENGATE-CONSOLE`,
-parsing schema `GGADMIN`으로 설치한다. Supporting Objects와 Data Fabric
-Designer Page 200, 실제 ORDS 실행 URL까지 검증하며, 완료 상태에서 다시
-실행하면 application을 덮어쓰지 않고 안전하게 건너뛴다.
-
 18장에서는 `/home/oracle/labs/lab18/lab18_init.sh`를 실행해 Target APEX의
 `OGG` workspace에 업무 App 300부터 400까지 11개를 자동으로 import한다.
 이 script는 GoldenGate D01이 Source SOE 원천 table과 상담 event를 Target
 SOE로 전달했는지 먼저 확인하고, 정보계 vector/FP 케어 객체를 Target SOE에만
 생성한다. `GGADMIN`은 APEX parsing schema로 필요한 권한만 받는다. App 101은
-13장에서 이미 준비하며, Data Mesh Control Tower App 410은 19장 이후
+수동 import 절차를 유지하고, Data Mesh Control Tower App 410은 19장 이후
 절차에서 별도로 준비한다. 같은 script를 다시 실행해도 안전하다.
 
 ## 독자가 직접 넣어야 하는 제품 파일
