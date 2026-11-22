@@ -3207,3 +3207,4 @@ end;
 /
 
 prompt App 101 Data Fabric Designer installed.
+exit success

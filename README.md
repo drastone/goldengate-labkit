@@ -32,6 +32,10 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
+v0.133은 Chapter 20 Data Fabric Designer 설치가 끝난 뒤 SQL*Plus를
+명시적으로 종료한다. 설치 결과가 정상이어도 `SQL>` 프롬프트에서 입력을
+기다리던 문제를 없애 `lab20_init.sh`가 다음 단계로 계속 진행한다.
+
 v0.132는 App 101의 Supporting Objects에 Chapter 20 Data Fabric 테이블과
 `GGADMIN.FABRIC_DESIGNER_PKG`를 포함한다. 따라서 13장에서 App 101을 수동으로
 가져오며 Supporting Objects를 설치한 깨끗한 환경에서도 Canvas 페이지가
