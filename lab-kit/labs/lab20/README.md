@@ -21,7 +21,13 @@ nodes because it is modeling their relationship, not replaying their workload.
 
 Use `lab20_init.sh` as the single Chapter 20 entry point. It stops the Kafka,
 OSA, and Lakehouse containers that are not needed, starts the four required
-containers, verifies Target APEX/ORDS, and then recreates the Data Fabric lanes:
+containers, verifies Target APEX/ORDS, and then recreates the Data Fabric lanes.
+App 101 remains the manual APEX App Builder import exercise in Chapter 13.
+Before printing the console URL, Chapter 20 verifies the manually imported
+`GOLDENGATE-CONSOLE` alias, Data Fabric Designer Page 200, and the ORDS
+endpoint. If that prerequisite is missing, it stops and directs the reader
+back to the Chapter 13 manual import procedure instead of continuing with an
+unusable URL:
 
 ```bash
 sh lab20_init.sh

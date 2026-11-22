@@ -32,6 +32,13 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
+v0.130은 13장의 App 101 실습을 APEX App Builder를 이용한 독자 수동 import
+절차로 그대로 유지한다. 저자 누적 자동화는 별도 writer-tools에서 이 완료
+상태를 만들며 독자용 `lab13_init.sh`에 import 로직을 넣지 않는다. Lab 20은
+수동 import된 alias `GOLDENGATE-CONSOLE`, Data Fabric Designer Page 200과
+실제 ORDS endpoint를 먼저 확인하고, 누락되면 Data Fabric 초기화 전에 13장
+수동 절차를 완료하라고 안내한다.
+
 v0.128은 `lab20_init.sh`가 Lab 20에서 사용하지 않는 기존 핵심 복제 경로
 `C01`과 `D01`을 명시적으로 정상 종료하고 `STOPPED` 상태를 확인한다.
 Data Fabric 실습 경로인 `FC01`, `FC02`, `FD01`, `FD02`, `FD03`은 모두

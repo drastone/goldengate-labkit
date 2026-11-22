@@ -15,6 +15,9 @@ LAB_HOME="${LAB_HOME:-$(cd "${LAB20_DIR}/../.." && pwd)}"
 LAB_LOGGING="${LAB_HOME}/troubleshooting/scripts/lab_init_logging.sh"
 OGGHUB_CONTAINER="${OGGHUB_CONTAINER:-demo_ogg_23ai}"
 TARGET_DB_CONTAINER="${TARGET_DB_CONTAINER:-demo_otrg_23ai}"
+TARGET_PDB="${TARGET_PDB:-ORCLPDB1}"
+TARGET_ORDS_PORT="${TARGET_ORDS_PORT:-36080}"
+APEX_WORKSPACE="${APEX_WORKSPACE:-OGG}"
 DOMAIN="${DOMAIN:-OracleGoldenGate}"
 NORMAL_TRAIL="${NORMAL_TRAIL:-k1}"
 HEAVY_TRAIL="${HEAVY_TRAIL:-k2}"
@@ -34,6 +37,49 @@ if [ ! -x "${RUNTIME_START}" ]; then
   exit 1
 fi
 
+verify_manual_app101_import() {
+  local ready_count=""
+  local response_file="/tmp/lab20-app101-response.$$"
+  local http_code=""
+  local app_url="http://127.0.0.1:${TARGET_ORDS_PORT}/ords/r/ogg/goldengate-console"
+
+  ready_count="$(docker exec -u oracle "${TARGET_DB_CONTAINER}" bash -lc "sqlplus -s / as sysdba <<'SQL'
+set pages 0 feedback off heading off verify off echo off trimspool on
+whenever sqlerror exit sql.sqlcode
+alter session set container=${TARGET_PDB};
+select 'LAB20_APP101=' || count(*)
+from apex_applications a
+where a.workspace = upper('${APEX_WORKSPACE}')
+  and upper(a.alias) = 'GOLDENGATE-CONSOLE'
+  and exists (
+    select 1
+    from apex_application_pages p
+    where p.application_id = a.application_id
+      and p.page_id = 200
+  );
+exit
+SQL" | sed -n 's/^[[:space:]]*LAB20_APP101=//p' | tail -1)"
+
+  if [ "${ready_count:-0}" -ne 1 ]; then
+    printf "ERROR: Chapter 13 manual App 101 import is incomplete.\n" >&2
+    printf "ERROR: import App 101 and install Supporting Objects through APEX App Builder as shown in Chapter 13, then rerun lab20_init.sh.\n" >&2
+    return 1
+  fi
+  printf "OK: manually imported App 101 GOLDENGATE-CONSOLE and Page 200 are installed.\n"
+
+  http_code="$(curl -sS -o "${response_file}" -w '%{http_code}' "${app_url}" || true)"
+  if grep -Eiq "Application not found|Sorry, this page isn't available" "${response_file}" 2>/dev/null; then
+    rm -f "${response_file}"
+    printf "ERROR: ORDS reports that the manually imported App 101 is unavailable: %s\n" "${app_url}" >&2
+    return 1
+  fi
+  rm -f "${response_file}"
+  case "${http_code}" in
+    2??|3??) printf "OK: App 101 endpoint is available (HTTP %s): %s\n" "${http_code}" "${app_url}" ;;
+    *) printf "ERROR: App 101 endpoint returned HTTP %s: %s\n" "${http_code:-000}" "${app_url}" >&2; return 1 ;;
+  esac
+}
+
 printf "Chapter 20 uses only the minimum Data Fabric Console runtime.\n"
 printf "Required containers:\n"
 printf "  - demo_osrc_23ai  : Source Oracle Database\n"
@@ -47,6 +93,10 @@ printf "Chapter 20 uses FC01/FC02 and FD01/FD02/FD03 for the Data Fabric exercis
 
 printf "==> Prepare the Chapter 20 minimum runtime.\n"
 bash "${RUNTIME_START}"
+printf "\n"
+
+printf "==> Verify the manual Chapter 13 App 101 import.\n"
+verify_manual_app101_import
 printf "\n"
 
 printf "Reset Chapter 20 Data Fabric GoldenGate lanes\n"
