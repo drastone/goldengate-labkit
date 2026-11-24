@@ -1,6 +1,6 @@
 2377f6077cce3cd528a9878965556b34ec72692fdef5ad2a05076acb5bd9e03e  ./LABKIT_README.md
 7c29185a3ea0f583c2e2b62b8f2a0980fc0333e8c0a250c150735328bf2836d0  ./README.md
-7ae790fde2d33eaeb4a7ef69701b06b1492ed6baaf62eaa1ee2d58d3a5ba3f33  ./VERSION
+91001f525756b47e3ee7497f96b0621be5e8d071d5d836810a387d98e38f10ba  ./VERSION
 dbd4250e4c25ba3e849cdb5b4774566af3c062c5c892a73261baff05161d08fc  ./build_base_images.sh
 825360d93df80abaf1fd77fde8f3c3764ff1ed45d9acce955835c54e37d12794  ./centos/.dockerignore
 1480d5116129b8742fb2ed51c3fa75af7e55b40768e537f1401b9e16d38cb984  ./centos/Dockerfile
@@ -408,10 +408,10 @@ a731483567089552613be1ebf4eed537fb10481771aba0c3ff9962bb39c3cf67  ./oracle/scrip
 312638026f7ea44bee4994a92433921717c245512fa710f15a8384240771a3d3  ./oracle/script/restapi-lab/12_stop_cr01.sh
 4802befe22785a437fb79171c418d441013522dfc4736f76b1747870078df8fc  ./oracle/script/restapi-lab/13_stop_dr01.sh
 2dc22dd61fb5b904250bd267151ed76f921f4a95f4f7d828b37090aebcd3f8f9  ./oracle/script/restapi-lab/14_stop_lab11_processes.sh
-4a25444e8dd5c11e93bd415b4b18e2b7ea6c379f424acaeb70176cc07e749a27  ./oracle/script/restapi-lab/configure_trail_purge.sh
+9f7881ae83e44ab2224e181af04a518a5689170419aeba9a5a53ef550c87e9f1  ./oracle/script/restapi-lab/configure_trail_purge.sh
 21ca7510eee16e500c90426a6e22b8ebef80333f5cc3c2e5c3e03bf5965f9542  ./oracle/script/restapi-lab/env.sh
-b9d05e7d3fba1c26284295b52306fb63ff4dd7d21e92246764353441c643391d  ./oracle/script/restapi-lab/purge-oggbd-trails.json
-609057dc13aabd6c1079e7569c79e9004427cd3c0c120343ac0f2fad2a0c2601  ./oracle/script/restapi-lab/purge-ogghub-trails.json
+5e3a421671b211a261fc59c73e846f44609410cac9b7b45787fdf37e410d6655  ./oracle/script/restapi-lab/purge-oggbd-trails.json
+6679a4dfea81ea52fec8b0128a94c1c6c4733baa760fc9dad21807e4bbd973c3  ./oracle/script/restapi-lab/purge-ogghub-trails.json
 e44b47fd972980b65b39b48faedeb8c284ecb878db7b58e59762a39599255fbd  ./oracle/script/rmlogin.sh
 19ae4169d4e51788a535e73dc58b5e0de04b66f1e08825faca54edc0e1f3bbb5  ./oracle/script/sql/pk_update_employee_prepare.sql
 510215e8017e00c78ade9098bbb087016023993ec6a6e844356a2def54157407  ./oracle/script/sql/pk_update_employee_run.sql

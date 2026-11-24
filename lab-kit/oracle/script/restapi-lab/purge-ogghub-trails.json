@@ -13,7 +13,7 @@
     "name": "purge",
     "purgeType": "trails",
     "trails": [
-      { "name": "ca", "path": "dirdat" }
+      { "name": "ca" }
     ],
     "useCheckpoints": true,
     "keep": [

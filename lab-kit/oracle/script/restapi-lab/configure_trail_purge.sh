@@ -85,12 +85,16 @@ task = document.get("response", document)
 command = task.get("command", {})
 schedule = task.get("schedule", {}).get("every", {})
 keep = command.get("keep", [{}])[0]
+trails = command.get("trails", [])
 
 expected = (
     task.get("enabled") is True
     and command.get("purgeType") == "trails"
     and command.get("useCheckpoints") is True
-    and any(item.get("name") == expected_trail for item in command.get("trails", []))
+    and any(
+        item.get("name") == expected_trail and "path" not in item
+        for item in trails
+    )
     and keep.get("type") == "min"
     and keep.get("units") == "files"
     and keep.get("value") == 10
@@ -98,7 +102,10 @@ expected = (
     and schedule.get("value") == 10
 )
 if not expected:
-    raise SystemExit("ERROR: purge task verification failed")
+    raise SystemExit(
+        "ERROR: purge task verification failed; the trail must use the "
+        "deployment default data directory without a path override"
+    )
 ' "${trail}" || fail "${label} purge task verification failed"
 
   printf 'OK: %s purge task %s is configured.\n' "${label}" "${task_name}"

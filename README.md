@@ -32,6 +32,12 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
+v0.135는 Chapter 12 Trail purge task가 Microservices deployment의 표준
+Trail data directory를 사용하도록 바로잡는다. Classic Architecture의 상대
+경로인 `dirdat`를 강제로 지정하지 않으므로 OGGHUB의 `ca`와 OGGBD의 `da`
+Trail을 실제로 찾을 수 있다. 설정 검증도 path override가 다시 들어오면
+실패하도록 보강했다.
+
 v0.134는 Chapter 20 Data Fabric 변경 요청이 실제 적용된 뒤에도 APEX가
 기본 응답 `OK`를 JSON으로 해석하지 못해 실패로 표시하던 문제를 바로잡는다.
 Supporting Objects의 AJAX callback이 명시적인 JSON 성공 응답을 반환하므로
