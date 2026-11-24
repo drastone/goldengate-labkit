@@ -111,6 +111,31 @@ verify_groups_absent() {
   done
 }
 
+restart_adminsrvr() {
+  attempts="${1:-40}"
+  delay_seconds="${2:-2}"
+
+  run_admin_batch "${OGGHUB_CONTAINER}" <<'OGG'
+connect http://localhost as oggadmin password WElcome1234## !
+restart service adminsrvr
+exit
+OGG
+
+  i=1
+  while [ "${i}" -le "${attempts}" ]; do
+    if admin_output "${OGGHUB_CONTAINER}" "info all" >/dev/null 2>&1; then
+      printf "OK: Administration Service restarted and is ready.\n"
+      return 0
+    fi
+    printf "... waiting for Administration Service after restart (%s/%s).\n" "${i}" "${attempts}"
+    sleep "${delay_seconds}"
+    i=$((i + 1))
+  done
+
+  printf "ERROR: Administration Service did not become ready after restart.\n" >&2
+  return 1
+}
+
 run_admin_batch() {
   container="$1"
   docker exec -i -u ogg "${container}" bash -lc "cd /u01/ogg && ./bin/adminclient"
@@ -179,6 +204,10 @@ for grp in C01 C02 FC01 FC02; do
   run_admin_ignore "${OGGHUB_CONTAINER}" "delete extract ${grp}!"
 done
 verify_groups_absent C01 C02 FC01 FC02
+
+printf "\nRestart Administration Service to clear deleted process handles before reusing trail names.\n"
+restart_adminsrvr
+verify_groups_absent D01 F01 F02 FD01 FD02 FD03 C01 C02 FC01 FC02
 
 printf "\nWait for process handles to settle and remove the trails owned by this full-path reset.\n"
 sleep "${RESET_SETTLE_SECONDS}"
@@ -347,10 +376,12 @@ docker exec -i "${OGGHUB_CONTAINER}" bash -lc "sed -n '1,80p' /u02/Deployment/et
 printf "\nCreate split Extracts and trails.\n"
 run_admin "${OGGHUB_CONTAINER}" \
   "add extract C01, integrated tranlog, begin now" \
-  "add exttrail ${BASE_TRAIL}, extract C01, megabytes 100" \
   "add extract FC01, integrated tranlog, begin now" \
+  "add extract FC02, integrated tranlog, begin now"
+
+run_admin "${OGGHUB_CONTAINER}" \
+  "add exttrail ${BASE_TRAIL}, extract C01, megabytes 100" \
   "add exttrail ${NORMAL_TRAIL}, extract FC01, megabytes 100" \
-  "add extract FC02, integrated tranlog, begin now" \
   "add exttrail ${HEAVY_TRAIL}, extract FC02, megabytes 100"
 
 printf "\nRegister split integrated Extracts in one Admin Client session.\n"

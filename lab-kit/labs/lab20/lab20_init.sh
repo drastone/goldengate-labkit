@@ -230,7 +230,7 @@ wait_group_stopped() {
       printf "OK: %s %s is STOPPED.\n" "${process_type}" "${process_name}"
       return 0
     fi
-    if printf '%s\n' "${status_text}" | grep -Eiq 'does not exist|not found|OGG-12029'; then
+    if printf '%s\n' "${status_text}" | grep -Eiq 'does not exist|not found|OGG-12029|No (Extract|Replicat) groups found'; then
       printf "SKIP: %s %s is not registered.\n" "${process_type}" "${process_name}"
       return 0
     fi
@@ -254,7 +254,7 @@ stop_legacy_group() {
   local status_text=""
 
   status_text="$(admin_output "${OGGHUB_CONTAINER}" "info ${process_type} ${process_name}" 2>&1 || true)"
-  if printf '%s\n' "${status_text}" | grep -Eiq 'does not exist|not found|OGG-12029'; then
+  if printf '%s\n' "${status_text}" | grep -Eiq 'does not exist|not found|OGG-12029|No (Extract|Replicat) groups found'; then
     printf "SKIP: legacy %s %s is not registered.\n" "${process_type}" "${process_name}"
     return 0
   fi

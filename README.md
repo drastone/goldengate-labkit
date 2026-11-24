@@ -32,6 +32,17 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
+v0.134는 Chapter 20 Data Fabric 변경 요청이 실제 적용된 뒤에도 APEX가
+기본 응답 `OK`를 JSON으로 해석하지 못해 실패로 표시하던 문제를 바로잡는다.
+Supporting Objects의 AJAX callback이 명시적인 JSON 성공 응답을 반환하므로
+`Set Table` 완료 건수와 결과가 화면에 정확히 표시된다.
+
+또한 GoldenGate split 경로를 다시 구성할 때 Extract를 모두 생성한 뒤
+Trail을 연결하고, 삭제된 process handle을 Administration Service 재기동으로
+정리한다. `lab20_init.sh`는 Chapter 20에서 사용하지 않는 D01이 이미 삭제된
+상태도 정상으로 처리하므로 부분 실행 후 재시도와 즉시 재실행이 모두
+같은 최종 상태로 수렴한다.
+
 v0.133은 Chapter 20 Data Fabric Designer 설치가 끝난 뒤 SQL*Plus를
 명시적으로 종료한다. 설치 결과가 정상이어도 `SQL>` 프롬프트에서 입력을
 기다리던 문제를 없애 `lab20_init.sh`가 다음 단계로 계속 진행한다.
