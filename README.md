@@ -32,6 +32,18 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
+v0.136은 Chapter 13의 GoldenGate 통합 Console에서 MySQL과 MongoDB
+Migration 기능을 16 GB급 독자 환경에서도 실습할 수 있도록 `migration`
+모드를 추가한다. `sh lab13_init.sh migration`은 Chapter 12의 APEX/ORDS
+선행 구성을 재사용한 뒤 Oracle Source와 기본 GoldenGate Hub를 내리고,
+Target APEX/ORDS와 MySQL, HeatWave, MongoDB Source/Target, 각 GoldenGate
+runtime만 기동한다. id7에서는 일곱 container가 약 5.50~5.85 GiB를 사용했고,
+MySQL 및 MongoDB의 실제 변경이 Target에 도착하는 것까지 확인했다.
+
+GoldenGate for MySQL image가 없으면 독자가 별도로 받은 지정 버전 설치
+파일의 SHA-256을 확인한 뒤 고정된 Oracle Linux base image로 빌드한다.
+제품 설치 파일과 빌드된 image는 이 저장소와 Release에 포함하지 않는다.
+
 v0.135는 Chapter 12 Trail purge task가 Microservices deployment의 표준
 Trail data directory를 사용하도록 바로잡는다. Classic Architecture의 상대
 경로인 `dirdat`를 강제로 지정하지 않으므로 OGGHUB의 `ca`와 OGGBD의 `da`

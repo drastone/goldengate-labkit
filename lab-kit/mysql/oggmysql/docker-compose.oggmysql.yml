@@ -1,0 +1,22 @@
+services:
+  oggmysql:
+    image: oracle/goldengate:23.26.1-mysql
+    container_name: demo_oggmysql_23ai
+    environment:
+      OGG_ADMIN: oggadmin
+      OGG_ADMIN_PWD: "WElcome1234##"
+      OGG_DEPLOYMENT: OGGMYSQL
+    ports:
+      - "127.0.0.1:38443:443"
+    volumes:
+      - ./data:/u02
+    mem_limit: 1536m
+    networks:
+      ogg_network:
+        ipv4_address: 172.28.0.33
+    restart: unless-stopped
+
+networks:
+  ogg_network:
+    external: true
+    name: oracle_ogg_network
