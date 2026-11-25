@@ -2,9 +2,6 @@ cd /home/oracle/labs/lab13
 cat lab13_init.sh
 bash lab13_init.sh
 
-# Prepare the memory-optimized MySQL and MongoDB Migration runtime.
-sh lab13_init.sh migration
-
 cat ../lab12/lab12_prepare_media.sh
 cat ../lab12/lab12_install_apex.sh
 cat ../lab12/lab12_install_ords.sh

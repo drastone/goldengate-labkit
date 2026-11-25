@@ -1,6 +1,6 @@
 2377f6077cce3cd528a9878965556b34ec72692fdef5ad2a05076acb5bd9e03e  ./LABKIT_README.md
 7c29185a3ea0f583c2e2b62b8f2a0980fc0333e8c0a250c150735328bf2836d0  ./README.md
-17b3a9c96f2923bcff6bab849ac6c656d102e34eb49634aa8d21dea84b7e7cd9  ./VERSION
+9f284f1d7076988ef8a42d4ccb81367856305642313453c34710236261b597ab  ./VERSION
 dbd4250e4c25ba3e849cdb5b4774566af3c062c5c892a73261baff05161d08fc  ./build_base_images.sh
 825360d93df80abaf1fd77fde8f3c3764ff1ed45d9acce955835c54e37d12794  ./centos/.dockerignore
 1480d5116129b8742fb2ed51c3fa75af7e55b40768e537f1401b9e16d38cb984  ./centos/Dockerfile
@@ -157,8 +157,8 @@ faba7183f45370be6ab9bf06564f313fe252d5908a12ed83998e901e43e6cf73  ./labs/lab12/l
 9e2ed6d8e673f7c756df061ded6754c55b53dc4b1b0f5f8a81d48fa0b46db6ac  ./labs/lab12/lab12_setup_db.sh
 1b61944afd60d6b66677e9f2ae9ccd39b73b50537b7adfedf396843209785e5f  ./labs/lab12/remove_apex.sh
 b4110ff13ea1215107fd7181825bad157112cf70f26e023616202f035de22a1d  ./labs/lab12/remove_ords.sh
-f774a94bff7769b7252b8180e7e08ad9c8e8050abea87eba4dd90118adff7232  ./labs/lab13/lab13_commands.txt
-06f05a2ea84de4dc750828f608073ddd31ebb4e2ea912ed4be2bd8ad2fca03cb  ./labs/lab13/lab13_init.sh
+66db3aff36ac1846fbe0e8a7477159704e7bc398f5710f7ec8d149cf95544973  ./labs/lab13/lab13_commands.txt
+6927fe97d96cedd9151b73f353b23619be90162215742ba8a6d36a2f514cad13  ./labs/lab13/lab13_init.sh
 f37a4b3f4f19bf819369d6e4b5baee5dd5261806395c2e279abdf1c4dcdf3e06  ./labs/lab14/lab14_commands.txt
 50a3c0eaca83ce7b39ae4f6c9bb4194e9bba1e09d96db8158ec072a913c39ea0  ./labs/lab14/lab14_init.sh
 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  ./labs/lab15/Backup
@@ -315,7 +315,7 @@ ab1b4c739ec2de50a334137415cebeb0a8ec79c902779ff3ced4db2b1e1a954a  ./oracle/scrip
 735728d7e997f675916cd0e4af2a313761a85c3a56bb0d9783b125aed5155183  ./oracle/script/mongodb-poc/create_target_side_oggbd.sh
 fdff0c5a7e3d95ca213e4ab0130d91371ffbbf2a70fd78169000894da5c841b8  ./oracle/script/mongodb-poc/mrc01.prm
 b099e6bc58438be65a41489f441e51bd4b5a8767a6cf21a95901c3079dc4b644  ./oracle/script/mongodb/configure_mongodb_replication.sh
-fdf3d885a764e319cf28d73f56a2c6d43aa07977c586df2263366b2789a0e4db  ./oracle/script/mongodb/create_mongodb_lab.sh
+05a1c960200c6aebe3f7d9ce9cb3f6b701c8d89b2977b137fb93f1c6dabc89a9  ./oracle/script/mongodb/create_mongodb_lab.sh
 4cd24c84b4fe78beeca6d7c164d683e6d14b59ed9e8cf153be58f3aeb65e3115  ./oracle/script/mongodb/prepare_mongodb_dependencies.sh
 edf7b8cdef4a5f64b14167968e133ed8ea44a8b8c67b361ced87027a0095c685  ./oracle/script/msa/23aifree/AnalyzeTrails.sh
 7b56eeadf8c7d122b11d48d090f1148e1d16e24c88c9d687c25f8a3e93e8f7d0  ./oracle/script/msa/23aifree/create-certificate.sh

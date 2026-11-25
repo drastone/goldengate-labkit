@@ -169,11 +169,11 @@ docker stats --no-stream --format 'table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\
 
 echo
 if [ "${MODE}" = migration ]; then
-  echo "OK: Chapter 13 MySQL and MongoDB migration runtime is ready."
+  echo "OK: Chapter 13 online appendix MySQL and MongoDB migration runtime is ready."
   echo "INFO: Oracle Source and GoldenGate Hub are stopped to release memory."
 else
   echo "OK: Chapter 13 base migration runtime is ready."
-  echo "INFO: Run 'sh lab13_init.sh migration' for the MySQL and MongoDB exercises."
+  echo "INFO: MySQL and MongoDB migration exercises are provided in the online appendix."
 fi
 echo "NEXT: import App 101 manually as shown in Chapter 13, then open:"
 echo "  http://localhost:36080/ords/r/ogg/goldengate-console"

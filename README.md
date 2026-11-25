@@ -32,6 +32,13 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
+v0.137은 기존 MongoDB container를 재사용할 때 canonical 관리자 암호가
+현재 Lab Kit과 다른 경우에도 replica-set keyfile의 내부 인증으로 계정을
+안전하게 보정한다. container와 volume을 삭제하지 않으므로 이전 실습
+데이터를 보존하면서 즉시 재실행할 수 있다. `lab13_init.sh migration`은
+MySQL과 MongoDB를 더 실습하려는 독자를 위한 온라인 부록 전용 경로로
+구분하고, 13장 본문 명령 목록에서는 제외한다.
+
 v0.136은 Chapter 13의 GoldenGate 통합 Console에서 MySQL과 MongoDB
 Migration 기능을 16 GB급 독자 환경에서도 실습할 수 있도록 `migration`
 모드를 추가한다. `sh lab13_init.sh migration`은 Chapter 12의 APEX/ORDS

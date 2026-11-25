@@ -37,6 +37,75 @@ create_mongo() {
     --keyFile /etc/mongo-keyfile/keyfile --auth >/dev/null
 }
 
+wait_mongod() {
+  local name=$1
+  for attempt in $(seq 1 60); do
+    if docker exec "${name}" mongosh --quiet --host localhost \
+      --eval 'quit(0)' >/dev/null 2>&1; then
+      return
+    fi
+    sleep 2
+  done
+  docker logs --tail 100 "${name}" || true
+  echo "ERROR: ${name} did not start MongoDB." >&2
+  exit 1
+}
+
+reconcile_admin_user() {
+  local name=$1 uri=$2 user=$3 password=$4
+
+  if docker exec "${name}" mongosh "${uri}" --quiet \
+    --eval 'quit(db.adminCommand({ping:1}).ok ? 0 : 1)' >/dev/null 2>&1; then
+    echo "OK: ${name} canonical administrator is ready."
+    return
+  fi
+
+  echo "INFO: reconcile ${name} canonical administrator from replica-set keyfile."
+  if ! docker exec \
+    -e CANONICAL_USER="${user}" \
+    -e CANONICAL_PASSWORD="${password}" \
+    "${name}" sh -lc '
+      keyfile=
+      for candidate in \
+        /etc/mongo-keyfile/keyfile \
+        /run/mongodb-key/mongodb-keyfile; do
+        if [ -s "${candidate}" ]; then
+          keyfile="${candidate}"
+          break
+        fi
+      done
+      [ -n "${keyfile}" ] || exit 2
+      internal_password="$(tr -d "\r\n" < "${keyfile}")"
+      mongosh --quiet --host localhost \
+        --username __system \
+        --password "${internal_password}" \
+        --authenticationDatabase local \
+        --authenticationMechanism SCRAM-SHA-256 \
+        --eval '\''
+          const admin = db.getSiblingDB("admin");
+          const user = process.env.CANONICAL_USER;
+          const pwd = process.env.CANONICAL_PASSWORD;
+          const roles = [{role: "root", db: "admin"}];
+          if (admin.getUser(user)) {
+            admin.updateUser(user, {pwd, roles});
+          } else {
+            admin.createUser({user, pwd, roles});
+          }
+        '\'' >/dev/null
+    '; then
+    echo "ERROR: could not reconcile ${name} administrator." >&2
+    echo "ERROR: preserve the container and review its replica-set keyfile mount." >&2
+    exit 1
+  fi
+
+  if ! docker exec "${name}" mongosh "${uri}" --quiet \
+    --eval 'quit(db.adminCommand({ping:1}).ok ? 0 : 1)' >/dev/null 2>&1; then
+    echo "ERROR: ${name} canonical administrator validation failed after reconciliation." >&2
+    exit 1
+  fi
+  echo "OK: ${name} canonical administrator was reconciled."
+}
+
 wait_mongo() {
   local name=$1 uri=$2
   for attempt in $(seq 1 60); do
@@ -74,6 +143,10 @@ TRG_URI='mongodb://oggapply:WElcome1234_@localhost:27017/admin?directConnection=
 echo "Create/start MongoDB source and target."
 create_mongo demo_mongo_src rs_src mongo_src_data oggadmin 'WElcome1234##'
 create_mongo demo_mongo_trg rs_trg mongo_trg_data oggapply 'WElcome1234_'
+wait_mongod demo_mongo_src
+wait_mongod demo_mongo_trg
+reconcile_admin_user demo_mongo_src "${SRC_URI}" oggadmin 'WElcome1234##'
+reconcile_admin_user demo_mongo_trg "${TRG_URI}" oggapply 'WElcome1234_'
 wait_mongo demo_mongo_src "${SRC_URI}"
 wait_mongo demo_mongo_trg "${TRG_URI}"
 init_replset demo_mongo_src rs_src "${SRC_URI}"
