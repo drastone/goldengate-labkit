@@ -14,7 +14,7 @@ services:
     networks:
       ogg_network:
         ipv4_address: 172.28.0.33
-    restart: unless-stopped
+    restart: "no"
 
 networks:
   ogg_network:

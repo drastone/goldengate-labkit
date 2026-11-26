@@ -28,6 +28,8 @@ configure_host_shell_profiles() {
   locale_end_marker='# END GOLDENGATE LAB UTF-8'
   prompt_begin_marker='# BEGIN GOLDENGATE LAB PROMPT'
   prompt_end_marker='# END GOLDENGATE LAB PROMPT'
+  vi_begin_marker='# BEGIN GOLDENGATE LAB ROOT VI MODE'
+  vi_end_marker='# END GOLDENGATE LAB ROOT VI MODE'
 
   update_host_profile() {
     profile="$1"
@@ -64,6 +66,15 @@ configure_host_shell_profiles() {
   printf '%s\n' "export PS1='[\\u \\W]\\\$ '" > /etc/profile.d/ogg-lab-prompt.sh
   chmod 644 /etc/profile.d/ogg-lab-prompt.sh
 
+  touch /root/.bashrc
+  sed -i "\|^${vi_begin_marker}$|,\|^${vi_end_marker}$|d" /root/.bashrc
+  sed -i '/^[[:space:]]*set -o vi[[:space:]]*$/d' /root/.bashrc
+  {
+    printf '\n%s\n' "${vi_begin_marker}"
+    printf '%s\n' 'set -o vi'
+    printf '%s\n' "${vi_end_marker}"
+  } >> /root/.bashrc
+
   for profile in /root/.bashrc /root/.bash_profile /root/.profile \
                  /home/oracle/.bashrc /home/oracle/.bash_profile /home/oracle/.profile; do
     update_host_profile "${profile}"
@@ -76,7 +87,8 @@ configure_host_shell_profiles() {
   [ "${actual_charmap}" = "UTF-8" ]
   echo "OK: Base Linux UTF-8 shell locale configured as ${selected_locale}."
   echo "OK: Base Linux shell prompt configured as '[user directory]'."
-  echo "INFO: Sign in again to apply the UTF-8 locale and standard prompt to an existing shell."
+  echo "OK: Base Linux root shell editing mode configured as vi."
+  echo "INFO: Sign in again to apply the UTF-8 locale, standard prompt, and root vi mode to an existing shell."
 }
 
 configure_host_utf8_profiles() {
