@@ -32,6 +32,12 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
+v0.138은 온라인 부록에서만 사용하는 GoldenGate for MySQL container가
+PC 재부팅 뒤 자동으로 시작되지 않도록 restart policy를 명시적으로
+비활성화한다. 필요한 경우 해당 온라인 부록 절차에서만 기동한다. 또한
+Lab Kit 초기화 시 Base Linux의 `root` 계정에 `set -o vi`를 중복 없이
+설정해, 새 terminal에서도 동일한 명령행 편집 방식을 사용할 수 있다.
+
 v0.137은 기존 MongoDB container를 재사용할 때 canonical 관리자 암호가
 현재 Lab Kit과 다른 경우에도 replica-set keyfile의 내부 인증으로 계정을
 안전하게 보정한다. container와 volume을 삭제하지 않으므로 이전 실습
