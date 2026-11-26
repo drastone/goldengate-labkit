@@ -1,6 +1,7 @@
 docker exec -it demo_osrc_23ai bash
 cd /home/oracle/script/osa/23ai
-sqlplus "soe/soe@orclpdb1" @create_source_business_objects.sql
+sh create_source_business_objects.sh
+sh gen_init.sh
 
 sh gen_0.sh 2
 sh gen_base.sh 100 1

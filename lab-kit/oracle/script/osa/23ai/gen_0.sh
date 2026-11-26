@@ -1,4 +1,26 @@
-sqlplus -s soe/soe@orclpdb1 << EOF
+#!/bin/sh
+
+set -eu
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+MONTHS="${1:-}"
+
+case "${MONTHS}" in
+  ''|*[!0-9]*)
+    echo "Usage: $0 <positive months>" >&2
+    exit 2
+    ;;
+esac
+if ! [ "${MONTHS}" -gt 0 ]; then
+  echo "Usage: $0 <positive months>" >&2
+  exit 2
+fi
+
+cd "${SCRIPT_DIR}"
+bash "${SCRIPT_DIR}/check_source_business_objects.sh"
+
+sqlplus -L -s soe/soe@orclpdb1 << EOF
+whenever sqlerror exit failure rollback
 
 truncate table soe.cfund_dt reuse storage;
 truncate table soe.cust_dep_dt reuse storage;
@@ -46,7 +68,7 @@ declare
 
 begin
 
-	months := $1;
+	months := ${MONTHS};
 	
 	for i in -months..-1 loop 
 	

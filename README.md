@@ -32,6 +32,11 @@ sha256sum -c goldengate-labkit.tar.gz.sha256
 tar -xzf goldengate-labkit.tar.gz --strip-components=1
 ```
 
+v0.139는 7장 Source 업무 테이블을 만드는 절차를 복구한다.
+`sh create_source_business_objects.sh`로 필수 테이블을 준비하고,
+`sh gen_init.sh`로 고객과 계약 데이터를 만든 다음 `sh gen_0.sh 2`를
+실행한다. 필수 테이블이 빠져 있으면 생성기는 데이터를 변경하기 전에 중단한다.
+
 v0.138은 온라인 부록에서만 사용하는 GoldenGate for MySQL container가
 PC 재부팅 뒤 자동으로 시작되지 않도록 restart policy를 명시적으로
 비활성화한다. 필요한 경우 해당 온라인 부록 절차에서만 기동한다. 또한

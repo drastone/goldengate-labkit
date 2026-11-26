@@ -1,4 +1,12 @@
-drop table soe.cfund_ratio purge;
+begin
+  execute immediate 'drop table soe.cfund_ratio purge';
+exception
+  when others then
+    if sqlcode != -942 then
+      raise;
+    end if;
+end;
+/
 create table soe.cfund_ratio (
 cust_id number,
 fund_code1 varchar2(20),
@@ -1014,4 +1022,3 @@ where fund_code2  = 'FUND'
 ;
 
 commit;
-exit;

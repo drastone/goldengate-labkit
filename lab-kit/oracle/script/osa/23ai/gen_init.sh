@@ -65,7 +65,7 @@ create table soe.employee (
   email varchar2(100),
   age number,
   phonenumber varchar2(20),
-  job varchar2(100),
+  designation varchar2(100),
   created date
 );
 
