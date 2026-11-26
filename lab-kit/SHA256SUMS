@@ -1,6 +1,6 @@
 2377f6077cce3cd528a9878965556b34ec72692fdef5ad2a05076acb5bd9e03e  ./LABKIT_README.md
 7c29185a3ea0f583c2e2b62b8f2a0980fc0333e8c0a250c150735328bf2836d0  ./README.md
-b73fb9460e7db7e750597d1fa064dd7faa8ae91851f9cd711812f0dfc172ad07  ./VERSION
+665be9488861203396d638657e69ef8c53250861c9f8d99ffc16c5a19d79169b  ./VERSION
 dbd4250e4c25ba3e849cdb5b4774566af3c062c5c892a73261baff05161d08fc  ./build_base_images.sh
 825360d93df80abaf1fd77fde8f3c3764ff1ed45d9acce955835c54e37d12794  ./centos/.dockerignore
 1480d5116129b8742fb2ed51c3fa75af7e55b40768e537f1401b9e16d38cb984  ./centos/Dockerfile
@@ -127,7 +127,7 @@ bf04a6e7c9d32caa9786f94a1a47c548412696fe78b825d63427339e7b7e634a  ./labs/lab04/l
 abbe230e79d25eb527885cec81dec58bf66adf95528f37cdca51cd8b562ffca2  ./labs/lab05/check_lab05.sh
 2bd683d903e6146e7165aa24130e7411d5a1376c5bcfdd27047a7606c4843282  ./labs/lab05/lab05_commands.txt
 97c12d3115553c71e1882e6e7fd350047cfa745f633ba0196e96697b42d9fbd0  ./labs/lab06/lab06_commands.txt
-75acf4582e2a3c31c82034b329567f6f67f7334bfd8424f1982fb405f477ed3d  ./labs/lab07/lab07_commands.txt
+e467a1a55a1c9000962f3a1fb9e40167feed5c8fb048a912abdebd70e25849c5  ./labs/lab07/lab07_commands.txt
 bd3fbe20f789d56b5ceec2f4297760b6df0a9dbb71943ad5822a7967fc90200d  ./labs/lab08/lab08_commands.txt
 3937881666e6827452cff6e22cd8c1a2a80b762f8a05c6917528e96aba5f5a4c  ./labs/lab09/lab09_commands.txt
 35a139de6256046f1a222170bda7ab4cfa26aebdb2cd804e12be758fbd46cd9e  ./labs/lab09/lab09_init.sh
@@ -368,14 +368,16 @@ a5a8119344482046fde6cdf4c16790cc443fa376603acf23c97b5e2396376cc7  ./oracle/scrip
 aa0aeaa8d49ddd636abc02eb3912cf8d13a18c340b91314198e5364f8d141f9a  ./oracle/script/osa/23ai/add_dpkaf01_distpath.oby
 4890c909da82fb0c56e60ed304b3d15dab625b79adb9e0a55b448df4b623119b  ./oracle/script/osa/23ai/call_center_log_inserts.sql
 5a23ef0bbc0628b00ab66cd03e8465f637943e165046cdcb066c1e21323f3e0a  ./oracle/script/osa/23ai/call_center_log_tmp_inserts.sql
-0c4fdb41abd6a10826327c0fd3239797ab2d74c87b16065dc30c093fd603e1ca  ./oracle/script/osa/23ai/cfund_ratio.sql
+86159b3bb285ead5cc038d585be5dbaa6039cf778876c72ea7cf57d78fba5f8b  ./oracle/script/osa/23ai/cfund_ratio.sql
+ca74c1c42374b4f10a2a6098816a10233868342aebf1fde2ef1a54f7c5e2aeac  ./oracle/script/osa/23ai/check_source_business_objects.sh
 699b2f020c9edf564e4e60dfff4015467119132f3201442aecdf0b041c2df0ab  ./oracle/script/osa/23ai/comment_osa_business_metadata.sql
 94586b83c66924774fbb6fdaa4718c72835edfa2b156b78afc85690d5ea723ef  ./oracle/script/osa/23ai/create_objects_v1_2.sh
 baec2819d964318f5d738905f3f43e19fb028b1461c3d2494e9b53dbda3fd433  ./oracle/script/osa/23ai/create_objects_v1_2.sql
+683cdc2f4e84421e6c2c6e8d5e7fea0108b17b55478c92f9521295a7951e12a5  ./oracle/script/osa/23ai/create_source_business_objects.sh
 502c30b63807831927096125b84ef429e1240fc5c146321691d2a4804e616ea9  ./oracle/script/osa/23ai/create_source_business_objects.sql
 2ca9b91181d1cdcd13e3ba872c453edb9ea2097f8ffa6b8068bdbb1d6d8924bf  ./oracle/script/osa/23ai/cust_info.sql
 aa0aeaa8d49ddd636abc02eb3912cf8d13a18c340b91314198e5364f8d141f9a  ./oracle/script/osa/23ai/dpkaf01.oby
-5321fb44aa01f36f13004797f6a00d8cbfcff86c857ad35d75a6d9785102f99c  ./oracle/script/osa/23ai/gen_0.sh
+6fab9fe037339ebcefa5e60e0604d0f051ef23d826aea2688969fcc0ba26d5c5  ./oracle/script/osa/23ai/gen_0.sh
 65fa14183bc66f3b99999ad5f98ab25775deb393059ec0a6c1800170ce8241b1  ./oracle/script/osa/23ai/gen_1.sh
 a2d44f69d0d6f3a1f75ee128adfd9c097c610e9d709c10832c271d5c6213e0a1  ./oracle/script/osa/23ai/gen_3.sh
 feaf76a200291ac8e56fd22cf5eebea8919122cd495be5859d5087408c7a277e  ./oracle/script/osa/23ai/gen_4.sh
@@ -388,7 +390,7 @@ ccbf7272b1ac2788b2f315caac1d0a0f91b6a6c45e92ddc2a2230a46543f376a  ./oracle/scrip
 0b5bb08bb220342ef8f7bfbbd0d9ca5b805a59ab1c0760a5404498dd5cd80520  ./oracle/script/osa/23ai/gen_base_legacy_demo.sh
 45a1bd6db9e8aec5767d9db4ee73d7651082409c895301d2b6cc18f860a1acd3  ./oracle/script/osa/23ai/gen_heartbeat.sh
 81d7f81275e32776fd97a46a9e9c7b44d9d687730258e8ba5e00eb151267b4a8  ./oracle/script/osa/23ai/gen_heartbp.sh
-00cec167bfdef57fbceece1d555ae53da1e2278549218193134856a930625a83  ./oracle/script/osa/23ai/gen_init.sh
+32f8722c43bc61eea0faabd08eec7ba2b5d2614852c8dea79986b5b44e20cfd0  ./oracle/script/osa/23ai/gen_init.sh
 db64bfbce3f012b0912ab47b36bb63fa03e2f100c7c8e02c1e6e53eb5928cefd  ./oracle/script/osa/23ai/gen_kill.sh
 4f6554ad7958fafd600287dd35461ffd9bc8e280b717a52c4e0e18d4642abb7c  ./oracle/script/osa/23ai/gen_opstatus.sh
 b592998ca950614736ebec437d5e9a4a794b04613f2f7e10612a15b5441fe968  ./oracle/script/osa/23ai/gen_totamt.sh
@@ -399,7 +401,7 @@ e6f6a3ffd2a56bf196b9a61dae27e1f5095eec6eb4a231df17462f17bd521f13  ./oracle/scrip
 ecb4d286a0a31db23d84d5dac99730d74ad5753f91b0b7d82f9b49ae4bd6c9b6  ./oracle/script/osa/23ai/prepare_ai_26ai_demo.sql
 3531f86005508b9a12dbf1dfd571d6c8bf261ba3525b505cd5e9152849d2d197  ./oracle/script/osa/23ai/prepare_ai_26ai_profile_template.sql
 7bb7d024f5ba14a08c2ff0d958bfe853b274a8cbf9164b0a4b14c0dc999f8134  ./oracle/script/osa/23ai/prepare_osa_base_data.sh
-8d58699b29ff12c0dc3551fcd39409652227efc8f5497d2b68dcc9890a5362bf  ./oracle/script/osa/23ai/prepare_osa_source_objects.sh
+a6d6005c08a533c7a759c4847f3350c3dc36e220b6cda50e1cc5902691ea5c09  ./oracle/script/osa/23ai/prepare_osa_source_objects.sh
 27c3deebff3b5acfabef28611e51d71d0b15fc734e130e388bfddbfdfd8ad635  ./oracle/script/osa/23ai/product.sql
 6ff2adcf5df0f2933a5a4d48cebc351690736ddab1418ebd6f421972ae13b045  ./oracle/script/osa/23ai/rag.py
 0e1c20858fe231825a19c25dfbfab583e723723810607bc1d2772f7aec738cdb  ./oracle/script/osa/23ai/rag_demo_cli.py

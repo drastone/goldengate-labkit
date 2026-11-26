@@ -1,9 +1,26 @@
 #!/bin/bash
 
+set -euo pipefail
+
+SCOPE="${1:-full}"
+case "${SCOPE}" in
+  full|--core-only) ;;
+  *)
+    echo "Usage: $0 [--core-only]" >&2
+    exit 2
+    ;;
+esac
+
 START_TIME=$(date '+%Y-%m-%d %H:%M:%S')
 START_SEC=$(date +%s)
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 cd "${SCRIPT_DIR}"
+for seed_file in cfund_ratio.sql call_center_log_inserts.sql; do
+  if [ ! -r "${seed_file}" ]; then
+    echo "ERROR: missing Source seed file: ${SCRIPT_DIR}/${seed_file}" >&2
+    exit 1
+  fi
+done
 LOG_DIR=${SCRIPT_DIR}/logs
 mkdir -p "${LOG_DIR}"
 LOG_FILE=${LOG_DIR}/prepare_osa_source_objects_$(date '+%Y%m%d_%H%M%S').log
@@ -11,7 +28,9 @@ LOG_FILE=${LOG_DIR}/prepare_osa_source_objects_$(date '+%Y%m%d_%H%M%S').log
 echo "Preparing OSA source objects..."
 echo "Start time: ${START_TIME}"
 echo "Log file: ${LOG_FILE}"
-sqlplus -s soe/soe@orclpdb1 >> "${LOG_FILE}" 2>&1 << EOF
+sqlplus -L -s soe/soe@orclpdb1 >> "${LOG_FILE}" 2>&1 << EOF
+whenever sqlerror exit failure rollback
+whenever oserror exit failure rollback
 set termout off;
 set echo off;
 set feedback off;
@@ -439,12 +458,16 @@ end;
 
 alter table soe.fund_price add constraint fundp_pk primary key (dt,fund_code);
 EOF
-sqlplus -s soe/soe@orclpdb1 >> "${LOG_FILE}" 2>&1 << EOF
+sqlplus -L -s soe/soe@orclpdb1 >> "${LOG_FILE}" 2>&1 << EOF
+whenever sqlerror exit failure rollback
+whenever oserror exit failure rollback
 set term off;
 set feedback off;
 @cfund_ratio.sql
 EOF
-sqlplus -s soe/soe@orclpdb1 >> "${LOG_FILE}" 2>&1 << EOF
+sqlplus -L -s soe/soe@orclpdb1 >> "${LOG_FILE}" 2>&1 << EOF
+whenever sqlerror exit failure rollback
+whenever oserror exit failure rollback
 set term off;
 set feedback off;
 -- ##### 고객별 fund 투입비율 설정 마스터 테이블
@@ -1108,6 +1131,21 @@ end;
 truncate table soe.call_center_log;
 @call_center_log_inserts.sql
 commit;
+
+EOF
+
+if [ "${SCOPE}" = "--core-only" ]; then
+  END_TIME=$(date '+%Y-%m-%d %H:%M:%S')
+  END_SEC=$(date +%s)
+  ELAPSED_SEC=$((END_SEC - START_SEC))
+
+  echo "End time: ${END_TIME}"
+  echo "Elapsed time: ${ELAPSED_SEC} seconds"
+  echo "Core source business objects prepared."
+  exit 0
+fi
+
+sqlplus -s soe/soe@orclpdb1 >> "${LOG_FILE}" 2>&1 << EOF
 
 begin
   execute immediate 'drop TABLE soe.OSA_CANCEL_PREDICTION ';
